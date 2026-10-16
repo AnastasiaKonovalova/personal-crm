@@ -1,0 +1,55 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+credentials*.json
+service-account*.json
+secrets*.json
+token.json
+
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# build
+build/
+dist/
+*.tsbuildinfo
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# local data
+*.sqlite
+*.sqlite3
+*.dump
+
+# os / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# AI agents / tools local state
+.claude/
+.cursor/
+.codex/
+.gemini/
+.mcp.json
+claude_desktop_config.json
+
+# local notes (not for the repo)
+*.local.md
