@@ -110,4 +110,30 @@ describe("success criteria over HTTP", () => {
 
     expect(await getPage(`/contacts/${contactId}`)).toContain(noteText);
   });
+
+  it("edited the contact → the card shows the new data", async () => {
+    expect(contactId).toBeDefined();
+    const editedName = `Проверка Сквозная Фёдорова ${marker}`;
+    const response = await submitForm(`/contacts/${contactId}/edit`, {
+      name: editedName,
+      about: "Отредактировано",
+      howWeMet: "Автотест",
+      phone: "",
+      email: "",
+    });
+    const location = response.headers.get("location") ?? "";
+    expect(location, `redirect to the card, got ${response.status}`).toMatch(
+      new RegExp(`/contacts/${contactId}$`),
+    );
+
+    const card = await getPage(`/contacts/${contactId}`);
+    expect(card).toContain(editedName);
+    expect(card).toContain("Отредактировано");
+  });
+
+  it("found the «ё» name by a query with «е»", async () => {
+    const html = await getPage(`/?q=${encodeURIComponent(`федорова ${marker}`)}`);
+    expect(html).toContain("Найдено: 1");
+    expect(html).toContain(`href="/contacts/${contactId}"`);
+  });
 });

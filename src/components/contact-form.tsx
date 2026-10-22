@@ -2,7 +2,11 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { createContactAction, type ContactFormState } from "@/app/contacts/actions";
+import {
+  createContactAction,
+  updateContactAction,
+  type ContactFormState,
+} from "@/app/contacts/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,14 +20,23 @@ const fields: { name: ContactField; label: string; type?: string; placeholder?: 
   { name: "email", label: "Почта", type: "email", placeholder: "anna@example.com" },
 ];
 
-export function ContactForm() {
+type EditedContact = { id: string } & Record<ContactField, string | null>;
+
+// Without a contact the form creates a new one, with a contact it edits that contact
+export function ContactForm({ contact }: { contact?: EditedContact }) {
   const [state, formAction, pending] = useActionState<ContactFormState, FormData>(
-    createContactAction,
+    contact ? updateContactAction : createContactAction,
     {},
   );
 
   return (
     <form action={formAction} className="grid gap-5" noValidate>
+      {contact && <input type="hidden" name="contactId" value={contact.id} />}
+      {state.formError && (
+        <p className="text-sm text-destructive" role="alert">
+          {state.formError}
+        </p>
+      )}
       {fields.map((field) => {
         const error = state.errors?.[field.name];
         const errorId = `${field.name}-error`;
@@ -38,7 +51,7 @@ export function ContactForm() {
               name={field.name}
               type={field.type ?? "text"}
               placeholder={field.placeholder}
-              defaultValue={state.values?.[field.name] ?? ""}
+              defaultValue={state.values?.[field.name] ?? contact?.[field.name] ?? ""}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? errorId : undefined}
               autoFocus={field.name === "name"}
@@ -56,7 +69,7 @@ export function ContactForm() {
           {pending ? "Сохраняю…" : "Сохранить"}
         </Button>
         <Button asChild variant="outline">
-          <Link href="/">Отмена</Link>
+          <Link href={contact ? `/contacts/${contact.id}` : "/"}>Отмена</Link>
         </Button>
       </div>
     </form>
