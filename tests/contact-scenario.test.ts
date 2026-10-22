@@ -1,14 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { closeDb } from "@/db";
-import { contactSchema } from "@/lib/validation";
+import { contactSchema, type ContactInput } from "@/lib/validation";
 import {
   PAGE_SIZE,
   addNote,
   createContact,
   getContactWithNotes,
   listContacts,
+  updateContact,
+  updateNote,
 } from "@/server/contacts";
 
 // Integration tests against the real database from .env (the success criteria from the spec)
@@ -96,5 +98,92 @@ describe("main scenario: add → find by name → add note → saved", () => {
     expect(await addNote(randomUUID(), "Текст")).toBeNull();
     expect(await addNote("not-a-uuid", "Текст")).toBeNull();
     expect(await getContactWithNotes("not-a-uuid")).toBeNull();
+  });
+});
+
+describe("search treats «е» and «ё» as the same letter", () => {
+  it("finds a name written with «е» by a query with «ё»", async () => {
+    expect(createdId).toBeDefined();
+    // testName is "Тестовый Контакт …" — written with «е»
+    const found = await listContacts({ query: `тёстовый контакт ${marker}`, page: 1 });
+    expect(found.items.map((contact) => contact.id)).toEqual([createdId]);
+  });
+
+  it("finds a name written with «ё» by a query with «е» and with «ё»", async () => {
+    expect(createdId).toBeDefined();
+    await updateContact(
+      createdId!,
+      contactSchema.parse({ name: `Фёдоров ${marker}`, about: "", howWeMet: "", phone: "", email: "" }),
+    );
+
+    for (const query of [`Федоров ${marker}`, `федоров ${marker}`, `ФЁДОРОВ ${marker}`]) {
+      const found = await listContacts({ query, page: 1 });
+      expect(found.items.map((contact) => contact.id)).toEqual([createdId]);
+    }
+  });
+});
+
+describe("editing", () => {
+  it("updates every field of the contact", async () => {
+    expect(createdId).toBeDefined();
+    const input = contactSchema.parse({
+      name: `${testName} изменён`,
+      about: "Новое описание",
+      howWeMet: "",
+      phone: "+7 (111) 111-11-11",
+      email: "edited@example.com",
+    });
+    expect(await updateContact(createdId!, input)).toBe(createdId);
+
+    const card = await getContactWithNotes(createdId!);
+    expect(card?.contact).toMatchObject(input);
+    expect(card?.contact.howWeMet).toBeNull();
+  });
+
+  it("does not update a missing contact", async () => {
+    const input = contactSchema.parse({ name: "Никто", about: "", howWeMet: "", phone: "", email: "" });
+    expect(await updateContact(randomUUID(), input)).toBeNull();
+    expect(await updateContact("not-a-uuid", input)).toBeNull();
+  });
+
+  it("updates a note of the contact and only of that contact", async () => {
+    expect(createdId).toBeDefined();
+    const card = await getContactWithNotes(createdId!);
+    const noteId = card!.notes[0].id;
+    const editedText = `Перенесли встречу ${marker}`;
+
+    expect(await updateNote(randomUUID(), noteId, editedText)).toBeNull();
+    expect(await updateNote(createdId!, randomUUID(), editedText)).toBeNull();
+
+    const note = await updateNote(createdId!, noteId, editedText);
+    expect(note?.body).toBe(editedText);
+    const after = await getContactWithNotes(createdId!);
+    expect(after?.notes.map((item) => item.body)).toEqual([editedText]);
+  });
+});
+
+describe("failed writes keep personal data out of logs", () => {
+  it("logs and throws without the contact's fields", async () => {
+    // Validation is bypassed on purpose, so the phone only has to be a unique marker
+    const secretPhone = `+7 999 ${marker}`;
+    const secretEmail = `leak-${marker}@example.com`;
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      // A null name violates NOT NULL, and Postgres puts the whole failing row into the error
+      const broken = { name: null, phone: secretPhone, email: secretEmail } as unknown as ContactInput;
+      const error = await createContact(broken).catch((caught: unknown) => caught);
+
+      expect(error).toBeInstanceOf(Error);
+      const thrown = error as Error;
+      expect(thrown.message).toBe("Failed to create contact");
+      expect(thrown.cause).toBeUndefined();
+
+      const logged = JSON.stringify(errorLog.mock.calls);
+      expect(logged).toContain("23502");
+      expect(logged).not.toContain(secretPhone);
+      expect(logged).not.toContain(secretEmail);
+    } finally {
+      errorLog.mockRestore();
+    }
   });
 });

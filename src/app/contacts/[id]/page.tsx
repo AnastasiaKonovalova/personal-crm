@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Pencil } from "lucide-react";
 import { NoteForm } from "@/components/note-form";
+import { NoteItem } from "@/components/note-item";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getContactWithNotes } from "@/server/contacts";
@@ -36,7 +37,15 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
         </Button>
       </div>
 
-      <h1 className="text-2xl font-semibold">{contact.name}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">{contact.name}</h1>
+        <Button asChild variant="outline">
+          <Link href={`/contacts/${contact.id}/edit`}>
+            <Pencil />
+            Редактировать
+          </Link>
+        </Button>
+      </div>
 
       <dl className="grid gap-3">
         <Field label="Кто это">{contact.about}</Field>
@@ -68,15 +77,12 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
           ) : (
             <ul className="grid gap-4" data-testid="notes">
               {notes.map((note) => (
-                <li key={note.id} className="grid gap-1 border-t pt-4">
-                  <time
-                    dateTime={note.createdAt.toISOString()}
-                    className="text-xs text-muted-foreground"
-                  >
-                    {dateFormat.format(note.createdAt)}
-                  </time>
-                  <p className="whitespace-pre-wrap">{note.body}</p>
-                </li>
+                <NoteItem
+                  key={note.id}
+                  contactId={contact.id}
+                  note={{ id: note.id, body: note.body, createdAt: note.createdAt.toISOString() }}
+                  createdAtLabel={dateFormat.format(note.createdAt)}
+                />
               ))}
             </ul>
           )}
