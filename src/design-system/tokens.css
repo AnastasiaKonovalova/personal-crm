@@ -1,0 +1,113 @@
+/* Design tokens from ak-design-system (tokens/tokens.json), plus app tokens marked "app".
+   Edit the values here; Tailwind utilities read them through globals.css.
+   Font families come from next/font in globals.css, not from here. */
+
+/* Plain variables: colours, spacing, sizes, motion. Mapped to Tailwind in globals.css. */
+:root {
+  /* colour */
+  --bg: #f4f0e7;
+  --surface: #fbf8f1;
+  --surface-2: #ede7d8;
+  --line: #e0d9c8;
+  --ink: #504636;
+  --muted: #6e665a;
+  --accent: #f1b559;
+  --accent-deep: #d99a36;
+  --accent-soft: #fbeac8;
+  --brown: #7a5a33;
+  --on-accent: #ffffff;
+  --teal: #27aab1;
+  --teal-deep: #166f74;
+  --teal-soft: #e1f3f4;
+  --aurora-gold: #f6ce80;
+  --header-glass: rgba(244, 240, 231, 0.82);
+  --menu-glass: rgba(244, 240, 231, 0.97);
+  --danger: #b93c1c;      /* app: error text and borders, ~5:1 on bg */
+  --danger-soft: #fbe9e3; /* app: tint behind an invalid field */
+  /* spacing */
+  --space-chip: 4px;
+  --space-tag: 8px;
+  --space-button-icon: 9px;
+  --space-cta: 12px;
+  --space-glance: 14px;
+  --space-grid: 16px;
+  --space-controls: 20px;
+  --space-heading: 24px;
+  --space-nav: 28px;
+  --space-label: 30px;
+  --space-cta-top: 34px;
+  --gutter: 52px;
+  --pad-stat: 26px;
+  --pad-card: 30px;
+  --pad-cell: 32px;
+  --pad-case: 42px;
+  --pad-contact: 76px;
+  --section-y: 96px;
+  --header-height: 70px;
+  /* size */
+  --content-max: 1180px;
+  --content-narrow: 760px; /* app: contact card and forms column */
+  --hit-carousel: 44px;
+  --hit-burger: 40px;
+  --hit-icon-button: 48px;
+  --rule-label: 30px;
+}
+
+/* Radius, shadow, easing and type share Tailwind's theme namespaces, so they are defined as theme
+   variables: each one is both a CSS variable (var(--radius-pill)) and a utility (rounded-pill). */
+@theme {
+  --radius-pill: 100px;
+  --radius-burger: 10px;
+  --radius-stat: 18px;
+  --radius-card: 20px;
+  --radius-case: 24px;
+  --radius-contact: 28px;
+  --radius-photo: 30px;
+  --radius-round: 50%;
+
+  --shadow-photo: 0 34px 80px -36px rgba(60, 44, 20, 0.55);
+  --shadow-case-hover: 0 30px 70px -40px rgba(207, 146, 36, 0.5);
+
+  --ease-spring: cubic-bezier(.34, 1.4, .5, 1);
+  --ease-slide: cubic-bezier(.4, 0, .2, 1);
+
+  /* type styles from tokens.json (text-<style>); fluid titles use clamp() as in the mockups */
+  --text-page-title: clamp(30px, 4.4vw, 52px);
+  --text-page-title--line-height: 1.05;
+  --text-page-title--letter-spacing: -0.025em;
+  --text-empty-title: clamp(24px, 3.2vw, 34px);
+  --text-empty-title--line-height: 1.1;
+  --text-empty-title--letter-spacing: -0.02em;
+  --text-notes-title: clamp(22px, 2.6vw, 28px);
+  --text-notes-title--line-height: 1.2;
+  --text-notes-title--letter-spacing: -0.02em;
+  --text-brand: 17px;
+  --text-brand--line-height: 1.6;
+  --text-counter: 14px;
+  --text-counter--line-height: 1.6;
+  --text-counter--letter-spacing: 0.04em;
+  --text-eyebrow: 12.5px;
+  --text-eyebrow--line-height: 1.6;
+  --text-eyebrow--letter-spacing: 0.14em;
+  --text-kicker: 12.5px;
+  --text-kicker--line-height: 1.6;
+  --text-kicker--letter-spacing: 0.1em;
+  --text-pill: 12.5px;
+  --text-pill--line-height: 1.6;
+  --text-pill--letter-spacing: 0.04em;
+  --text-badge: 11px;
+  --text-badge--line-height: 1.6;
+  --text-badge--letter-spacing: 0.1em;
+  --text-body-lg: 17px;
+  --text-body-lg--line-height: 1.6;
+  --text-body: 15.5px;
+  --text-body--line-height: 1.6;
+  --text-meta: 14.5px; /* app: secondary text in list rows */
+  --text-meta--line-height: 1.6;
+  --text-button: 15px;
+  --text-button--line-height: 1.6;
+  --text-nav: 14px;
+  --text-nav--line-height: 1.6;
+  --text-caption: 13px;
+  --text-caption--line-height: 1.6;
+}

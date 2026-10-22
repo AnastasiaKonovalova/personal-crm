@@ -1,52 +1,78 @@
 @import "tailwindcss";
+@import "../design-system/tokens.css";
 
-/* shadcn/ui theme tokens (new-york, neutral) */
-
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-}
-
+/* Only design tokens: Tailwind's default palette is switched off, so a stray `text-red-500` does not compile.
+   shadcn/ui semantic colours point at design tokens. Names that exist in both systems
+   (accent, muted) follow shadcn's meaning in utilities: `bg-muted` is a quiet fill,
+   `text-muted-foreground` is the secondary text colour (design token --muted). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
+  --color-*: initial;
+
+  /* shadcn/ui semantic colours */
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--ink);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--muted);
   --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--danger);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--teal-deep);
+
+  /* design-system colours without a shadcn counterpart */
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-soft: var(--accent-soft);
+  --color-brown: var(--brown);
+  --color-teal: var(--teal);
+  --color-teal-deep: var(--teal-deep);
+  --color-teal-soft: var(--teal-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-header-glass: var(--header-glass);
+  --color-menu-glass: var(--menu-glass);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* shadcn/ui radius scale on design tokens */
+  --radius-sm: var(--radius-burger);
+  --radius-md: var(--radius-burger);
+  --radius-lg: var(--radius-stat);
+  --radius-xl: var(--radius-card);
+
+  /* named spacing from the design system (gap-grid, p-pad-card …); the numeric 4px scale stays */
+  --spacing-chip: var(--space-chip);
+  --spacing-tag: var(--space-tag);
+  --spacing-button-icon: var(--space-button-icon);
+  --spacing-cta: var(--space-cta);
+  --spacing-grid: var(--space-grid);
+  --spacing-controls: var(--space-controls);
+  --spacing-heading: var(--space-heading);
+  --spacing-label: var(--space-label);
+  --spacing-cta-top: var(--space-cta-top);
+  --spacing-pad-stat: var(--pad-stat);
+  --spacing-pad-card: var(--pad-card);
+  --spacing-header-height: var(--header-height);
+  --spacing-hit-carousel: var(--hit-carousel);
+
+  --container-content: var(--content-max);
+  --container-narrow: var(--content-narrow);
+
+  /* fonts from next/font (layout.tsx). Space Grotesk has no Cyrillic, so Russian display text falls back to the system sans, as in the design system */
+  --font-display: var(--font-space-grotesk), sans-serif;
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
 }
 
 @layer base {
@@ -54,6 +80,10 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-foreground;
+    line-height: 1.6;
+  }
+  ::selection {
+    @apply bg-accent text-ink;
   }
 }
