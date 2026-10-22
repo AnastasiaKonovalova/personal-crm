@@ -1,0 +1,3 @@
+/* Google-hosted brand fonts: Space Grotesk (display) and Manrope (sans). Load before tokens.css.
+   In Next.js prefer next/font/google with the same families and weights. */
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");

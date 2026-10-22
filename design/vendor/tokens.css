@@ -1,0 +1,87 @@
+/* Anastasia Konovalova — generated from tokens.json. Edit tokens.json, not this file. */
+:root {
+  /* colour */
+  --bg: #f4f0e7;
+  --surface: #fbf8f1;
+  --surface-2: #ede7d8;
+  --line: #e0d9c8;
+  --ink: #504636;
+  --muted: #6e665a;
+  --accent: #f1b559;
+  --accent-deep: #d99a36;
+  --accent-soft: #fbeac8;
+  --brown: #7a5a33;
+  --on-accent: #ffffff;
+  --teal: #27aab1;
+  --teal-deep: #166f74;
+  --teal-soft: #e1f3f4;
+  --aurora-gold: #f6ce80;
+  --header-glass: rgba(244, 240, 231, 0.82);
+  --menu-glass: rgba(244, 240, 231, 0.97);
+  /* shadow */
+  --shadow-photo: 0 34px 80px -36px rgba(60, 44, 20, 0.55);
+  --shadow-case-hover: 0 30px 70px -40px rgba(207, 146, 36, 0.5);
+  /* spacing */
+  --space-chip: 4px;
+  --space-tag: 8px;
+  --space-button-icon: 9px;
+  --space-cta: 12px;
+  --space-glance: 14px;
+  --space-grid: 16px;
+  --space-controls: 20px;
+  --space-heading: 24px;
+  --space-nav: 28px;
+  --space-label: 30px;
+  --space-cta-top: 34px;
+  --gutter: 52px;
+  --pad-stat: 26px;
+  --pad-card: 30px;
+  --pad-cell: 32px;
+  --pad-case: 42px;
+  --pad-contact: 76px;
+  --section-y: 96px;
+  --header-height: 70px;
+  /* radius */
+  --radius-pill: 100px;
+  --radius-burger: 10px;
+  --radius-stat: 18px;
+  --radius-card: 20px;
+  --radius-case: 24px;
+  --radius-contact: 28px;
+  --radius-photo: 30px;
+  --radius-round: 50%;
+  /* size */
+  --content-max: 1180px;
+  --hit-carousel: 44px;
+  --hit-burger: 40px;
+  --hit-icon-button: 48px;
+  --rule-label: 30px;
+  /* font families */
+  --font-display: "Space Grotesk", sans-serif;
+  --font-sans: Manrope, system-ui, sans-serif;
+  /* motion (from the brand book) */
+  --ease-spring: cubic-bezier(.34, 1.4, .5, 1);
+  --ease-slide: cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Type styles: one class per style, ak-t-<name>. Fluid clamp() ranges are in each style's usage in tokens.json. */
+.ak-t-hero-title { font-family: var(--font-display); font-size: 76px; line-height: 1.02; font-weight: 600; letter-spacing: -0.025em; }
+.ak-t-contact-title { font-family: var(--font-display); font-size: 58px; line-height: 1.03; font-weight: 600; letter-spacing: -0.025em; }
+.ak-t-section-title { font-family: var(--font-display); font-size: 44px; line-height: 1.07; font-weight: 600; letter-spacing: -0.02em; }
+.ak-t-case-title { font-family: var(--font-display); font-size: 34px; line-height: 1.1; font-weight: 600; letter-spacing: -0.02em; }
+.ak-t-case-index { font-family: var(--font-display); font-size: 84px; line-height: 0.8; font-weight: 700; }
+.ak-t-stat-value { font-family: var(--font-display); font-size: 23px; line-height: 1.15; font-weight: 600; letter-spacing: -0.01em; }
+.ak-t-brand { font-family: var(--font-display); font-size: 17px; line-height: 1.6; font-weight: 600; }
+.ak-t-counter { font-family: var(--font-display); font-size: 14px; line-height: 1.6; font-weight: 600; letter-spacing: 0.04em; }
+.ak-t-chip { font-family: var(--font-display); font-size: 13px; line-height: 1.6; font-weight: 400; }
+.ak-t-eyebrow { font-family: var(--font-display); font-size: 12.5px; line-height: 1.6; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; }
+.ak-t-kicker { font-family: var(--font-display); font-size: 12.5px; line-height: 1.6; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; }
+.ak-t-pill { font-family: var(--font-display); font-size: 12.5px; line-height: 1.6; font-weight: 400; letter-spacing: 0.04em; }
+.ak-t-tag { font-family: var(--font-display); font-size: 12.5px; line-height: 1.6; font-weight: 400; }
+.ak-t-badge { font-family: var(--font-display); font-size: 11px; line-height: 1.6; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; }
+.ak-t-lede { font-family: var(--font-sans); font-size: 19px; line-height: 1.6; font-weight: 400; }
+.ak-t-body-lg { font-family: var(--font-sans); font-size: 17px; line-height: 1.6; font-weight: 400; }
+.ak-t-body { font-family: var(--font-sans); font-size: 15.5px; line-height: 1.6; font-weight: 400; }
+.ak-t-button { font-family: var(--font-sans); font-size: 15px; line-height: 1.6; font-weight: 700; }
+.ak-t-nav { font-family: var(--font-sans); font-size: 14px; line-height: 1.6; font-weight: 600; }
+.ak-t-caption { font-family: var(--font-sans); font-size: 13px; line-height: 1.6; font-weight: 400; }

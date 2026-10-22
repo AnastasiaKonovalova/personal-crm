@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Редактирование — эскиз</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/tokens.css">
+  <link rel="stylesheet" href="vendor/styles.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="ak-root">
+  <header class="ak-header">
+    <div class="ak-wrap ak-bar">
+      <a class="ak-brand" href="contacts.html">Личная CRM<b>.</b></a>
+    </div>
+  </header>
+
+  <main class="ak-wrap ak-main ak-stack-y ak-narrow">
+    <a class="ak-back" href="contact.html">
+      <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      Анна Смирнова
+    </a>
+
+    <h1 class="ak-page-title">Редактирование</h1>
+
+    <!-- validation state: the name was erased and the form submitted -->
+    <form class="ak-card ak-stack-y" novalidate>
+      <div class="ak-field">
+        <label class="ak-field-label" for="name">Имя<span class="ak-req">*</span></label>
+        <input class="ak-input" id="name" value="" aria-invalid="true" aria-describedby="name-error">
+        <p class="ak-field-error" id="name-error">
+          <svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+          Имя обязательно
+        </p>
+      </div>
+      <div class="ak-field">
+        <label class="ak-field-label" for="about">Кто это</label>
+        <input class="ak-input" id="about" value="Дизайнер, соседка по даче">
+      </div>
+      <div class="ak-field">
+        <label class="ak-field-label" for="howWeMet">Откуда знакомы</label>
+        <input class="ak-input" id="howWeMet" value="Учились вместе на курсах">
+      </div>
+      <div class="ak-field">
+        <label class="ak-field-label" for="phone">Телефон</label>
+        <input class="ak-input" id="phone" type="tel" value="+7 900 123-45-67">
+      </div>
+      <div class="ak-field">
+        <label class="ak-field-label" for="email">Почта</label>
+        <input class="ak-input" id="email" type="email" placeholder="anna@example.com">
+      </div>
+      <div class="ak-btn-row">
+        <button class="ak-btn ak-btn-primary" type="submit">Сохранить</button>
+        <a class="ak-btn ak-btn-ghost" href="contact.html">Отмена</a>
+      </div>
+    </form>
+  </main>
+</div>
+</body>
+</html>

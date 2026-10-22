@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Карточка контакта — эскиз</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/tokens.css">
+  <link rel="stylesheet" href="vendor/styles.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="ak-root">
+  <header class="ak-header">
+    <div class="ak-wrap ak-bar">
+      <a class="ak-brand" href="contacts.html">Личная CRM<b>.</b></a>
+    </div>
+  </header>
+
+  <main class="ak-wrap ak-main ak-stack-y ak-narrow">
+    <a class="ak-back" href="contacts.html">
+      <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      Все контакты
+    </a>
+
+    <div class="ak-page-head">
+      <h1 class="ak-page-title">Анна Смирнова</h1>
+      <a class="ak-btn ak-btn-ghost ak-btn-sm" href="contact-edit.html">
+        <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+        Редактировать
+      </a>
+    </div>
+
+    <section class="ak-card" aria-label="Данные контакта">
+      <dl class="ak-dl">
+        <div><dt>Кто это</dt><dd>Дизайнер, соседка по даче</dd></div>
+        <div><dt>Откуда знакомы</dt><dd>Учились вместе на курсах</dd></div>
+        <div><dt>Телефон</dt><dd><a href="tel:+79001234567">+7 900 123-45-67</a></dd></div>
+        <div><dt>Почта</dt><dd><span class="ak-empty-value">—</span></dd></div>
+      </dl>
+    </section>
+
+    <section class="ak-card" aria-labelledby="notes-title">
+      <div class="ak-notes-head">
+        <h2 class="ak-notes-title" id="notes-title">Заметки</h2>
+      </div>
+
+      <form class="ak-note-form">
+        <label class="ak-sr-only" for="body">Новая заметка</label>
+        <textarea class="ak-textarea" id="body" rows="3" placeholder="О чём поговорили, о чём договорились"></textarea>
+        <div class="ak-btn-row">
+          <button class="ak-btn ak-btn-primary" type="submit">Добавить заметку</button>
+          <span class="ak-status" role="status">Заметка сохранена</span>
+        </div>
+      </form>
+
+      <ul class="ak-notes">
+        <li class="ak-note">
+          <div class="ak-note-top">
+            <time datetime="2026-10-20T18:40">20 октября 2026 г. в 18:40</time>
+            <button class="ak-btn ak-btn-text ak-btn-sm" type="button">
+              <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+              Изменить
+            </button>
+          </div>
+          <p>Созвонились насчёт ремонта кухни. Пришлёт подборку плитки до пятницы, встречаемся на объекте в субботу утром.</p>
+        </li>
+        <li class="ak-note ak-note-editing">
+          <div class="ak-note-top">
+            <time datetime="2026-09-02T11:15">2 сентября 2026 г. в 11:15</time>
+          </div>
+          <form class="ak-note-form">
+            <div class="ak-field">
+              <label class="ak-sr-only" for="note-2-body">Текст заметки</label>
+              <textarea class="ak-textarea" id="note-2-body" rows="3" aria-invalid="true" aria-describedby="note-2-error"></textarea>
+              <p class="ak-field-error" id="note-2-error">
+                <svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                Заметка пустая
+              </p>
+            </div>
+            <div class="ak-btn-row">
+              <button class="ak-btn ak-btn-ghost ak-btn-sm" type="submit">Сохранить</button>
+              <button class="ak-btn ak-btn-text ak-btn-sm" type="button">Отмена</button>
+            </div>
+          </form>
+        </li>
+        <li class="ak-note">
+          <div class="ak-note-top">
+            <time datetime="2026-06-14T20:05">14 июня 2026 г. в 20:05</time>
+            <button class="ak-btn ak-btn-text ak-btn-sm" type="button">
+              <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+              Изменить
+            </button>
+          </div>
+          <p>Встретились на даче. Советовала мастера по крыше — контакт обещала скинуть.</p>
+        </li>
+      </ul>
+    </section>
+  </main>
+</div>
+</body>
+</html>
