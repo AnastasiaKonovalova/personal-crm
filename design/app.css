@@ -2,12 +2,6 @@
    Load after ak-design-system/tokens/tokens.css and components/src/styles.css.
    Mappings follow the "Extending to app UI" table in ak-design-system/CLAUDE.md. */
 
-/* App tokens missing from the design system. On transfer, add them to tokens.json and regenerate tokens.css / tokens.ts / the preset. */
-:root {
-  --danger: #b93c1c;      /* error text and borders: warm red; ~5:1 on bg */
-  --danger-soft: #fbe9e3; /* tint behind an invalid field, same warm hue */
-}
-
 .ak-main { padding-top: clamp(28px, 4vw, 56px); padding-bottom: clamp(50px, 7vw, 96px); }
 .ak-stack-y { display: grid; gap: var(--space-heading); }
 .ak-narrow { max-width: 760px; }
@@ -28,18 +22,20 @@
 .ak-btn-text { padding: 8px 0; background: none; border: 0; color: var(--muted); }
 .ak-btn-text:hover { color: var(--teal-deep); }
 
-/* inputs: surface fill, line border, pill for single-line, radius-card for textarea, teal-deep focus */
+/* inputs: surface fill, line border, pill for single-line, radius-card for textarea, teal-deep focus.
+   Overrides the design system's TextField styles (styles.css): label Manrope 600 ink, error 13px 600 */
 .ak-field { display: grid; gap: 8px; }
-.ak-field-label { font-family: var(--font-sans); font-weight: 600; font-size: 14px; color: var(--ink); }
+.ak-field-label { font-family: var(--font-sans); font-weight: 600; font-size: 14px; color: var(--ink); letter-spacing: normal; }
 .ak-field-label .ak-req { color: var(--brown); margin-left: 2px; }
-.ak-input, .ak-textarea { width: 100%; font-family: var(--font-sans); font-size: 15px; line-height: 1.6; color: var(--ink); background: var(--surface); border: 1px solid var(--line); transition: border-color .2s; }
+.ak-input, .ak-textarea { width: 100%; font-family: var(--font-sans); font-size: 16px; line-height: 1.5; color: var(--ink); background: var(--surface); border: 1px solid var(--line); transition: border-color .2s; }
 .ak-input { border-radius: var(--radius-pill); padding: 14px 20px; } /* same height as .ak-btn (54px) so search and button line up */
 .ak-textarea { border-radius: var(--radius-card); padding: 14px 20px; resize: vertical; min-height: 104px; }
 .ak-input::placeholder, .ak-textarea::placeholder { color: var(--muted); opacity: 1; }
 .ak-input:hover, .ak-textarea:hover { border-color: var(--muted); }
 .ak-root .ak-input:focus-visible, .ak-root .ak-textarea:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 3px; border-color: var(--teal-deep); }
 .ak-input[aria-invalid="true"], .ak-textarea[aria-invalid="true"] { border-color: var(--danger); background: var(--danger-soft); }
-.ak-field-error { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--danger); margin: 0; }
+.ak-root .ak-input[aria-invalid="true"]:focus-visible, .ak-root .ak-textarea[aria-invalid="true"]:focus-visible { outline-color: var(--danger); border-color: var(--danger); }
+.ak-field-error { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; line-height: 1.6; color: var(--danger); margin: 0; }
 .ak-field-error .ak-ico { width: 16px; height: 16px; }
 
 /* search: pill input with a leading icon + ghost submit */

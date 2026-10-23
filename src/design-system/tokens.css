@@ -19,11 +19,11 @@
   --teal: #27aab1;
   --teal-deep: #166f74;
   --teal-soft: #e1f3f4;
+  --danger: #b93c1c;
+  --danger-soft: #fbe9e3;
   --aurora-gold: #f6ce80;
   --header-glass: rgba(244, 240, 231, 0.82);
   --menu-glass: rgba(244, 240, 231, 0.97);
-  --danger: #b93c1c;      /* app: error text and borders, ~5:1 on bg */
-  --danger-soft: #fbe9e3; /* app: tint behind an invalid field */
   /* spacing */
   --space-chip: 4px;
   --space-tag: 8px;
@@ -104,6 +104,8 @@
   --text-body--line-height: 1.6;
   --text-meta: 14.5px; /* app: secondary text in list rows */
   --text-meta--line-height: 1.6;
+  --text-field: 16px; /* app: field text as in TextField; 24px line keeps the field 52px tall like a button */
+  --text-field--line-height: 1.5;
   --text-button: 15px;
   --text-button--line-height: 1.6;
   --text-nav: 14px;

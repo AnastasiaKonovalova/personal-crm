@@ -168,6 +168,19 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 .ak-contact-title { font-family: var(--font-display); font-weight: 600; font-size: clamp(30px, 5vw, 58px); letter-spacing: -.025em; line-height: 1.03; max-width: 18ch; margin: 0 auto; }
 .ak-contact .ak-btn-row { justify-content: center; margin-top: var(--space-cta-top); }
 
+/* field (text input / textarea) — added for app UI; error state from the notes screen */
+.ak-field { display: flex; flex-direction: column; gap: 8px; }
+.ak-field-label { font-family: var(--font-display); font-size: 14px; color: var(--muted); letter-spacing: .02em; }
+.ak-input { width: 100%; font: inherit; font-family: var(--font-sans); font-size: 16px; line-height: 1.6; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-pill); padding: 12px 20px; transition: border-color .2s, background .2s; }
+textarea.ak-input { border-radius: var(--radius-card); padding: 14px 18px; resize: vertical; min-height: 120px; }
+.ak-input::placeholder { color: var(--muted); }
+.ak-input:hover { border-color: var(--muted); }
+.ak-input:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 3px; }
+.ak-input[aria-invalid="true"] { background: var(--danger-soft); border-color: var(--danger); }
+.ak-input[aria-invalid="true"]:focus-visible { outline-color: var(--danger); }
+.ak-field-error { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-family: var(--font-sans); font-size: 15px; line-height: 1.4; color: var(--danger); }
+.ak-field-error svg { flex: 0 0 auto; }
+
 /* footer */
 .ak-footer { padding: 30px 0; text-align: center; color: var(--muted); font-family: var(--font-display); font-size: 12.5px; }
 

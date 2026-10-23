@@ -70,8 +70,8 @@
   --container-content: var(--content-max);
   --container-narrow: var(--content-narrow);
 
-  /* fonts from next/font (layout.tsx). Space Grotesk has no Cyrillic, so Russian display text falls back to the system sans, as in the design system */
-  --font-display: var(--font-space-grotesk), sans-serif;
+  /* fonts from next/font (layout.tsx) */
+  --font-display: var(--font-wix-madefor-display), var(--font-manrope), sans-serif;
   --font-sans: var(--font-manrope), system-ui, sans-serif;
 }
 

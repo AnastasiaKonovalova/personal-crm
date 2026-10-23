@@ -15,6 +15,8 @@
   --teal: #27aab1;
   --teal-deep: #166f74;
   --teal-soft: #e1f3f4;
+  --danger: #b93c1c;
+  --danger-soft: #fbe9e3;
   --aurora-gold: #f6ce80;
   --header-glass: rgba(244, 240, 231, 0.82);
   --menu-glass: rgba(244, 240, 231, 0.97);
@@ -57,7 +59,7 @@
   --hit-icon-button: 48px;
   --rule-label: 30px;
   /* font families */
-  --font-display: "Space Grotesk", sans-serif;
+  --font-display: "Wix Madefor Display", "Manrope", sans-serif;
   --font-sans: Manrope, system-ui, sans-serif;
   /* motion (from the brand book) */
   --ease-spring: cubic-bezier(.34, 1.4, .5, 1);
