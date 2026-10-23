@@ -5,16 +5,19 @@ import { NoteForm } from "@/components/note-form";
 import { NoteItem } from "@/components/note-item";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getContactWithNotes } from "@/server/contacts";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "long", timeStyle: "short" });
 
+const cardClasses = "rounded-card border border-line bg-surface p-[clamp(22px,2.6vw,30px)]";
+const linkClasses =
+  "border-b border-line transition-colors duration-200 hover:border-teal-deep hover:text-teal-deep";
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="grid gap-1 sm:grid-cols-[10rem_1fr] sm:gap-4">
-      <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd>{children ?? "—"}</dd>
+    <div className="grid grid-cols-[11rem_1fr] gap-grid border-b border-line py-3.5 first:pt-0 last:border-b-0 last:pb-0 max-[560px]:grid-cols-1 max-[560px]:gap-1">
+      <dt className="pt-1 font-display text-badge text-muted-foreground uppercase">{label}</dt>
+      <dd className="text-ink">{children ?? <span className="text-muted-foreground">—</span>}</dd>
     </div>
   );
 }
@@ -28,9 +31,9 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
   const { contact, notes } = data;
 
   return (
-    <PageShell width="narrow" className="grid gap-6">
+    <PageShell width="narrow" className="grid gap-heading">
       <div>
-        <Button asChild variant="ghost" size="sm" className="-ml-3">
+        <Button asChild variant="ghost" size="sm" className="px-0">
           <Link href="/">
             <ChevronLeft />
             Все контакты
@@ -38,9 +41,9 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">{contact.name}</h1>
-        <Button asChild variant="outline">
+      <div className="flex flex-wrap items-end justify-between gap-grid">
+        <h1 className="font-display text-page-title font-semibold">{contact.name}</h1>
+        <Button asChild variant="outline" size="sm">
           <Link href={`/contacts/${contact.id}/edit`}>
             <Pencil />
             Редактировать
@@ -48,47 +51,47 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
         </Button>
       </div>
 
-      <dl className="grid gap-3">
-        <Field label="Кто это">{contact.about}</Field>
-        <Field label="Откуда знакомы">{contact.howWeMet}</Field>
-        <Field label="Телефон">
-          {contact.phone && (
-            <a href={`tel:${contact.phone.replace(/[^0-9+]/g, "")}`} className="hover:underline">
-              {contact.phone}
-            </a>
-          )}
-        </Field>
-        <Field label="Почта">
-          {contact.email && (
-            <a href={`mailto:${contact.email}`} className="hover:underline">
-              {contact.email}
-            </a>
-          )}
-        </Field>
-      </dl>
+      <section className={cardClasses} aria-label="Данные контакта">
+        <dl>
+          <Field label="Кто это">{contact.about}</Field>
+          <Field label="Откуда знакомы">{contact.howWeMet}</Field>
+          <Field label="Телефон">
+            {contact.phone && (
+              <a href={`tel:${contact.phone.replace(/[^0-9+]/g, "")}`} className={linkClasses}>
+                {contact.phone}
+              </a>
+            )}
+          </Field>
+          <Field label="Почта">
+            {contact.email && (
+              <a href={`mailto:${contact.email}`} className={linkClasses}>
+                {contact.email}
+              </a>
+            )}
+          </Field>
+        </dl>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Заметки</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-6">
-          <NoteForm contactId={contact.id} />
-          {notes.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Заметок пока нет</p>
-          ) : (
-            <ul className="grid gap-4" data-testid="notes">
-              {notes.map((note) => (
-                <NoteItem
-                  key={note.id}
-                  contactId={contact.id}
-                  note={{ id: note.id, body: note.body, createdAt: note.createdAt.toISOString() }}
-                  createdAtLabel={dateFormat.format(note.createdAt)}
-                />
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <section className={cardClasses} aria-labelledby="notes-title">
+        <h2 id="notes-title" className="mb-controls font-display text-notes-title font-semibold">
+          Заметки
+        </h2>
+        <NoteForm contactId={contact.id} />
+        {notes.length === 0 ? (
+          <p className="mt-heading text-muted-foreground">Заметок пока нет</p>
+        ) : (
+          <ul className="mt-heading grid" data-testid="notes">
+            {notes.map((note) => (
+              <NoteItem
+                key={note.id}
+                contactId={contact.id}
+                note={{ id: note.id, body: note.body, createdAt: note.createdAt.toISOString() }}
+                createdAtLabel={dateFormat.format(note.createdAt)}
+              />
+            ))}
+          </ul>
+        )}
+      </section>
     </PageShell>
   );
 }
