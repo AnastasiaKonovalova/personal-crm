@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { BackLink } from "@/components/back-link";
 import { ContactForm } from "@/components/contact-form";
 import { PageShell } from "@/components/page-shell";
 import { getContact } from "@/server/contacts";
@@ -16,8 +17,9 @@ export default async function EditContactPage({ params }: { params: Promise<{ id
   }
 
   return (
-    <PageShell width="narrow" className="grid gap-6">
-      <h1 className="text-2xl font-semibold">Редактирование контакта</h1>
+    <PageShell width="narrow" className="grid gap-heading">
+      <BackLink href={`/contacts/${contact.id}`}>{contact.name}</BackLink>
+      <h1 className="font-display text-page-title font-semibold">Редактирование контакта</h1>
       <ContactForm contact={contact} />
     </PageShell>
   );

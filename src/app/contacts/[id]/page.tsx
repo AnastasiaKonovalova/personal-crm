@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Pencil } from "lucide-react";
+import { Pencil } from "lucide-react";
+import { BackLink } from "@/components/back-link";
 import { NoteForm } from "@/components/note-form";
 import { NoteItem } from "@/components/note-item";
 import { PageShell } from "@/components/page-shell";
@@ -32,14 +33,7 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
 
   return (
     <PageShell width="narrow" className="grid gap-heading">
-      <div>
-        <Button asChild variant="ghost" size="sm" className="px-0">
-          <Link href="/">
-            <ChevronLeft />
-            Все контакты
-          </Link>
-        </Button>
-      </div>
+      <BackLink href="/">Все контакты</BackLink>
 
       <div className="flex flex-wrap items-end justify-between gap-grid">
         <h1 className="font-display text-page-title font-semibold">{contact.name}</h1>
