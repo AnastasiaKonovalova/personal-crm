@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft, Pencil } from "lucide-react";
 import { NoteForm } from "@/components/note-form";
 import { NoteItem } from "@/components/note-item";
+import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getContactWithNotes } from "@/server/contacts";
@@ -27,7 +28,7 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
   const { contact, notes } = data;
 
   return (
-    <div className="grid gap-6">
+    <PageShell width="narrow" className="grid gap-6">
       <div>
         <Button asChild variant="ghost" size="sm" className="-ml-3">
           <Link href="/">
@@ -88,6 +89,6 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

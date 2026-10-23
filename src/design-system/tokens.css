@@ -37,6 +37,7 @@
   --space-label: 30px;
   --space-cta-top: 34px;
   --gutter: 52px;
+  --gutter-fluid: clamp(20px, 5vw, 52px); /* app: page side padding, the clamp from the gutter usage note */
   --pad-stat: 26px;
   --pad-card: 30px;
   --pad-cell: 32px;

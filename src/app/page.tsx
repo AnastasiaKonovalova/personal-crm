@@ -1,6 +1,7 @@
 import Form from "next/form";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,7 +32,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
   const { items, total, page, pageCount } = await listContacts({ query, page: requestedPage });
 
   return (
-    <div className="grid gap-6">
+    <PageShell aurora className="grid gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
           <h1 className="text-2xl font-semibold">Контакты</h1>
@@ -126,6 +127,6 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
           )}
         </nav>
       )}
-    </div>
+    </PageShell>
   );
 }

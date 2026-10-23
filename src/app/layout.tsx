@@ -24,14 +24,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ru" className={`${wixMadeforDisplay.variable} ${manrope.variable}`}>
       <body className="min-h-screen antialiased">
-        <header className="border-b">
-          <div className="mx-auto flex max-w-4xl items-center px-4 py-4">
-            <Link href="/" className="font-semibold">
-              Личная CRM
+        <header className="sticky top-0 z-10 border-b border-line bg-header-glass backdrop-blur-[10px]">
+          <div className="mx-auto flex h-header-height max-w-content items-center px-gutter-fluid">
+            <Link href="/" className="font-display text-brand font-semibold whitespace-nowrap">
+              Личная CRM<span className="text-accent">.</span>
             </Link>
           </div>
         </header>
-        <main className="mx-auto max-w-4xl px-4 py-8">{children}</main>
+        {children}
       </body>
     </html>
   );
