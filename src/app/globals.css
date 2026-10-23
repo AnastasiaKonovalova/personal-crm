@@ -67,6 +67,7 @@
   --spacing-header-height: var(--header-height);
   --spacing-gutter-fluid: var(--gutter-fluid);
   --spacing-hit-carousel: var(--hit-carousel);
+  --spacing-rule-label: var(--rule-label);
 
   --container-content: var(--content-max);
   --container-narrow: var(--content-narrow);
