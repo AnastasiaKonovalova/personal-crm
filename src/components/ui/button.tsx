@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 // ghost = quiet text action; icon = round arrow (pagination).
 
 const baseClasses =
-  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-button-icon rounded-pill border border-transparent font-sans text-button font-bold whitespace-nowrap transition-[transform,background-color,border-color,color] duration-[350ms] ease-spring outline-none focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-40 motion-reduce:transition-none motion-reduce:hover:translate-y-0 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5";
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-button-icon rounded-pill border border-transparent font-sans text-button font-bold whitespace-nowrap transition-[transform,background-color,border-color,color] duration-[350ms] ease-spring outline-none focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-ring focus-visible:outline-solid disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-40 motion-reduce:transition-none motion-reduce:hover:translate-y-0 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-5";
 
 const variantClasses = {
   default: "bg-primary text-primary-foreground hover:-translate-y-[3px] hover:bg-accent-deep",

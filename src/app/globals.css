@@ -114,7 +114,12 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+  /* Keyboard focus from the design system: 2px teal-deep, 3px away. Plain links rely on it;
+     controls with outline-none set the same ring themselves */
+  :focus-visible {
+    @apply outline-2 outline-offset-3 outline-ring outline-solid;
   }
   body {
     @apply bg-background font-sans text-foreground;

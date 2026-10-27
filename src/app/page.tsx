@@ -117,9 +117,9 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
               <li key={contact.id} className="border-b border-line last:border-b-0">
                 <Link
                   href={`/contacts/${contact.id}`}
-                  className={`${rowGrid} group transition-colors duration-200 hover:bg-teal-soft max-[680px]:grid-cols-[1fr_20px] max-[680px]:gap-x-3 max-[680px]:gap-y-0.5 max-[680px]:px-5 max-[680px]:py-4`}
+                  className={`${rowGrid} group transition-colors duration-200 hover:bg-teal-soft focus-visible:-outline-offset-2 focus-visible:bg-teal-soft max-[680px]:grid-cols-[1fr_20px] max-[680px]:gap-x-3 max-[680px]:gap-y-0.5 max-[680px]:px-5 max-[680px]:py-4`}
                 >
-                  <span className="font-bold text-ink group-hover:text-teal-deep max-[680px]:col-start-1">
+                  <span className="font-bold text-ink group-hover:text-teal-deep group-focus-visible:text-teal-deep max-[680px]:col-start-1">
                     {contact.name}
                   </span>
                   <span className="text-meta text-muted-foreground max-[680px]:col-start-1">
