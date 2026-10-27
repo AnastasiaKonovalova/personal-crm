@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ничего не нашлось — эскиз</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/tokens.css">
+  <link rel="stylesheet" href="vendor/styles.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="ak-root">
+  <header class="ak-header">
+    <div class="ak-wrap ak-bar">
+      <a class="ak-brand" href="contacts.html">Личная CRM<b>.</b></a>
+    </div>
+  </header>
+
+  <div class="ak-aurora-zone">
+    <div class="ak-aurora" aria-hidden="true"></div>
+    <main class="ak-wrap ak-main ak-stack-y">
+      <div class="ak-page-head">
+        <div>
+          <div class="ak-label">Найдено: 0</div>
+          <h1 class="ak-page-title">Контакты</h1>
+        </div>
+        <a class="ak-btn ak-btn-primary" href="contact-new.html">
+          <svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          Добавить контакт
+        </a>
+      </div>
+
+      <form class="ak-search" role="search" action="contacts-search.html">
+        <label class="ak-search-box">
+          <span class="ak-sr-only">Поиск по имени</span>
+          <svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input class="ak-input" type="search" name="q" value="Тимофей" placeholder="Поиск по имени">
+        </label>
+        <button class="ak-btn ak-btn-ghost" type="submit">Найти</button>
+        <a class="ak-btn ak-btn-text" href="contacts.html">Сбросить</a>
+      </form>
+
+      <div class="ak-empty">
+        <h2 class="ak-empty-title">По запросу «Тимофей» никого не нашлось</h2>
+        <p>Проверь написание или поищи по части имени. Регистр, «е» и «ё» не важны.</p>
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>

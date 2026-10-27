@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Личная CRM — эскизы экранов</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/tokens.css">
+  <link rel="stylesheet" href="vendor/styles.css">
+  <link rel="stylesheet" href="app.css">
+  <style>
+    /* overview only: each screen at 1280px (scaled to half) and 390px */
+    .ov-screen { padding: var(--space-label) 0; border-top: 1px solid var(--line); }
+    .ov-screen h2 { font-family: var(--font-display); font-weight: 600; font-size: 22px; letter-spacing: -.01em; margin: 0 0 4px; }
+    .ov-screen h2 a:hover { color: var(--teal-deep); }
+    .ov-screen p { margin: 0 0 var(--space-controls); color: var(--muted); font-size: 14px; }
+    .ov-frames { display: flex; gap: var(--space-heading); align-items: flex-start; flex-wrap: wrap; }
+    .ov-frame { display: grid; gap: 8px; }
+    .ov-frame span { font-family: var(--font-display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .ov-desktop { width: 640px; height: 450px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-stat); background: var(--bg); }
+    .ov-desktop iframe { width: 1280px; height: 900px; border: 0; transform: scale(.5); transform-origin: 0 0; }
+    .ov-mobile { width: 390px; height: 450px; border: 1px solid var(--line); border-radius: var(--radius-stat); overflow: hidden; background: var(--bg); }
+    .ov-mobile iframe { width: 390px; height: 450px; border: 0; }
+  </style>
+</head>
+<body>
+<div class="ak-root">
+  <header class="ak-header">
+    <div class="ak-wrap ak-bar">
+      <span class="ak-brand">Личная CRM<b>.</b></span>
+      <span class="ak-pill"><span class="ak-pill-dot"></span>Эскизы экранов</span>
+    </div>
+  </header>
+
+  <main class="ak-wrap ak-main">
+    <div class="ak-label">Дизайн · ak-design-system</div>
+    <h1 class="ak-page-title">Экраны приложения</h1>
+    <p class="ak-lede">Каждый экран в двух ширинах: 1280 (уменьшен вдвое) и 390. Заголовок открывает экран целиком — его можно листать и кликать.</p>
+
+    <section class="ov-screen" style="margin-top: var(--space-label)">
+      <h2><a href="contacts.html">Список контактов</a></h2>
+      <p>Главная: всего, поиск, список, страницы.</p>
+      <div class="ov-frames">
+        <div class="ov-frame"><span>1280</span><div class="ov-desktop"><iframe src="contacts.html" title="Список контактов, 1280"></iframe></div></div>
+        <div class="ov-frame"><span>390</span><div class="ov-mobile"><iframe src="contacts.html" title="Список контактов, 390"></iframe></div></div>
+      </div>
+    </section>
+
+    <section class="ov-screen">
+      <h2><a href="contacts-search.html">Поиск: есть результаты</a></h2>
+      <p>«Найдено», кнопка «Сбросить».</p>
+      <div class="ov-frames">
+        <div class="ov-frame"><span>1280</span><div class="ov-desktop"><iframe src="contacts-search.html" title="Поиск, 1280"></iframe></div></div>
+        <div class="ov-frame"><span>390</span><div class="ov-mobile"><iframe src="contacts-search.html" title="Поиск, 390"></iframe></div></div>
+      </div>
+    </section>
+
+    <section class="ov-screen">
+      <h2><a href="contacts-not-found.html">Поиск: никого не нашлось</a></h2>
+      <p>Пустое состояние.</p>
+      <div class="ov-frames">
+        <div class="ov-frame"><span>1280</span><div class="ov-desktop"><iframe src="contacts-not-found.html" title="Ничего не нашлось, 1280"></iframe></div></div>
+        <div class="ov-frame"><span>390</span><div class="ov-mobile"><iframe src="contacts-not-found.html" title="Ничего не нашлось, 390"></iframe></div></div>
+      </div>
+    </section>
+
+    <section class="ov-screen">
+      <h2><a href="contact.html">Карточка контакта</a></h2>
+      <p>Данные, новая заметка, лента заметок; одна заметка в режиме правки с ошибкой.</p>
+      <div class="ov-frames">
+        <div class="ov-frame"><span>1280</span><div class="ov-desktop"><iframe src="contact.html" title="Карточка, 1280"></iframe></div></div>
+        <div class="ov-frame"><span>390</span><div class="ov-mobile"><iframe src="contact.html" title="Карточка, 390"></iframe></div></div>
+      </div>
+    </section>
+
+    <section class="ov-screen">
+      <h2><a href="contact-new.html">Новый контакт</a></h2>
+      <p>Форма создания.</p>
+      <div class="ov-frames">
+        <div class="ov-frame"><span>1280</span><div class="ov-desktop"><iframe src="contact-new.html" title="Новый контакт, 1280"></iframe></div></div>
+        <div class="ov-frame"><span>390</span><div class="ov-mobile"><iframe src="contact-new.html" title="Новый контакт, 390"></iframe></div></div>
+      </div>
+    </section>
+
+    <section class="ov-screen">
+      <h2><a href="contact-edit.html">Редактирование контакта</a></h2>
+      <p>Форма с ошибкой «Имя обязательно».</p>
+      <div class="ov-frames">
+        <div class="ov-frame"><span>1280</span><div class="ov-desktop"><iframe src="contact-edit.html" title="Редактирование, 1280"></iframe></div></div>
+        <div class="ov-frame"><span>390</span><div class="ov-mobile"><iframe src="contact-edit.html" title="Редактирование, 390"></iframe></div></div>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

@@ -53,3 +53,10 @@ claude_desktop_config.json
 
 # local notes (not for the repo)
 *.local.md
+
+# design system source package (only used parts get copied into src/)
+ak-design-system/
+
+# local helper scripts for the agent's sandbox and their output (check logs, screenshots)
+/scripts/
+/tmp/

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 // Success criteria from the spec, checked over HTTP against a running app.
 // Forms are submitted the way a browser without JavaScript does it.
@@ -135,5 +135,69 @@ describe("success criteria over HTTP", () => {
     const html = await getPage(`/?q=${encodeURIComponent(`федорова ${marker}`)}`);
     expect(html).toContain("Найдено: 1");
     expect(html).toContain(`href="/contacts/${contactId}"`);
+  });
+});
+
+// Must match PAGE_SIZE in src/server/contacts.ts
+const pageSize = 50;
+const pagerMarker = randomUUID().slice(0, 8);
+const pagerPrefix = `Пагинация Проверка ${pagerMarker}`;
+
+// Opening tag of the pagination arrow with this aria-label (<a> when active, <span> when not)
+function arrowTag(html: string, label: string) {
+  return [...html.matchAll(/<(a|span)\b[^>]*>/g)].find(([tag]) =>
+    tag.includes(`aria-label="${label}"`),
+  );
+}
+
+function arrowHref(html: string, label: string) {
+  const href = arrowTag(html, label)?.[0].match(/href="([^"]*)"/)?.[1];
+  return href === undefined ? undefined : decodeHtml(href);
+}
+
+function visibleText(html: string) {
+  return html.replace(/<[^>]+>/g, "");
+}
+
+describe("pagination", () => {
+  // One page and one more contact, all with a shared marker so a search returns exactly them
+  beforeAll(async () => {
+    await withPool((pool) =>
+      pool.query(
+        "insert into contacts (name, about) select $1 || ' ' || lpad(n::text, 2, '0'), 'Проверка страниц' from generate_series(1, $2::int) n",
+        [pagerPrefix, pageSize + 1],
+      ),
+    );
+  });
+
+  afterAll(async () => {
+    await withPool((pool) => pool.query("delete from contacts where name like $1", [`${pagerPrefix} %`]));
+  });
+
+  it("the full list shows the page count of all contacts", async () => {
+    const { rows } = await withPool((pool) =>
+      pool.query<{ total: number }>("select count(*)::int as total from contacts"),
+    );
+    const pageCount = Math.ceil(rows[0].total / pageSize);
+    const html = await getPage("/");
+    expect(visibleText(html)).toContain(`Страница 1 из ${pageCount}`);
+    expect(arrowHref(html, "Вперёд")).toBe("/?page=2");
+  });
+
+  it("search results are paged and the query stays in the page links", async () => {
+    const first = await getPage(`/?q=${pagerMarker}`);
+    expect(visibleText(first)).toContain("Страница 1 из 2");
+    expect(first).toContain(`${pagerPrefix} 01`);
+    expect(first).not.toContain(`${pagerPrefix} ${pageSize + 1}`);
+    expect(arrowTag(first, "Назад")?.[0]).toContain('aria-disabled="true"');
+    expect(arrowHref(first, "Вперёд")).toBe(`/?q=${pagerMarker}&page=2`);
+
+    const second = await getPage(`/?q=${pagerMarker}&page=2`);
+    expect(visibleText(second)).toContain("Страница 2 из 2");
+    expect(second).toContain(`${pagerPrefix} ${pageSize + 1}`);
+    expect(second).not.toContain(`${pagerPrefix} 01`);
+    expect(arrowHref(second, "Назад")).toBe(`/?q=${pagerMarker}`);
+    expect(arrowTag(second, "Вперёд")?.[1]).toBe("span");
+    expect(arrowTag(second, "Вперёд")?.[0]).toContain('aria-disabled="true"');
   });
 });

@@ -1,59 +1,131 @@
 @import "tailwindcss";
+@import "../design-system/tokens.css";
 
-/* shadcn/ui theme tokens (new-york, neutral) */
+/* Only design tokens: Tailwind's default palette is switched off, so a stray `text-red-500` does not compile.
+   shadcn/ui semantic colours point at design tokens. Names that exist in both systems
+   (accent, muted) follow shadcn's meaning in utilities: `bg-muted` is a quiet fill,
+   `text-muted-foreground` is the secondary text colour (design token --muted). */
+@theme inline {
+  --color-*: initial;
 
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* shadcn/ui semantic colours */
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--ink);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--ink);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--ink);
+  --color-secondary: var(--surface-2);
+  --color-secondary-foreground: var(--ink);
+  --color-muted: var(--surface-2);
+  --color-muted-foreground: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--ink);
+  --color-destructive: var(--danger);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--teal-deep);
+
+  /* design-system colours without a shadcn counterpart */
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-soft: var(--accent-soft);
+  --color-brown: var(--brown);
+  --color-teal: var(--teal);
+  --color-teal-deep: var(--teal-deep);
+  --color-teal-soft: var(--teal-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-header-glass: var(--header-glass);
+  --color-menu-glass: var(--menu-glass);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  /* shadcn/ui radius scale on design tokens */
+  --radius-sm: var(--radius-burger);
+  --radius-md: var(--radius-burger);
+  --radius-lg: var(--radius-stat);
+  --radius-xl: var(--radius-card);
+
+  /* named spacing from the design system (gap-grid, p-pad-card …); the numeric 4px scale stays */
+  --spacing-chip: var(--space-chip);
+  --spacing-tag: var(--space-tag);
+  --spacing-button-icon: var(--space-button-icon);
+  --spacing-cta: var(--space-cta);
+  --spacing-grid: var(--space-grid);
+  --spacing-controls: var(--space-controls);
+  --spacing-heading: var(--space-heading);
+  --spacing-label: var(--space-label);
+  --spacing-cta-top: var(--space-cta-top);
+  --spacing-pad-stat: var(--pad-stat);
+  --spacing-pad-card: var(--pad-card);
+  --spacing-header-height: var(--header-height);
+  --spacing-gutter-fluid: var(--gutter-fluid);
+  --spacing-hit-carousel: var(--hit-carousel);
+  --spacing-rule-label: var(--rule-label);
+
+  --container-content: var(--content-max);
+  --container-narrow: var(--content-narrow);
+
+  /* fonts from next/font (layout.tsx) */
+  --font-display: var(--font-wix-madefor-display), var(--font-manrope), sans-serif;
+  --font-sans: var(--font-manrope), system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+/* Gold wash behind the list screens (design system Aurora). Every glow is gold, never teal */
+@utility aurora {
+  position: absolute;
+  inset: -20% -20% -15% 28%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(50% 35% at 65% 22%, color-mix(in srgb, var(--accent) 60%, transparent), transparent 70%),
+    radial-gradient(55% 30% at 38% 35%, color-mix(in srgb, var(--aurora-gold) 48%, transparent), transparent 72%),
+    radial-gradient(40% 25% at 88% 18%, color-mix(in srgb, var(--accent-soft) 55%, transparent), transparent 70%),
+    radial-gradient(35% 22% at 72% 48%, color-mix(in srgb, var(--brown) 24%, transparent), transparent 70%),
+    radial-gradient(50% 32% at 60% 74%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 70%),
+    radial-gradient(55% 28% at 36% 82%, color-mix(in srgb, var(--accent-soft) 42%, transparent), transparent 72%),
+    radial-gradient(40% 24% at 84% 86%, color-mix(in srgb, var(--brown) 14%, transparent), transparent 70%);
+  filter: blur(54px);
+  opacity: 0.88;
+  mask-image: linear-gradient(to bottom, black 52%, transparent 76%);
+  animation: aurora-drift 9s ease-in-out infinite alternate;
+
+  @media (max-width: 860px) {
+    inset: -10% -5% auto -5%;
+    height: 55%;
+    mask-image: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes aurora-drift {
+  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate(-4%, 3%) scale(1.12) rotate(6deg); }
+  100% { transform: translate(3%, -3%) scale(1.05) rotate(-4deg); }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+  /* Keyboard focus from the design system: 2px teal-deep, 3px away. Plain links rely on it;
+     controls with outline-none set the same ring themselves */
+  :focus-visible {
+    @apply outline-2 outline-offset-3 outline-ring outline-solid;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-foreground;
+    line-height: 1.6;
+  }
+  ::selection {
+    @apply bg-accent text-ink;
   }
 }

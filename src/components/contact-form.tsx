@@ -7,6 +7,7 @@ import {
   updateContactAction,
   type ContactFormState,
 } from "@/app/contacts/actions";
+import { FieldError } from "@/components/field-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,13 +31,13 @@ export function ContactForm({ contact }: { contact?: EditedContact }) {
   );
 
   return (
-    <form action={formAction} className="grid gap-5" noValidate>
+    <form
+      action={formAction}
+      className="grid gap-heading rounded-card border border-line bg-surface p-[clamp(22px,2.6vw,30px)]"
+      noValidate
+    >
       {contact && <input type="hidden" name="contactId" value={contact.id} />}
-      {state.formError && (
-        <p className="text-sm text-destructive" role="alert">
-          {state.formError}
-        </p>
-      )}
+      {state.formError && <FieldError role="alert">{state.formError}</FieldError>}
       {fields.map((field) => {
         const error = state.errors?.[field.name];
         const errorId = `${field.name}-error`;
@@ -44,7 +45,7 @@ export function ContactForm({ contact }: { contact?: EditedContact }) {
           <div key={field.name} className="grid gap-2">
             <Label htmlFor={field.name}>
               {field.label}
-              {field.required && <span className="text-destructive">*</span>}
+              {field.required && <span className="text-brown">*</span>}
             </Label>
             <Input
               id={field.name}
@@ -56,15 +57,11 @@ export function ContactForm({ contact }: { contact?: EditedContact }) {
               aria-describedby={error ? errorId : undefined}
               autoFocus={field.name === "name"}
             />
-            {error && (
-              <p id={errorId} className="text-sm text-destructive">
-                {error}
-              </p>
-            )}
+            {error && <FieldError id={errorId}>{error}</FieldError>}
           </div>
         );
       })}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-cta">
         <Button type="submit" disabled={pending}>
           {pending ? "Сохраняю…" : "Сохранить"}
         </Button>
