@@ -128,7 +128,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
                   <span className="text-meta text-muted-foreground max-[680px]:hidden">
                     {contact.howWeMet ?? "—"}
                   </span>
-                  <span className="flex text-muted-foreground transition-[color,transform] duration-[350ms] ease-spring group-hover:translate-x-[3px] group-hover:text-teal-deep motion-reduce:transition-none max-[680px]:col-start-2 max-[680px]:row-span-2 max-[680px]:row-start-1">
+                  <span className="flex text-muted-foreground transition-[color,transform] duration-[350ms] ease-spring group-hover:translate-x-[3px] group-hover:text-teal-deep group-focus-visible:translate-x-[3px] group-focus-visible:text-teal-deep motion-reduce:transition-none max-[680px]:col-start-2 max-[680px]:row-span-2 max-[680px]:row-start-1">
                     <ChevronRight aria-hidden="true" className="size-5" />
                   </span>
                 </Link>
