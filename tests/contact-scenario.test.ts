@@ -7,6 +7,7 @@ import {
   PAGE_SIZE,
   addNote,
   createContact,
+  deleteContact,
   getContactWithNotes,
   listContacts,
   updateContact,
@@ -159,6 +160,36 @@ describe("editing", () => {
     expect(note?.body).toBe(editedText);
     const after = await getContactWithNotes(createdId!);
     expect(after?.notes.map((item) => item.body)).toEqual([editedText]);
+  });
+});
+
+describe("deleting", () => {
+  async function countNotes(contactId: string) {
+    const { rows } = await withSeparateConnection((pool) =>
+      pool.query<{ total: number }>("select count(*)::int as total from notes where contact_id = $1", [
+        contactId,
+      ]),
+    );
+    return rows[0].total;
+  }
+
+  it("deletes the contact together with its notes", async () => {
+    expect(createdId).toBeDefined();
+    expect(await countNotes(createdId!)).toBe(1);
+
+    expect(await deleteContact(createdId!)).toBe(createdId);
+    expect(await getContactWithNotes(createdId!)).toBeNull();
+    expect(await countNotes(createdId!)).toBe(0);
+    const found = await listContacts({ query: marker, page: 1 });
+    expect(found.items).toEqual([]);
+  });
+
+  it("does not delete a missing contact", async () => {
+    expect(createdId).toBeDefined();
+    // Already deleted above, as if from another browser
+    expect(await deleteContact(createdId!)).toBeNull();
+    expect(await deleteContact(randomUUID())).toBeNull();
+    expect(await deleteContact("not-a-uuid")).toBeNull();
   });
 });
 

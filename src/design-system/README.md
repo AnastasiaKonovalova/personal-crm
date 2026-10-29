@@ -36,6 +36,8 @@ When the design system gets one of these, take its name and value and drop the l
 - `components/page-shell.tsx`: page column (`wide` 1180 / `narrow` 760) and the optional `aurora` wash
 - `components/field-error.tsx`: error under a field — `circle-alert` icon + words in `danger`
 - `components/back-link.tsx`: "‹ back" link above a page title
+- `components/ui/alert-dialog.tsx`: shadcn alert dialog on the design system's dialog mapping — `surface` card, `line` border, `radius-contact`, `header-glass` backdrop with blur. No `Action`: confirm with a submit button in a form, so the dialog stays open while it sends
+- `components/close-button.tsx`: round 44px close button (dialog, toast), `teal-deep` on `teal-soft` on hover
 
 ## Rules
 

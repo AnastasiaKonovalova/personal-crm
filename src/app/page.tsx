@@ -1,6 +1,7 @@
 import Form from "next/form";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { DeletedToast } from "@/components/deleted-toast";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -152,6 +153,9 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
           </PageArrow>
         </nav>
       )}
+
+      {/* fixed to the viewport, so it takes no grid cell */}
+      {params.deleted === "1" && <DeletedToast />}
     </PageShell>
   );
 }

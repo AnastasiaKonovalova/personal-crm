@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { contactSchema, firstErrors, noteSchema, type ContactField } from "@/lib/validation";
-import { addNote, createContact, updateContact, updateNote } from "@/server/contacts";
+import { addNote, createContact, deleteContact, updateContact, updateNote } from "@/server/contacts";
 
 export type ContactFormState = {
   values?: Partial<Record<ContactField, string>>;
@@ -68,6 +68,16 @@ export async function updateContactAction(
   revalidatePath("/");
   revalidatePath(`/contacts/${id}`);
   redirect(`/contacts/${id}`);
+}
+
+// A contact already deleted elsewhere is not an error: the list is the same either way
+export async function deleteContactAction(formData: FormData) {
+  const contactId = readString(formData, "contactId");
+  await deleteContact(contactId);
+
+  revalidatePath("/");
+  revalidatePath(`/contacts/${contactId}`);
+  redirect("/?deleted=1");
 }
 
 export async function addNoteAction(

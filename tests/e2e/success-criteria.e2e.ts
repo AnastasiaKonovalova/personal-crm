@@ -136,6 +136,19 @@ describe("success criteria over HTTP", () => {
     expect(html).toContain("Найдено: 1");
     expect(html).toContain(`href="/contacts/${contactId}"`);
   });
+
+  // The confirm dialog renders only once opened in a browser, so the delete itself is a manual check
+  it("the card has a «Удалить» button that opens a dialog", async () => {
+    expect(contactId).toBeDefined();
+    const card = await getPage(`/contacts/${contactId}`);
+    expect(card).toContain('aria-haspopup="dialog"');
+    expect(visibleText(card)).toContain("Удалить");
+  });
+
+  it("after a delete the list says «Контакт удалён»", async () => {
+    expect(visibleText(await getPage("/?deleted=1"))).toContain("Контакт удалён");
+    expect(visibleText(await getPage("/"))).not.toContain("Контакт удалён");
+  });
 });
 
 // Must match PAGE_SIZE in src/server/contacts.ts
