@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { BackLink } from "@/components/back-link";
+import { DeleteContactButton } from "@/components/delete-contact-button";
 import { NoteForm } from "@/components/note-form";
 import { NoteItem } from "@/components/note-item";
 import { PageShell } from "@/components/page-shell";
@@ -37,12 +38,15 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
 
       <div className="flex flex-wrap items-end justify-between gap-grid">
         <h1 className="font-display text-page-title font-semibold">{contact.name}</h1>
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/contacts/${contact.id}/edit`}>
-            <Pencil />
-            Редактировать
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-controls">
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/contacts/${contact.id}/edit`}>
+              <Pencil />
+              Редактировать
+            </Link>
+          </Button>
+          <DeleteContactButton contactId={contact.id} />
+        </div>
       </div>
 
       <section className={cardClasses} aria-label="Данные контакта">

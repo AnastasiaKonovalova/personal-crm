@@ -108,6 +108,18 @@ export async function updateContact(id: string, input: ContactInput) {
   return updated?.id ?? null;
 }
 
+// Notes go with the contact: notes.contact_id is ON DELETE CASCADE
+export async function deleteContact(id: string) {
+  if (!UUID_PATTERN.test(id)) {
+    return null;
+  }
+  const db = getDb();
+  const [deleted] = await safeWrite("delete contact", () =>
+    db.delete(contacts).where(eq(contacts.id, id)).returning({ id: contacts.id }),
+  );
+  return deleted?.id ?? null;
+}
+
 export async function addNote(contactId: string, body: string) {
   if (!UUID_PATTERN.test(contactId)) {
     return null;

@@ -106,6 +106,20 @@
 .ak-note-editing { background: var(--bg); border-radius: var(--radius-stat); padding: 18px; border-top-color: transparent; margin: 0 -18px; }
 @media (max-width: 560px) { .ak-note-editing { padding: 14px 10px; margin: 0 -10px; } }
 
+/* contact delete: page-head actions, confirm dialog, toast on the list after delete */
+.ak-page-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-controls); }
+.ak-dialog-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: clamp(20px, 5vw, 52px); background: var(--header-glass); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.ak-dialog { position: relative; width: 100%; max-width: 440px; display: grid; gap: var(--space-cta); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-contact); padding: clamp(24px, 3.4vw, 36px); }
+.ak-dialog-title { font-family: var(--font-display); font-weight: 600; font-size: clamp(22px, 2.6vw, 28px); line-height: 1.1; letter-spacing: -.02em; margin: 0; padding-right: var(--hit-carousel); }
+.ak-dialog .ak-close { position: absolute; top: var(--space-cta); right: var(--space-cta); }
+.ak-dialog p { margin: 0; color: var(--muted); }
+.ak-dialog .ak-btn-row { margin-top: var(--space-cta); }
+.ak-toast { position: fixed; left: 50%; bottom: var(--space-heading); z-index: 20; transform: translateX(-50%); display: inline-flex; align-items: center; gap: var(--space-cta); padding: 5px 5px 5px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-pill); font-weight: 600; font-size: 15px; color: var(--ink); white-space: nowrap; }
+.ak-toast::before { content: ""; width: 7px; height: 7px; border-radius: var(--radius-round); background: var(--teal); }
+/* close button (dialog, toast): round 44px hit area, no border */
+.ak-close { display: flex; align-items: center; justify-content: center; width: var(--hit-carousel); height: var(--hit-carousel); border: 0; border-radius: var(--radius-round); background: none; color: var(--muted); cursor: pointer; transition: color .2s, background .2s; }
+.ak-close:hover { color: var(--teal-deep); background: var(--teal-soft); }
+
 /* back link */
 .ak-back { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 14px; color: var(--muted); transition: color .2s; }
 .ak-back:hover { color: var(--teal-deep); }
