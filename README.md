@@ -114,6 +114,44 @@ docker compose down      # удалить контейнер, данные со�
 docker compose down -v   # удалить контейнер И ВСЕ ДАННЫЕ базы — необратимо
 ```
 
+## Выкатка на сервер
+
+Приложение работает на https://app.mypeoplecrm.ru. Выкатка автоматическая: **push в `main` — и через несколько минут новая версия на сервере.**
+
+Что происходит после push (`.github/workflows/deploy.yml`):
+
+1. **test** — GitHub Actions поднимает пустую базу, применяет миграции, запускает `pnpm typecheck` и `pnpm test`. Упали — дальше не идёт.
+2. **build** — собирает Docker-образ приложения (`Dockerfile`) и кладёт в GitHub Container Registry с тегом — SHA коммита.
+3. **deploy** — копирует `deploy/` на сервер в `/opt/personal-crm` и запускает `deploy/deploy.sh`: скачать образ → поднять базу → применить миграции разовым контейнером (упали — новая версия не стартует) → запустить новую версию → проверить `/health` → оставить на сервере только текущий и предыдущий образы.
+4. Проверка снаружи: `https://app.mypeoplecrm.ru/health` отвечает 200.
+
+Следить за выкаткой: вкладка **Actions** репозитория на GitHub. Зелёная галочка — выкатилось, красный крестик — нет (сервер продолжает работать на прошлой версии, если упало до шага «App»).
+
+`pnpm start` локально пишет предупреждение `"next start" does not work with "output: standalone"` — это ожидаемо: сервер работает, а `standalone` нужен для Docker-образа.
+
+### На сервере
+
+- Пользователь `crm-deploy`, папка `/opt/personal-crm`: `compose.yml`, скрипты, `.env` (секреты, права 600, пишет только владелец), `image.env` / `image.env.prev` (текущая и предыдущая версия)
+- docker compose, проект `prod`: `postgres` (данные в томе `prod_pgdata`) и `app` на `127.0.0.1:3000`; nginx проксирует на него `app.mypeoplecrm.ru`
+- Порты наружу не открыты: база доступна только с самого сервера на `127.0.0.1:5433` (или через SSH-туннель)
+
+Посмотреть состояние и логи:
+```bash
+ssh vps_hostkey
+cd /opt/personal-crm
+sudo -u crm-deploy docker compose -p prod -f compose.yml --env-file .env --env-file image.env ps
+sudo -u crm-deploy docker compose -p prod -f compose.yml --env-file .env --env-file image.env logs --tail 100 app
+```
+
+### Откат (только вручную)
+
+Автоотката нет. Если новая версия сломана — вернуть предыдущую:
+```bash
+ssh vps_hostkey
+sudo -u crm-deploy /opt/personal-crm/rollback.sh
+```
+Скрипт меняет местами текущую и предыдущую версии и перезапускает приложение; повторный запуск возвращает обратно. Миграции базы откат не отменяет.
+
 ## Секреты
 
 - Пароли и строки подключения хранятся только в `.env`. Этот файл в `.gitignore`.

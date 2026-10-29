@@ -13,7 +13,8 @@ export function getDb(): Db {
     if (!connectionString) {
       throw new Error("DATABASE_URL is not set: fill it in .env");
     }
-    globalForDb.pool = new Pool({ connectionString });
+    // A small pool: the production server has little memory and Postgres allows few connections
+    globalForDb.pool = new Pool({ connectionString, max: 5 });
     globalForDb.db = drizzle({ client: globalForDb.pool, schema });
   }
   return globalForDb.db;
