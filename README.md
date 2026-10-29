@@ -135,12 +135,14 @@ docker compose down -v   # удалить контейнер И ВСЕ ДАНН�
 - docker compose, проект `prod`: `postgres` (данные в томе `prod_pgdata`) и `app` на `127.0.0.1:3000`; nginx проксирует на него `app.mypeoplecrm.ru`
 - Порты наружу не открыты: база доступна только с самого сервера на `127.0.0.1:5433` (или через SSH-туннель)
 
-Посмотреть состояние и логи:
+Посмотреть состояние и логи (папка закрыта для других пользователей, поэтому сначала переключиться на `crm-deploy`):
 ```bash
 ssh vps_hostkey
+sudo -u crm-deploy -i
 cd /opt/personal-crm
-sudo -u crm-deploy docker compose -p prod -f compose.yml --env-file .env --env-file image.env ps
-sudo -u crm-deploy docker compose -p prod -f compose.yml --env-file .env --env-file image.env logs --tail 100 app
+docker compose -p prod -f compose.yml --env-file .env --env-file image.env ps
+docker compose -p prod -f compose.yml --env-file .env --env-file image.env logs --tail 100 app
+exit
 ```
 
 ### Откат (только вручную)
