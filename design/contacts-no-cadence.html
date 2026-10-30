@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Частота не задана — эскиз</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/tokens.css">
+  <link rel="stylesheet" href="vendor/styles.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="ak-root">
+  <header class="ak-header">
+    <div class="ak-wrap ak-bar">
+      <a class="ak-brand" href="contacts-reminders.html">Личная CRM<b>.</b></a>
+    </div>
+  </header>
+
+  <div class="ak-aurora-zone">
+    <div class="ak-aurora" aria-hidden="true"></div>
+    <main class="ak-wrap ak-main ak-stack-y">
+      <div class="ak-page-head">
+        <div>
+          <div class="ak-label">Всего: 1000</div>
+          <h1 class="ak-page-title">Контакты</h1>
+        </div>
+        <a class="ak-btn ak-btn-primary" href="contact-new.html">
+          <svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          Добавить контакт
+        </a>
+      </div>
+
+      <!-- contacts exist, nobody has a cadence yet: hint only, no title; the block name is bold inside the text -->
+      <section class="ak-remind" aria-label="Пора связаться">
+        <div class="ak-remind-empty ak-remind-empty-solo">
+          <p class="ak-remind-hint">Задай частоту общения в карточке контакта — и здесь появятся те, с кем <b>пора связаться</b></p>
+        </div>
+      </section>
+
+      <form class="ak-search" role="search" action="contacts-search.html">
+        <label class="ak-search-box">
+          <span class="ak-sr-only">Поиск по имени</span>
+          <svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input class="ak-input" type="search" name="q" placeholder="Поиск по имени">
+        </label>
+        <button class="ak-btn ak-btn-ghost" type="submit">Найти</button>
+      </form>
+
+      <div class="ak-list ak-list-due">
+        <div class="ak-list-head" aria-hidden="true">
+          <span>Имя</span><span>Кто это</span><span>Откуда знакомы</span><span></span>
+        </div>
+        <a class="ak-row" href="contact.html">
+          <span class="ak-row-name"><span class="ak-due" aria-hidden="true"></span>Анна Смирнова</span>
+          <span class="ak-row-meta">Дизайнер, соседка по даче</span>
+          <span class="ak-row-meta ak-row-meta-extra">Учились вместе на курсах</span>
+          <span class="ak-row-go"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+        </a>
+        <a class="ak-row" href="contact.html">
+          <span class="ak-row-name"><span class="ak-due" aria-hidden="true"></span>Борис Ковалёв</span>
+          <span class="ak-row-meta">Юрист, помогал с договором аренды</span>
+          <span class="ak-row-meta ak-row-meta-extra">Познакомил Глеб</span>
+          <span class="ak-row-go"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+        </a>
+        <a class="ak-row" href="contact.html">
+          <span class="ak-row-name"><span class="ak-due" aria-hidden="true"></span>Вера Лебедева</span>
+          <span class="ak-row-meta">Тренер по плаванию</span>
+          <span class="ak-row-meta ak-row-meta-extra">Бассейн на Садовой</span>
+          <span class="ak-row-go"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+        </a>
+        <a class="ak-row" href="contact.html">
+          <span class="ak-row-name"><span class="ak-due" aria-hidden="true"></span>Глеб Орлов</span>
+          <span class="ak-row-meta">Бывший коллега, фронтенд</span>
+          <span class="ak-row-meta ak-row-meta-extra">Работали в одной студии</span>
+          <span class="ak-row-go"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+        </a>
+      </div>
+
+      <nav class="ak-pager" aria-label="Страницы">
+        <span class="ak-carousel-btn" role="link" aria-disabled="true" aria-label="Назад">
+          <svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </span>
+        <span class="ak-pager-counter">Страница <b>1</b> из 20</span>
+        <a class="ak-carousel-btn" href="contacts-page-2.html" aria-label="Вперёд">
+          <svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </nav>
+    </main>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Карточка: пора связаться — эскиз</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/tokens.css">
+  <link rel="stylesheet" href="vendor/styles.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="ak-root">
+  <header class="ak-header">
+    <div class="ak-wrap ak-bar">
+      <a class="ak-brand" href="contacts-reminders.html">Личная CRM<b>.</b></a>
+    </div>
+  </header>
+
+  <main class="ak-wrap ak-main ak-stack-y ak-narrow">
+    <a class="ak-back" href="contacts-reminders.html">
+      <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      Все контакты
+    </a>
+
+    <div class="ak-page-head">
+      <h1 class="ak-page-title">Борис Ковалёв</h1>
+      <div class="ak-page-actions">
+        <a class="ak-btn ak-btn-ghost ak-btn-sm" href="contact-edit.html">
+          <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+          Редактировать
+        </a>
+        <a class="ak-btn ak-btn-text ak-btn-sm" href="contact-delete.html">
+          <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          Удалить
+        </a>
+      </div>
+    </div>
+
+    <!-- rhythm: status "overdue"; today 30 Oct, last note 20 Sep, monthly -> due 20 Oct, 10 days over -->
+    <section class="ak-card ak-rhythm" aria-label="Связь с контактом">
+      <div class="ak-rhythm-top">
+        <div class="ak-rhythm-status">
+          <p class="ak-rhythm-line"><span class="ak-due ak-due-overdue" aria-hidden="true"></span>Пора связаться</p>
+          <p class="ak-rhythm-sub ak-due-text">просрочено на 10 дней</p>
+        </div>
+        <form>
+          <button class="ak-btn ak-btn-ghost ak-btn-sm ak-contacted" type="submit"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><g transform="translate(3.5 1.2) scale(.62)" stroke-width="2.3"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></g><path d="M2 13.5l7 7.5L22.5 10"/></svg>Связались</button>
+        </form>
+      </div>
+      <form class="ak-cadence">
+        <label class="ak-cadence-label" for="cadence">Как часто связываться</label>
+        <div class="ak-cadence-row">
+          <span class="ak-select-box">
+            <select class="ak-input ak-select" id="cadence" name="cadence">
+              <option value="">Не задано</option>
+              <option value="week">Раз в неделю</option>
+              <option value="month" selected>Раз в месяц</option>
+              <option value="quarter">Раз в 3 месяца</option>
+              <option value="half_year">Раз в 6 месяцев</option>
+              <option value="year">Раз в год</option>
+              <option value="date">Конкретная дата</option>
+            </select>
+            <svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+          <button class="ak-btn ak-btn-ghost ak-btn-sm" type="submit">Сохранить</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="ak-card" aria-label="Данные контакта">
+      <dl class="ak-dl">
+        <div><dt>Кто это</dt><dd>Юрист, помогал с договором аренды</dd></div>
+        <div><dt>Откуда знакомы</dt><dd>Познакомил Глеб</dd></div>
+        <div><dt>Телефон</dt><dd><a href="tel:+79001112233">+7 900 111-22-33</a></dd></div>
+        <div><dt>Почта</dt><dd><a href="mailto:boris@example.com">boris@example.com</a></dd></div>
+      </dl>
+    </section>
+
+    <section class="ak-card" aria-labelledby="notes-title">
+      <div class="ak-notes-head">
+        <h2 class="ak-notes-title" id="notes-title">Заметки</h2>
+      </div>
+
+      <form class="ak-note-form">
+        <label class="ak-sr-only" for="body">Новая заметка</label>
+        <textarea class="ak-textarea" id="body" rows="3" placeholder="О чём поговорили, о чём договорились"></textarea>
+        <div class="ak-btn-row">
+          <button class="ak-btn ak-btn-primary" type="submit">Добавить заметку</button>
+        </div>
+      </form>
+
+      <ul class="ak-notes">
+        <li class="ak-note">
+          <div class="ak-note-top">
+            <time datetime="2026-09-20T19:10">20 сентября 2026 г. в 19:10</time>
+            <button class="ak-btn ak-btn-text ak-btn-sm" type="button">
+              <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+              Изменить
+            </button>
+          </div>
+          <p>Обсудили продление аренды. Обещал посмотреть новый договор до конца октября.</p>
+        </li>
+      </ul>
+    </section>
+  </main>
+</div>
+</body>
+</html>
