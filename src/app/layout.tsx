@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import { Manrope, Wix_Madefor_Display } from "next/font/google";
+import localFont from "next/font/local";
 import Link from "next/link";
 import "./globals.css";
 
-// Brand fonts; globals.css maps them to font-display / font-sans
-const wixMadeforDisplay = Wix_Madefor_Display({
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700", "800"],
+// Brand fonts; globals.css maps them to font-display / font-sans.
+// Variable woff2 from google/fonts (SIL OFL, see fonts/OFL-*.txt), subset to latin + cyrillic
+const wixMadeforDisplay = localFont({
+  src: "./fonts/WixMadeforDisplay.woff2",
+  weight: "400 800",
   variable: "--font-wix-madefor-display",
 });
-const manrope = Manrope({
-  subsets: ["latin", "cyrillic"],
-  weight: ["400", "500", "600", "700", "800"],
+const manrope = localFont({
+  src: "./fonts/Manrope.woff2",
+  weight: "400 800",
   variable: "--font-manrope",
 });
 

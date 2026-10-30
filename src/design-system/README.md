@@ -8,7 +8,8 @@ The app's look comes from the owner's design system (`ak-design-system/`, kept o
 |---|---|
 | `tokens.css` | Token values copied from `ak-design-system/tokens/tokens.json`, plus app tokens marked `app` |
 | `../app/globals.css` | Maps tokens to Tailwind (`@theme inline`), the base styles (focus ring, selection) and the `aurora` utility |
-| `../app/layout.tsx` | Brand fonts through `next/font/google`: Wix Madefor Display (headings) and Manrope (text), both with Cyrillic |
+| `../app/layout.tsx` | Brand fonts through `next/font/local`: Wix Madefor Display (headings) and Manrope (text), both with Cyrillic |
+| `../app/fonts/` | Variable `.woff2` files (weights 400–800, latin + cyrillic) and their SIL OFL licenses; the build does not need network access |
 | `../lib/utils.ts` | `cn()`; lists the custom token names so tailwind-merge keeps `text-button` next to `text-ink` |
 
 ## How tokens reach the markup
@@ -46,10 +47,11 @@ When the design system gets one of these, take its name and value and drop the l
 - Readable text passes 4.5:1: secondary text is `muted`, readable teal is `teal-deep`, never `accent` or `teal` as text
 - Errors use `danger` with an icon and words, never colour alone
 - Keyboard focus: 2px `teal-deep`, 3px offset (`danger` on an invalid field). A component with `outline-none` must add `focus-visible:outline-solid`: in Tailwind v4 `outline-none` turns the outline style off
+- e2e tests read raw HTML: keep `Всего: N`, `Найдено: N` and `из N` as one text node each, and do not change the markup of hidden form inputs (the tests match attribute order)
 
 ## Updating from a new design system package
 
 1. Compare the new `ak-design-system/tokens/tokens.json` and `tokens.css` with `tokens.css` here; copy changed values
-2. If fonts changed: update `next/font` in `app/layout.tsx` (subsets `latin` + `cyrillic`) and `--font-display` / `--font-sans` in `globals.css`
+2. If fonts changed: take the variable `[wght].ttf` and `OFL.txt` from `github.com/google/fonts` (`ofl/<family>/`), subset to latin + cyrillic and convert to woff2 with `pyftsubset` (fonttools + brotli; Google Fonts `latin` and `cyrillic` unicode ranges, `--layout-features='*' --flavor=woff2`), put them in `app/fonts/`, update `app/layout.tsx` and `--font-display` / `--font-sans` in `globals.css`
 3. Update the copies in `design/vendor/` used by the mockups
 4. Check colour or radius changes with the owner before applying them
