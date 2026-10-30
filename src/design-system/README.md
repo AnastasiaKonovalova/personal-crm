@@ -47,6 +47,7 @@ When the design system gets one of these, take its name and value and drop the l
 - Readable text passes 4.5:1: secondary text is `muted`, readable teal is `teal-deep`, never `accent` or `teal` as text
 - Errors use `danger` with an icon and words, never colour alone
 - Keyboard focus: 2px `teal-deep`, 3px offset (`danger` on an invalid field). A component with `outline-none` must add `focus-visible:outline-solid`: in Tailwind v4 `outline-none` turns the outline style off
+- e2e tests read raw HTML: keep `Всего: N`, `Найдено: N` and `из N` as one text node each, and do not change the markup of hidden form inputs (the tests match attribute order)
 
 ## Updating from a new design system package
 
