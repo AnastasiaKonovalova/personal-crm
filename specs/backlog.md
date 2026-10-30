@@ -16,14 +16,6 @@ Docker публикует порты контейнеров в обход ufw. �
 - Если медленно и в проде — замерить по частям: запрос к базе (список с поиском по е/ё, подсчёт «Всего»), рендер серверных компонентов, загрузка шрифтов; только потом чинить
 - Не путать с ложной причиной: если на `:3000` висит старый `next start`, а `pnpm dev` ушёл на `:3001`, стили отдают 500 (общая папка `.next`)
 
-## Шрифты в репо через `next/font/local`
-
-Сейчас `next/font/google` скачивает шрифты при каждой сборке: сборка зависит от сети (в песочнице агента `pnpm build` падает, CI зависит от Google Fonts).
-
-- Положить `.woff2` в репо и подключить через `next/font/local` с теми же `variable` (`--font-wix-madefor-display` / `--font-manrope`, см. `src/app/layout.tsx`)
-- Wix Madefor Display 400–800 и Manrope 400–800, подмножества `latin` + `cyrillic`; проверить размер и лицензию (у Manrope — SIL OFL; лицензию Wix Madefor Display не проверяли)
-- Дизайн-система уже обновлена (2026-10-23): шрифт заголовков — Wix Madefor Display вместо Space Grotesk
-
 ## Три версии esbuild
 
 Решено 2026-10-29: `esbuild: false` в `pnpm-workspace.yaml` — install-скрипт esbuild не запускается (без решения pnpm в CI и Docker падал с `ERR_PNPM_IGNORED_BUILDS`). tsx, vitest и drizzle-kit работают без него.
