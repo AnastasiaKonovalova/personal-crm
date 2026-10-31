@@ -44,7 +44,14 @@ pnpm-debug.log*
 .idea/
 
 # AI agents / tools local state
-.claude/
+.claude/*
+# OpenSpec commands and skills are shared via git
+!.claude/commands/
+.claude/commands/*
+!.claude/commands/opsx/
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/openspec-*/
 .cursor/
 .codex/
 .gemini/

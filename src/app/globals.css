@@ -41,6 +41,7 @@
   --color-teal-soft: var(--teal-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-overdue: var(--overdue);
   --color-header-glass: var(--header-glass);
   --color-menu-glass: var(--menu-glass);
   --color-transparent: transparent;
@@ -75,6 +76,35 @@
   /* fonts from next/font (layout.tsx) */
   --font-display: var(--font-wix-madefor-display), var(--font-manrope), sans-serif;
   --font-sans: var(--font-manrope), system-ui, sans-serif;
+}
+
+/* Pulse of the "keep in touch" dots (DueDot): same ring as the design system's StatusPill dot */
+@theme {
+  --animate-due-soon: due-pulse-soon 2.6s infinite;
+  --animate-due-overdue: due-pulse-overdue 2s infinite;
+}
+
+@keyframes due-pulse-soon {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--teal) 60%, transparent); }
+  70% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--teal) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes due-pulse-overdue {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--overdue) 60%, transparent); }
+  70% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--overdue) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* Progressive enhancement. layout.tsx sets data-js on <html> before the first paint, so these
+   rules apply only when JavaScript runs. Without it every row of the "Пора связаться" block is
+   visible and its buttons are hidden; the fields that depend on a select show up always. */
+html:not([data-js]) [data-js-only] {
+  display: none !important;
+}
+html[data-js] [data-row-out],
+html[data-js] [data-cadence-date][data-visible="false"] {
+  display: none !important;
 }
 
 /* Gold wash behind the list screens (design system Aurora). Every glow is gold, never teal */

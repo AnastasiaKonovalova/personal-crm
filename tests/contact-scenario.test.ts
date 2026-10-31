@@ -2,14 +2,18 @@ import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { closeDb } from "@/db";
-import { contactSchema, type ContactInput } from "@/lib/validation";
+import { addPeriod, toDateString } from "@/lib/keep-in-touch";
+import { cadenceSchemaFor, contactSchema, contactSchemaFor, type ContactInput } from "@/lib/validation";
 import {
   PAGE_SIZE,
   addNote,
   createContact,
   deleteContact,
+  getContact,
   getContactWithNotes,
   listContacts,
+  listReminders,
+  setCadence,
   updateContact,
   updateNote,
 } from "@/server/contacts";
@@ -20,6 +24,7 @@ const marker = randomUUID().slice(0, 8);
 const testName = `Тестовый Контакт ${marker}`;
 const noteText = `Созвонились, договорились о встрече ${marker}`;
 let createdId: string | undefined;
+const keepInTouchIds: string[] = [];
 
 async function withSeparateConnection<T>(run: (pool: Pool) => Promise<T>) {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -35,6 +40,11 @@ afterAll(async () => {
     // Remove only the contact this test created; its notes go away via ON DELETE CASCADE
     await withSeparateConnection((pool) =>
       pool.query("delete from contacts where id = $1", [createdId]),
+    );
+  }
+  if (keepInTouchIds.length > 0) {
+    await withSeparateConnection((pool) =>
+      pool.query("delete from contacts where id = any($1)", [keepInTouchIds]),
     );
   }
   await closeDb();
@@ -190,6 +200,193 @@ describe("deleting", () => {
     expect(await deleteContact(createdId!)).toBeNull();
     expect(await deleteContact(randomUUID())).toBeNull();
     expect(await deleteContact("not-a-uuid")).toBeNull();
+  });
+});
+
+describe("keep in touch", () => {
+  // Inserted directly: the test sets creation dates in the past and saved dates that validation
+  // would refuse, to get overdue contacts without waiting
+  async function insertContact(fields: {
+    name: string;
+    cadence: string | null;
+    contactOn?: string | null;
+    createdDaysAgo: number;
+  }) {
+    const { rows } = await withSeparateConnection((pool) =>
+      pool.query<{ id: string }>(
+        `insert into contacts (name, cadence, contact_on, created_at)
+         values ($1, $2::contact_cadence, $3, now() - $4 * interval '1 day') returning id`,
+        [`${fields.name} ${marker}`, fields.cadence, fields.contactOn ?? null, fields.createdDaysAgo],
+      ),
+    );
+    keepInTouchIds.push(rows[0].id);
+    return rows[0].id;
+  }
+
+  async function insertNote(contactId: string, daysAgo: number) {
+    await withSeparateConnection((pool) =>
+      pool.query(
+        "insert into notes (contact_id, body, created_at) values ($1, 'Старая заметка', now() - $2 * interval '1 day')",
+        [contactId, daysAgo],
+      ),
+    );
+  }
+
+  const dayFromToday = (offset: number) => toDateString(new Date(Date.now() + offset * 24 * 60 * 60 * 1000));
+
+  it("orders the block: longer overdue first, then soon, contacts that are fine and without cadence left out", async () => {
+    const weekly = await insertContact({ name: "Недельный", cadence: "week", createdDaysAgo: 20 });
+    const monthly = await insertContact({ name: "Месячный", cadence: "month", createdDaysAgo: 40 });
+    const soon = await insertContact({ name: "Скоро", cadence: "week", createdDaysAgo: 6 });
+    const fine = await insertContact({ name: "В порядке", cadence: "month", createdDaysAgo: 5 });
+    const without = await insertContact({ name: "Без частоты", cadence: null, createdDaysAgo: 100 });
+
+    const reminders = await listReminders();
+    const ours = reminders.items.filter((item) => item.name.endsWith(marker));
+    // Weekly: 13 days overdue; monthly: 9-12 days overdue, whatever the month lengths
+    expect(ours.map((item) => item.id)).toEqual([weekly, monthly, soon]);
+    expect(ours[0].status).toEqual({ kind: "overdue", days: 13 });
+    expect(ours[2].status).toEqual({ kind: "soon", days: 1 });
+    expect([fine, without].some((id) => reminders.items.some((item) => item.id === id))).toBe(false);
+
+    expect(reminders.withCadenceCount).toBeGreaterThanOrEqual(4);
+    expect(reminders.totalCount).toBeGreaterThanOrEqual(5);
+  });
+
+  it("counts a contact without notes from its creation and a contact with notes from the latest note", async () => {
+    const id = await insertContact({ name: "Без заметок", cadence: "month", createdDaysAgo: 100 });
+    expect((await getContactWithNotes(id))?.keepInTouch.status?.kind).toBe("overdue");
+
+    await insertNote(id, 3);
+    const card = await getContactWithNotes(id);
+    expect(card?.keepInTouch.status?.kind).toBe("ok");
+    expect(card?.keepInTouch.dueOn).toBeDefined();
+    expect((await listReminders()).items.some((item) => item.id === id)).toBe(false);
+  });
+
+  it("keeps the cadence after a new note and starts the term again", async () => {
+    const id = await insertContact({ name: "Период сохраняется", cadence: "month", createdDaysAgo: 100 });
+    await addNote(id, "Созвонились");
+
+    expect((await getContact(id))?.cadence).toBe("month");
+    const card = await getContactWithNotes(id);
+    expect(card?.keepInTouch.status?.kind).toBe("ok");
+    expect(card?.keepInTouch.dueOn).toBe(addPeriod(toDateString(new Date()), "month"));
+  });
+
+  it("does not move the term when an old note is edited", async () => {
+    const id = await insertContact({ name: "Правка заметки", cadence: "week", createdDaysAgo: 30 });
+    await insertNote(id, 10);
+    const before = await getContactWithNotes(id);
+    expect(before?.keepInTouch.status).toEqual({ kind: "overdue", days: 3 });
+
+    expect(await updateNote(id, before!.notes[0].id, "Исправленный текст")).not.toBeNull();
+    expect((await getContactWithNotes(id))?.keepInTouch).toEqual(before?.keepInTouch);
+  });
+
+  it("shows the status in the contact list", async () => {
+    const id = await insertContact({ name: "Список", cadence: "week", createdDaysAgo: 20 });
+    const found = await listContacts({ query: `Список ${marker}`, page: 1 });
+    expect(found.items.map((item) => item.id)).toEqual([id]);
+    expect(found.items[0].status).toEqual({ kind: "overdue", days: 13 });
+    expect(found.items[0].dueOn).toBeTypeOf("string");
+  });
+
+  it("clears a specific date when the note is made soon before it", async () => {
+    const id = await insertContact({ name: "Дата скоро", cadence: "date", contactOn: dayFromToday(1), createdDaysAgo: 5 });
+    await addNote(id, "Связались");
+
+    const contact = await getContact(id);
+    expect(contact?.cadence).toBeNull();
+    expect(contact?.contactOn).toBeNull();
+    expect((await listReminders()).items.some((item) => item.id === id)).toBe(false);
+  });
+
+  it("clears a specific date that is already overdue", async () => {
+    const id = await insertContact({ name: "Дата прошла", cadence: "date", contactOn: dayFromToday(-5), createdDaysAgo: 30 });
+    await addNote(id, "Связались");
+
+    const contact = await getContact(id);
+    expect(contact?.cadence).toBeNull();
+    expect(contact?.contactOn).toBeNull();
+  });
+
+  it("keeps a specific date when the note is made long before it", async () => {
+    const date = dayFromToday(30);
+    const id = await insertContact({ name: "Дата далеко", cadence: "date", contactOn: date, createdDaysAgo: 5 });
+    await addNote(id, "Просто заметка");
+
+    const contact = await getContact(id);
+    expect(contact?.cadence).toBe("date");
+    expect(contact?.contactOn).toBe(date);
+  });
+
+  // What updateContactAction does: validate against the saved date, then write
+  it("saves a contact with a passed date after only its phone is edited", async () => {
+    const date = dayFromToday(-5);
+    const id = await insertContact({ name: "Правка телефона", cadence: "date", contactOn: date, createdDaysAgo: 30 });
+    const saved = await getContact(id);
+    const form = {
+      name: saved!.name,
+      about: "",
+      howWeMet: "",
+      phone: "+7 (222) 222-22-22",
+      email: "",
+      cadence: "date",
+      contactOn: saved!.contactOn!,
+    };
+
+    // The same form is refused for a contact that has no such saved date
+    expect(contactSchemaFor(null).safeParse(form).success).toBe(false);
+
+    const parsed = contactSchemaFor(saved!.contactOn).safeParse(form);
+    expect(parsed.success).toBe(true);
+    expect(await updateContact(id, parsed.data!)).toBe(id);
+
+    const card = await getContactWithNotes(id);
+    expect(card?.contact.phone).toBe("+7 (222) 222-22-22");
+    expect(card?.contact.contactOn).toBe(date);
+    expect(card?.keepInTouch.status).toEqual({ kind: "overdue", days: 5 });
+  });
+
+  it("changes the frequency from the card and recounts the term from the last contact", async () => {
+    const id = await insertContact({ name: "Смена частоты", cadence: "month", createdDaysAgo: 20 });
+    expect((await getContactWithNotes(id))?.keepInTouch.status?.kind).toBe("ok");
+
+    const parsed = cadenceSchemaFor(null).parse({ cadence: "week", contactOn: "" });
+    expect(await setCadence(id, parsed)).toBe(id);
+
+    const card = await getContactWithNotes(id);
+    expect(card?.contact.cadence).toBe("week");
+    expect(card?.keepInTouch.status).toEqual({ kind: "overdue", days: 13 });
+  });
+
+  // What setCadenceAction does when the card's form is sent again without touching the date
+  it("keeps a saved past date when the frequency form of the card is sent again unchanged", async () => {
+    const date = dayFromToday(-5);
+    const id = await insertContact({ name: "Повторное сохранение", cadence: "date", contactOn: date, createdDaysAgo: 30 });
+    const saved = await getContact(id);
+
+    const parsed = cadenceSchemaFor(saved!.contactOn).safeParse({ cadence: "date", contactOn: saved!.contactOn });
+    expect(parsed.success).toBe(true);
+    expect(await setCadence(id, parsed.data!)).toBe(id);
+
+    const contact = await getContact(id);
+    expect(contact?.cadence).toBe("date");
+    expect(contact?.contactOn).toBe(date);
+    expect((await getContactWithNotes(id))?.keepInTouch.status).toEqual({ kind: "overdue", days: 5 });
+  });
+
+  it("switches from a specific date to a period and drops the date", async () => {
+    const id = await insertContact({ name: "Дата на период", cadence: "date", contactOn: dayFromToday(10), createdDaysAgo: 5 });
+    const saved = await getContact(id);
+
+    const parsed = cadenceSchemaFor(saved!.contactOn).parse({ cadence: "month", contactOn: saved!.contactOn });
+    await setCadence(id, parsed);
+
+    const contact = await getContact(id);
+    expect(contact?.cadence).toBe("month");
+    expect(contact?.contactOn).toBeNull();
   });
 });
 

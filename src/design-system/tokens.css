@@ -21,6 +21,7 @@
   --teal-soft: #e1f3f4;
   --danger: #b93c1c;
   --danger-soft: #fbe9e3;
+  --overdue: #d9622b; /* app: "overdue" dot, warm red between accent and danger; 3.4:1 on surface (non-text only) */
   --aurora-gold: #f6ce80;
   --header-glass: rgba(244, 240, 231, 0.82);
   --menu-glass: rgba(244, 240, 231, 0.97);
@@ -107,6 +108,9 @@
   --text-meta--line-height: 1.6;
   --text-field: 16px; /* app: field text as in TextField; 24px line keeps the field 52px tall like a button */
   --text-field--line-height: 1.5;
+  --text-status: clamp(19px, 2.2vw, 23px); /* app: term line in the contact card */
+  --text-status--line-height: 1.2;
+  --text-status--letter-spacing: -0.01em;
   --text-button: 15px;
   --text-button--line-height: 1.6;
   --text-nav: 14px;

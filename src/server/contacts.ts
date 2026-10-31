@@ -1,6 +1,13 @@
-import { and, count, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNotNull, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { contacts, notes } from "@/db/schema";
+import {
+  type Cadence,
+  dueDate,
+  sortForReminders,
+  status as statusOn,
+  toDateString,
+} from "@/lib/keep-in-touch";
 import type { ContactInput } from "@/lib/validation";
 
 // Data access for contacts. Imported only by server components, server actions and scripts.
@@ -39,6 +46,24 @@ async function safeWrite<T>(operation: string, run: () => Promise<T>): Promise<T
   }
 }
 
+// Last contact is the latest note, or the contact's creation if it has none. Raw names on purpose:
+// a column interpolated into a single-table query may be rendered without its table, and then
+// "contact_id = id" would silently compare notes.id
+const lastContactAtSql = sql<Date>`coalesce(
+  (select max(n.created_at) from notes n where n.contact_id = contacts.id),
+  contacts.created_at
+)`.mapWith(contacts.createdAt);
+
+type KeepInTouchRow = { cadence: Cadence | null; contactOn: string | null; lastContactAt: Date };
+
+function keepInTouchOf({ cadence, contactOn, lastContactAt }: KeepInTouchRow, today: string) {
+  const dueOn = dueDate(cadence, lastContactAt, contactOn);
+  if (!cadence || !dueOn) {
+    return { dueOn: null, status: null };
+  }
+  return { dueOn, status: statusOn(dueOn, today, cadence) };
+}
+
 export async function listContacts({ query, page }: { query?: string; page: number }) {
   const db = getDb();
   const term = query?.trim();
@@ -50,12 +75,15 @@ export async function listContacts({ query, page }: { query?: string; page: numb
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const currentPage = Math.min(Math.max(1, Math.trunc(page) || 1), pageCount);
 
-  const items = await db
+  const rows = await db
     .select({
       id: contacts.id,
       name: contacts.name,
       about: contacts.about,
       howWeMet: contacts.howWeMet,
+      cadence: contacts.cadence,
+      contactOn: contacts.contactOn,
+      lastContactAt: lastContactAtSql,
     })
     .from(contacts)
     .where(where)
@@ -63,7 +91,38 @@ export async function listContacts({ query, page }: { query?: string; page: numb
     .limit(PAGE_SIZE)
     .offset((currentPage - 1) * PAGE_SIZE);
 
+  const today = toDateString(new Date());
+  const items = rows.map(({ contactOn, lastContactAt, ...row }) => ({
+    ...row,
+    ...keepInTouchOf({ cadence: row.cadence, contactOn, lastContactAt }, today),
+  }));
+
   return { items, total, page: currentPage, pageCount };
+}
+
+// The "Пора связаться" block: every overdue or soon contact in display order, plus the counts the
+// empty states need. Contacts with a cadence are few, so statuses are computed here, not in SQL.
+export async function listReminders() {
+  const db = getDb();
+  const rows = await db
+    .select({
+      id: contacts.id,
+      name: contacts.name,
+      cadence: contacts.cadence,
+      contactOn: contacts.contactOn,
+      lastContactAt: lastContactAtSql,
+    })
+    .from(contacts)
+    .where(isNotNull(contacts.cadence));
+  const [{ total }] = await db.select({ total: count() }).from(contacts);
+
+  const today = toDateString(new Date());
+  const withStatus = rows.flatMap(({ contactOn, lastContactAt, ...row }) => {
+    const { dueOn, status } = keepInTouchOf({ cadence: row.cadence, contactOn, lastContactAt }, today);
+    return dueOn && status && row.cadence ? [{ ...row, cadence: row.cadence, dueOn, status }] : [];
+  });
+
+  return { items: sortForReminders(withStatus), withCadenceCount: rows.length, totalCount: total };
 }
 
 export async function getContact(id: string) {
@@ -86,7 +145,14 @@ export async function getContactWithNotes(id: string) {
     .from(notes)
     .where(eq(notes.contactId, id))
     .orderBy(desc(notes.createdAt), desc(notes.id));
-  return { contact, notes: contactNotes };
+
+  // Notes come newest first, so the first one is the last contact
+  const lastContactAt = contactNotes[0]?.createdAt ?? contact.createdAt;
+  const keepInTouch = keepInTouchOf(
+    { cadence: contact.cadence, contactOn: contact.contactOn, lastContactAt },
+    toDateString(new Date()),
+  );
+  return { contact, notes: contactNotes, keepInTouch };
 }
 
 export async function createContact(input: ContactInput) {
@@ -108,6 +174,25 @@ export async function updateContact(id: string, input: ContactInput) {
   return updated?.id ?? null;
 }
 
+// Changes only the frequency (the form in the contact card); the input is validated with the saved date
+export async function setCadence(
+  id: string,
+  input: { cadence: Cadence | null; contactOn: string | null },
+) {
+  if (!UUID_PATTERN.test(id)) {
+    return null;
+  }
+  const db = getDb();
+  const [updated] = await safeWrite("set cadence", () =>
+    db
+      .update(contacts)
+      .set({ cadence: input.cadence, contactOn: input.contactOn })
+      .where(eq(contacts.id, id))
+      .returning({ id: contacts.id }),
+  );
+  return updated?.id ?? null;
+}
+
 // Notes go with the contact: notes.contact_id is ON DELETE CASCADE
 export async function deleteContact(id: string) {
   if (!UUID_PATTERN.test(id)) {
@@ -125,17 +210,29 @@ export async function addNote(contactId: string, body: string) {
     return null;
   }
   const db = getDb();
-  const [contact] = await db
-    .select({ id: contacts.id })
-    .from(contacts)
-    .where(eq(contacts.id, contactId));
-  if (!contact) {
-    return null;
-  }
-  const [note] = await safeWrite("add note", () =>
-    db.insert(notes).values({ contactId, body }).returning(),
+  // One transaction: the note and, when it settles a specific date, the clearing of that date
+  return safeWrite("add note", () =>
+    db.transaction(async (tx) => {
+      const [contact] = await tx
+        .select({ cadence: contacts.cadence, contactOn: contacts.contactOn })
+        .from(contacts)
+        .where(eq(contacts.id, contactId));
+      if (!contact) {
+        return null;
+      }
+
+      const [note] = await tx.insert(notes).values({ contactId, body }).returning();
+
+      // A date is settled by a note made when it is overdue or soon; a note long before it leaves it
+      if (contact.cadence === "date" && contact.contactOn) {
+        const { kind } = statusOn(contact.contactOn, toDateString(note.createdAt), "date");
+        if (kind !== "ok") {
+          await tx.update(contacts).set({ cadence: null, contactOn: null }).where(eq(contacts.id, contactId));
+        }
+      }
+      return note;
+    }),
   );
-  return note;
 }
 
 export async function updateNote(contactId: string, noteId: string, body: string) {

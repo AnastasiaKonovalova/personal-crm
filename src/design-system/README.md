@@ -28,6 +28,8 @@ The app's look comes from the owner's design system (`ak-design-system/`, kept o
 | `--text-page-title`, `--text-empty-title`, `--text-notes-title` | fluid `clamp()` | Titles of app screens |
 | `--text-meta` | 14.5px | Secondary text in list rows |
 | `--text-field` | 16px / 1.5 | Field text as in `TextField`; keeps a field 52px tall like a button |
+| `--text-status` | fluid `clamp()` | Term line in the contact card ("Следующий раз — до …") |
+| `--overdue` | `#d9622b` | "Overdue" dot (terracotta between `accent` and `danger`, 3.4:1 on `surface`): non-text only, as text it fails 4.5:1; the overdue text uses `danger`. The "soon" dot is `teal` |
 
 When the design system gets one of these, take its name and value and drop the local one.
 

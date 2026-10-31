@@ -1,0 +1,38 @@
+schema: spec-driven
+
+context: |
+  Language: Russian
+  All artifacts must be written in Russian.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+  Code, identifiers, file names, table and field names stay in English.
+
+  Project: personal CRM for people the owner knows personally.
+  Product idea, main scenario, constraints: specs/01-продуктовая-идея.md
+  Screen design: design/README.md; design system in code: src/design-system/README.md
+  Project rules (stack, branches, checks, deploy): AGENTS.md
+  Stack: Next.js (App Router), TypeScript, React, Tailwind CSS, shadcn/ui,
+  PostgreSQL + Drizzle (schema and migrations in code), pnpm, Vitest.
+  Product decisions belong to the owner: anything not in the spec is an open question, not an assumption.
+  Public repo: test data must be fictional, no real people.
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

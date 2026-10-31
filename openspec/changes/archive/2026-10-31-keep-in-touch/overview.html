@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Пора связаться — обзор</title>
+<style>
+/* App fonts: the same local files as src/app/layout.tsx */
+@font-face { font-family: "Wix Madefor Display"; src: url("../../../src/app/fonts/WixMadeforDisplay.woff2") format("woff2"); font-weight: 400 800; }
+@font-face { font-family: "Manrope"; src: url("../../../src/app/fonts/Manrope.woff2") format("woff2"); font-weight: 400 800; }
+
+/* Values copied from src/design-system/tokens.css; --overdue is the app token planned in design.md (task 5.4) */
+:root {
+  --bg: #f4f0e7;
+  --surface: #fbf8f1;
+  --surface-2: #ede7d8;
+  --line: #e0d9c8;
+  --ink: #504636;
+  --muted: #6e665a;
+  --accent: #f1b559;
+  --accent-deep: #d99a36;
+  --accent-soft: #fbeac8;
+  --brown: #7a5a33;
+  --on-accent: #ffffff;
+  --teal: #27aab1;
+  --teal-deep: #166f74;
+  --teal-soft: #e1f3f4;
+  --danger: #b93c1c;
+  --danger-soft: #fbe9e3;
+  --overdue: #d9622b;
+  --radius-pill: 100px;
+  --radius-burger: 10px;
+  --radius-stat: 18px;
+  --radius-card: 20px;
+  --radius-contact: 28px;
+  --text-body: 15.5px;
+  --text-meta: 14.5px;
+  --text-caption: 13px;
+  --text-badge: 11px;
+  --text-eyebrow: 12.5px;
+  --font-display: "Wix Madefor Display", "Manrope", sans-serif;
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --mono: ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: var(--text-body)/1.6 var(--font-sans); -webkit-font-smoothing: antialiased; }
+.page { max-width: 900px; margin: 0 auto; padding: 40px 16px 80px; }
+.eyebrow { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-display); font-size: var(--text-eyebrow); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.eyebrow::before { content: ""; width: 30px; height: 2px; border-radius: var(--radius-pill); background: var(--teal); }
+h1 { font: 600 clamp(32px, 5vw, 48px)/1.05 var(--font-display); letter-spacing: -0.025em; margin: 14px 0 12px; }
+h2 { font: 600 clamp(24px, 3.2vw, 32px)/1.1 var(--font-display); letter-spacing: -0.02em; margin: 60px 0 16px; display: flex; align-items: baseline; gap: 12px; }
+h2 .num { font-size: 16px; color: var(--teal-deep); }
+h3 { font: 600 19px/1.3 var(--font-display); margin: 28px 0 10px; }
+p { margin: 8px 0; }
+.lead { font-size: 17px; color: var(--muted); max-width: 680px; }
+.muted { color: var(--muted); }
+.small { font-size: var(--text-caption); }
+code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+ul.points { padding-left: 20px; margin: 8px 0; }
+ul.points li { margin: 4px 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); padding: 20px 24px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--radius-pill); background: var(--surface); border: 1px solid var(--line); font-size: var(--text-caption); }
+.chip.todo { background: var(--accent-soft); border-color: var(--accent); color: var(--brown); }
+.chip.ok { background: var(--teal-soft); border-color: var(--teal-soft); color: var(--teal-deep); }
+.updated { margin-top: 16px; background: var(--teal-soft); border-radius: var(--radius-stat); padding: 12px 16px; font-size: var(--text-meta); }
+.updated b { font-family: var(--font-display); }
+
+/* Screen sketches */
+.screens { display: grid; gap: 32px; }
+.screen-title { font: 600 18px var(--font-display); margin: 0 0 8px; }
+.device { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-stat); padding: 16px; }
+.appbar { font: 600 16px var(--font-display); padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+.appbar i { color: var(--accent); font-style: normal; }
+.title-row { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.title-row .lbl { font: var(--text-badge) var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.title-row .t { font: 600 26px/1.1 var(--font-display); }
+.btn { display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-pill); padding: 6px 14px; font-size: var(--text-caption); font-weight: 600; white-space: nowrap; }
+.btn.gold { background: var(--accent); color: var(--ink); }
+.btn.ghost { border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn.text { color: var(--teal-deep); padding: 6px 4px; }
+.btn .ic { color: var(--teal-deep); font-weight: 800; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); overflow: hidden; }
+.panel-head { display: flex; align-items: baseline; gap: 10px; padding: 12px 16px 8px; }
+.panel-head .t { font: 600 19px var(--font-display); }
+.panel-head .n { font-size: var(--text-caption); color: var(--muted); }
+.row { display: flex; align-items: center; gap: 10px; padding: 9px 16px; border-top: 1px solid var(--line); }
+.row .who { flex: 1; min-width: 0; }
+.row .name { font-weight: 700; }
+.row .meta { font-size: var(--text-caption); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .meta b { color: var(--danger); font-weight: 600; }
+.row .chev { color: var(--muted); }
+.foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px; border-top: 1px solid var(--line); }
+.pager { display: inline-flex; align-items: center; gap: 10px; font-size: var(--text-caption); color: var(--muted); font-weight: 600; }
+.pager .arr { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); display: inline-grid; place-items: center; background: var(--surface); color: var(--ink); }
+.pager .arr.off { opacity: 0.4; }
+.pager b { color: var(--teal-deep); }
+.search { display: flex; gap: 8px; margin: 14px 0 10px; }
+.search .in { flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-pill); padding: 7px 14px; color: var(--muted); font-size: var(--text-caption); }
+.is-new { position: relative; outline: 2px dashed var(--teal-deep); outline-offset: 4px; border-radius: 12px; }
+.new-tag { position: absolute; top: -12px; right: 10px; background: var(--teal-deep); color: var(--on-accent); font-size: var(--text-badge); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 1px 8px; border-radius: var(--radius-pill); z-index: 1; }
+.gap { height: 18px; }
+
+/* Status dots as in decision 15: overdue = --overdue, soon = teal; both pulse, stop under reduced motion */
+.sdot { position: relative; display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.sdot.over { background: var(--overdue); }
+.sdot.soon { background: var(--teal); }
+.sdot.none { visibility: hidden; }
+.sdot.over::after, .sdot.soon::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid currentColor; opacity: 0; animation: pulse 2s ease-out infinite; }
+.sdot.over::after { color: var(--overdue); }
+.sdot.soon::after { color: var(--teal); }
+@keyframes pulse { 0% { transform: scale(0.6); opacity: 0.8; } 100% { transform: scale(1.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sdot::after { animation: none !important; } }
+
+.status-line { display: flex; align-items: center; gap: 8px; font: 600 18px var(--font-display); }
+.danger-t { color: var(--danger); font-weight: 600; }
+.rhythm-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.fields { margin-top: 4px; }
+.field-row { display: grid; grid-template-columns: 9rem 1fr; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: var(--text-meta); }
+.field-row:last-child { border-bottom: 0; }
+.field-row .k { font: 600 var(--text-badge) var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.inline { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.select { display: inline-flex; justify-content: space-between; align-items: center; gap: 16px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius-pill); padding: 5px 14px; font-size: var(--text-caption); min-width: 170px; }
+.select::after { content: "⌄"; color: var(--muted); }
+.input { border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius-burger); padding: 6px 12px; font-size: var(--text-caption); }
+.input.bad { border-color: var(--danger); background: var(--danger-soft); }
+.err { color: var(--danger); font-size: var(--text-caption); font-weight: 600; margin-top: 6px; }
+.fld { margin: 10px 0; }
+.fld .k { font-size: var(--text-caption); font-weight: 600; margin-bottom: 4px; }
+.notes-box { margin-top: 12px; font-size: var(--text-caption); }
+.notes-box .n { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.notes-box .n:last-child { border-bottom: 0; }
+.notes-box .d { color: var(--muted); }
+.empties { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.empty { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); padding: 18px; }
+.empty .ic { width: 48px; height: 48px; border-radius: 50%; background: var(--teal-soft); color: var(--teal-deep); display: grid; place-items: center; font-size: 22px; margin-bottom: 8px; }
+.empty .t { font: 600 17px var(--font-display); }
+.callouts { margin: 10px 0 0; padding-left: 20px; font-size: var(--text-meta); color: var(--muted); }
+.callouts li { margin: 3px 0; }
+
+/* Rules: full-width strips, one under another */
+.rules { display: grid; gap: 12px; }
+.rule { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-stat); padding: 14px 18px; }
+.rule .h { font: 600 16px var(--font-display); margin-bottom: 4px; }
+.rule .h .chg { font: 700 var(--text-badge) var(--font-sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal-deep); background: var(--teal-soft); border-radius: var(--radius-pill); padding: 1px 8px; margin-left: 8px; vertical-align: 2px; }
+.example { font-size: var(--text-meta); background: var(--bg); border-left: 3px solid var(--teal); padding: 6px 10px; margin-top: 8px; border-radius: 0 8px 8px 0; }
+table.freq { border-collapse: collapse; width: 100%; font-size: var(--text-meta); margin-top: 8px; }
+table.freq th, table.freq td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+table.freq th { color: var(--muted); font-weight: 600; }
+
+/* Data model */
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: var(--text-caption); color: var(--muted); margin: 8px 0 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--line); background: var(--surface); }
+.sw.new { border-color: var(--teal-deep); background: var(--teal-soft); }
+.schema { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); overflow-x: auto; margin-bottom: 8px; }
+.schema svg { display: block; width: 100%; min-width: 640px; height: auto; }
+.scroll-hint { display: none; font-size: var(--text-caption); color: var(--muted); }
+@media (max-width: 700px) { .scroll-hint { display: block; } }
+.box { fill: var(--bg); stroke: var(--line); stroke-width: 1.5; }
+.head { fill: var(--surface-2); }
+.tname { font: 600 14px var(--mono); fill: var(--ink); }
+.tru { font: 400 13px var(--font-sans); fill: var(--muted); }
+.srow { font: 400 13px var(--mono); fill: var(--ink); }
+.srow .ru { font-family: var(--font-sans); fill: var(--muted); }
+.srow.hl { fill: var(--teal-deep); font-weight: 600; }
+.srow.hl .ru { fill: var(--teal-deep); }
+.rowbg { fill: var(--teal-soft); stroke: var(--teal-deep); stroke-dasharray: 4 3; }
+.link { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+.arrow { fill: var(--muted); }
+.snote { font: 400 13px var(--font-sans); fill: var(--muted); }
+.lookup { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.who-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-stat); padding: 16px 18px; display: grid; gap: 8px; }
+.who-card .ask { font-size: var(--text-meta); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; }
+.result { justify-self: start; font-size: var(--text-caption); font-weight: 600; border-radius: var(--radius-pill); padding: 3px 12px; background: var(--teal-soft); color: var(--teal-deep); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: step; }
+.steps li { counter-increment: step; display: grid; grid-template-columns: 36px 1fr; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-stat); padding: 14px 18px; }
+.steps li::before { content: counter(step); font: 600 24px/1 var(--font-display); color: var(--muted); }
+.steps h3 { margin: 0 0 4px; font-size: 17px; }
+.steps p { margin: 0; color: var(--muted); font-size: var(--text-meta); }
+.tag-ok { display: inline-block; font-size: var(--text-badge); font-weight: 700; letter-spacing: 0.06em; color: var(--teal-deep); background: var(--teal-soft); border-radius: var(--radius-pill); padding: 1px 9px; margin-left: 8px; vertical-align: 2px; }
+.callout { border-left: 3px solid var(--teal); padding: 4px 0 4px 16px; margin-top: 16px; }
+
+/* Checklist */
+.prep { background: var(--accent-soft); border-radius: var(--radius-stat); padding: 12px 16px; font-size: var(--text-meta); }
+.check-group { margin-bottom: 18px; }
+.check { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin: 6px 0; cursor: pointer; }
+.check input { margin-top: 5px; accent-color: var(--teal-deep); width: 16px; height: 16px; flex-shrink: 0; }
+.check .sc { font-weight: 700; }
+.check .st { font-size: var(--text-meta); color: var(--muted); }
+.check .st .arrow-t { color: var(--teal-deep); font-weight: 800; }
+.check .auto { font-size: var(--text-badge); color: var(--teal-deep); background: var(--teal-soft); border-radius: var(--radius-pill); padding: 1px 8px; margin-left: 6px; font-weight: 600; white-space: nowrap; }
+.check .warn { font-size: var(--text-badge); color: var(--brown); background: var(--accent-soft); border-radius: var(--radius-pill); padding: 1px 8px; margin-left: 6px; font-weight: 600; white-space: nowrap; }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.two h3 { margin-top: 0; }
+.q { margin-bottom: 12px; }
+.q b { font-family: var(--font-display); }
+.done-list { margin: 0; padding-left: 20px; font-size: var(--text-meta); color: var(--muted); }
+footer { margin-top: 64px; font-size: var(--text-caption); color: var(--muted); }
+
+@media (max-width: 720px) {
+  .two, .empties { grid-template-columns: 1fr; }
+  .field-row { grid-template-columns: 1fr; gap: 4px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<span class="eyebrow">Личная CRM · обзор фичи</span>
+<h1>Пора связаться</h1>
+<p class="lead">У каждого контакта можно задать, как часто хочется общаться. На главной появляется блок с теми, кому пора написать, а кнопка «Связались» отмечает разговор одним нажатием.</p>
+<div class="chips">
+  <span class="chip ok">✓ Сделана в коде</span>
+  <span class="chip ok">✓ Задачи: 16 из 16</span>
+  <span class="chip ok">✓ Эскизы утверждены (решения 14–20)</span>
+  <span class="chip ok">✓ Автотесты написаны; e2e: 19 из 19 в сохранённом прогоне</span>
+  <span class="chip todo">Не закоммичена, PR нет, на сервере нет</span>
+  <span class="chip">Изменение <code>keep-in-touch</code></span>
+</div>
+<div class="updated">
+  <b>Что поменялось с прошлого обзора</b>
+  <ul class="done-list">
+    <li>Фича <b>реализована</b>: все 16 задач отмечены. Раньше был только план и эскизы.</li>
+    <li>Страница сверена с кодом: ниже описано то, что получилось, а не то, что планировалось. Расхождения со спекой в мелочах собраны в разделе 6.</li>
+    <li>Миграция создана: файл <code>drizzle/0001_unique_rachel_grey.sql</code>, четыре команды, как и планировалось.</li>
+    <li>Ссылки «какой тест это проверяет» в чек-листе проставлены по реальным тестам.</li>
+    <li>Новое в разделе 7: изменения лежат в рабочей папке и не закоммичены; миграция на сервере ещё не применялась.</li>
+  </ul>
+</div>
+
+<!-- 1 -->
+<h2><span class="num">1</span>Коротко</h2>
+<ul class="points">
+  <li>У контакта появляется поле «Как часто связываться»: раз в неделю, месяц, 3 месяца, 6 месяцев, год или конкретная дата.</li>
+  <li>Последнее общение — это дата последней заметки. Заметок нет — дата создания контакта.</li>
+  <li>На главной между заголовком и поиском — блок «Пора связаться»: сначала просроченные, ниже те, у кого срок скоро.</li>
+  <li>В карточке — отдельная карточка «Связь»: статус, кнопка «Связались» и смена частоты. В общем списке — пульсирующие точки у тех, кому пора.</li>
+  <li>Статус: <b>сделана</b>. Отмечены все 16 задач из 16. Изменения лежат в ветке <code>keep-in-touch</code>, но не закоммичены и не выкачены.</li>
+  <li>Автотесты (программы, которые сами проходят сценарий и сверяют результат) есть трёх видов: расчёт сроков и вид блока (без базы), работа с базой, главный сценарий в браузере без JavaScript. Последний сохранённый прогон <code>tmp/checks.log</code>: сборка прошла, e2e — 19 из 19. Сам я тесты в этот раз не запускал.</li>
+</ul>
+
+<!-- 2 -->
+<h2><span class="num">2</span>Что появится на экранах</h2>
+<p class="muted small">Наброски по утверждённым эскизам из <code>design/</code> и по готовому коду — сами эскизы точнее (<code>open design/index.html</code>). Новое обведено пунктиром. Имена и числа выдуманы, «сегодня» — 30 октября.</p>
+
+<div class="screens">
+  <div>
+    <p class="screen-title">Главная — блок свёрнут</p>
+    <div class="device">
+      <div class="appbar">Личная CRM<i>.</i></div>
+      <div class="title-row"><div><div class="lbl">Всего: 1000</div><div class="t">Контакты</div></div><span class="btn gold">+ Добавить контакт</span></div>
+
+      <div class="is-new"><span class="new-tag">новое</span>
+        <div class="panel">
+          <div class="panel-head"><span class="t">Пора связаться</span><span class="n">23</span></div>
+          <div class="row"><span class="sdot over"></span><div class="who"><div class="name">Глеб Орлов</div><div class="meta"><b>просрочено на 13 дней</b> · раз в неделю</div></div><span class="btn ghost"><span class="ic">🤝</span>Связались</span></div>
+          <div class="row"><span class="sdot over"></span><div class="who"><div class="name">Борис Ковалёв</div><div class="meta"><b>просрочено на 10 дней</b> · раз в месяц</div></div><span class="btn ghost"><span class="ic">🤝</span>Связались</span></div>
+          <div class="row"><span class="sdot over"></span><div class="who"><div class="name">Ирина Соколова</div><div class="meta"><b>просрочено на 4 дня</b> · раз в 3 месяца</div></div><span class="btn ghost"><span class="ic">🤝</span>Связались</span></div>
+          <div class="row"><span class="sdot over"></span><div class="who"><div class="name">Егор Фомин</div><div class="meta"><b>просрочено на 1 день</b> · конкретная дата</div></div><span class="btn ghost"><span class="ic">🤝</span>Связались</span></div>
+          <div class="row"><span class="sdot soon"></span><div class="who"><div class="name">Константин Ершов</div><div class="meta">Срок — сегодня · раз в месяц</div></div><span class="btn ghost"><span class="ic">🤝</span>Связались</span></div>
+          <div class="foot"><span></span><span class="btn text">Показать все (23) ⌄</span></div>
+        </div>
+      </div>
+
+      <div class="search"><span class="in">🔍 Поиск по имени</span><span class="btn ghost">Найти</span></div>
+      <div class="panel">
+        <div class="row"><span class="sdot none"></span><div class="who"><div class="name">Анна Смирнова</div><div class="meta">Дизайнер, соседка по даче</div></div><span class="chev">›</span></div>
+        <div class="row is-new" style="outline-offset:-2px"><span class="new-tag">точка</span><span class="sdot over"></span><div class="who"><div class="name">Борис Ковалёв</div><div class="meta">Юрист, помогал с договором аренды</div></div><span class="chev">›</span></div>
+        <div class="row"><span class="sdot soon"></span><div class="who"><div class="name">Вера Лебедева</div><div class="meta">Тренер по плаванию</div></div><span class="chev">›</span></div>
+        <div class="row"><span class="sdot over"></span><div class="who"><div class="name">Глеб Орлов</div><div class="meta">Бывший коллега, фронтенд</div></div><span class="chev">›</span></div>
+      </div>
+    </div>
+    <ul class="callouts">
+      <li>Блок — только на первой странице списка и только без поиска.</li>
+      <li>Строка кликабельна целиком и ведёт в карточку, «Связались» — отдельная кнопка поверх. На телефоне вместо кнопки с подписью — круглая иконка.</li>
+      <li>Иконка «Связались» — рукопожатие в галочке (в наброске условно 🤝).</li>
+      <li>Точки: терракотовая — просрочено, бирюзовая — скоро. Обе пульсируют. У строк без статуса пустое место той же ширины, чтобы имена не скакали. Скринридер (программа, которая читает страницу вслух) произносит «пора связаться» или «скоро пора связаться».</li>
+    </ul>
+  </div>
+
+  <div>
+    <p class="screen-title">Главная — блок раскрыт</p>
+    <div class="device">
+      <div class="is-new"><span class="new-tag">новое</span>
+        <div class="panel">
+          <div class="panel-head"><span class="t">Пора связаться</span><span class="n">23</span></div>
+          <div class="row"><span class="sdot over"></span><div class="who"><div class="name">Глеб Орлов</div><div class="meta"><b>просрочено на 13 дней</b> · раз в неделю</div></div><span class="btn ghost"><span class="ic">🤝</span>Связались</span></div>
+          <div class="row muted small" style="justify-content:center">… ещё 8 строк …</div>
+          <div class="row"><span class="sdot soon"></span><div class="who"><div class="name">Павел Гусев</div><div class="meta">До 6 ноября · раз в 6 месяцев</div></div><span class="btn ghost"><span class="ic">🤝</span>Связались</span></div>
+          <div class="foot">
+            <span class="pager"><span class="arr off">‹</span>Страница <b>1</b> из 3<span class="arr">›</span></span>
+            <span class="btn text">Свернуть ⌃</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="callouts">
+      <li>По 10 строк на страницу. Стрелки и «Страница X из Y» — как у общего списка, но листают только блок.</li>
+      <li>Раскрытие, листание и сворачивание — на месте: страница не перезагружается, адрес не меняется, общий список не трогается.</li>
+      <li>На узком экране пагинация и «Свернуть» стоят друг под другом.</li>
+      <li>Без JavaScript кнопок нет: в блоке сразу видны все 23 строки.</li>
+      <li>Пока «Связались» отправляется, кнопка неактивна. Если контакт уже удалён в другой вкладке, под кнопкой появится «Контакт не найден».</li>
+    </ul>
+
+    <p class="screen-title" style="margin-top:20px">Блок, когда пора связаться не с кем</p>
+    <div class="empties">
+      <div class="empty is-new"><span class="new-tag">новое</span><div class="ic">💞</div><div class="t">Со всеми на связи</div><div class="small muted">Частота задана хотя бы у одного, но сейчас никто не просрочен и ни у кого не скоро</div></div>
+      <div class="empty is-new"><span class="new-tag">новое</span><div class="small">Задай частоту общения в карточке контакта - и здесь появятся те, с кем <b>пора связаться</b></div><div class="small muted" style="margin-top:8px">Контакты есть, частоты нет ни у кого. Без заголовка и без иконки</div></div>
+    </div>
+    <ul class="callouts">
+      <li>Иконка «Со всеми на связи» — сердце с рукопожатием в бирюзовом кружке (в наброске условно). Контактов нет совсем — блока нет.</li>
+    </ul>
+  </div>
+
+  <div>
+    <p class="screen-title">Карточка контакта</p>
+    <div class="device">
+      <div class="small muted" style="margin-bottom:8px">‹ Все контакты</div>
+      <div class="title-row"><span class="t">Борис Ковалёв</span><span class="inline"><span class="btn ghost">✎ Редактировать</span><span class="btn text" style="color:var(--ink)">🗑 Удалить</span></span></div>
+      <div class="card is-new"><span class="new-tag">новое — «Связь»</span>
+        <div class="rhythm-top">
+          <div>
+            <div class="status-line"><span class="sdot over"></span>Пора связаться</div>
+            <div class="danger-t small">просрочено на 10 дней</div>
+          </div>
+          <span class="btn ghost"><span class="ic">🤝</span>Связались</span>
+        </div>
+        <div class="fld" style="margin-top:14px"><div class="k">Как часто связываться</div>
+          <div class="inline"><span class="select">Раз в месяц</span><span class="btn ghost">Сохранить</span></div>
+        </div>
+      </div>
+      <div class="gap"></div>
+      <div class="card">
+        <div class="fields">
+          <div class="field-row"><span class="k">Кто это</span><span>Юрист, помогал с договором аренды</span></div>
+          <div class="field-row"><span class="k">Телефон</span><span>+7 900 111-22-33</span></div>
+        </div>
+      </div>
+      <div class="gap"></div>
+      <div class="card">
+        <div style="font:600 20px var(--font-display)">Заметки</div>
+        <div class="notes-box">
+          <div class="n is-new" style="outline-offset:2px"><span class="new-tag">после «Связались»</span>Связались <span class="d">· 30 октября 2026 г. в 12:40</span></div>
+          <div class="n">Обсудили продление аренды <span class="d">· 20 сентября 2026 г. в 19:10</span></div>
+        </div>
+      </div>
+    </div>
+    <ul class="callouts">
+      <li>«Связь» — отдельная карточка над данными контакта, чтобы главное действие фичи было видно сразу.</li>
+      <li>Срок в порядке или скоро — вместо «Пора связаться» строка «Следующий раз — до 15 ноября». У «скоро» рядом бирюзовая точка. Дата в другом году выводится с годом.</li>
+      <li>Частота «Не задано» — срока нет, вместо него текст «Срок не задан: выбери, как часто связываться».</li>
+      <li>Частота меняется маленькой формой с кнопкой «Сохранить» — работает и без JavaScript. Пока идёт сохранение, на кнопке «Сохраняю…», потом рядом «Сохранено».</li>
+      <li>«Связались» есть в карточке любого контакта, даже без частоты. Добавляет заметку «Связались» сверху ленты.</li>
+      <li>Золотая кнопка на экране одна — «Добавить заметку». «Связались» и «Сохранить» — спокойные.</li>
+    </ul>
+  </div>
+
+  <div>
+    <p class="screen-title">Форма «Новый контакт» и «Редактирование»</p>
+    <div class="device">
+      <div class="fld"><div class="k">Имя*</div><div class="input">Анна Смирнова</div></div>
+      <div class="fld"><div class="k">Телефон</div><div class="input">+7 900 123-45-67</div></div>
+      <div class="fld is-new" style="padding:4px 0"><span class="new-tag">новое</span>
+        <div class="k">Как часто связываться</div>
+        <div class="inline"><span class="select">Конкретная дата</span><span class="input bad">29.10.2026</span></div>
+        <div class="err">⊘ Дата уже прошла</div>
+      </div>
+      <div style="margin-top:14px" class="inline"><span class="btn gold">Сохранить</span><span class="btn ghost">Отмена</span></div>
+    </div>
+    <ul class="callouts">
+      <li>Варианты: Не задано (по умолчанию), Раз в неделю, Раз в месяц, Раз в 3 месяца, Раз в 6 месяцев, Раз в год, Конкретная дата.</li>
+      <li>Поле даты появляется справа при «Конкретная дата», ошибка — под обоими полями. Без JavaScript поле даты видно всегда, но при периоде сервер его не читает.</li>
+      <li>Ошибки: дата пустая — «Укажи дату», новая дата в прошлом — «Дата уже прошла». Контакт тогда не сохраняется.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 3 -->
+<h2><span class="num">3</span>Как это работает</h2>
+<div class="rules">
+  <div class="rule">
+    <div class="h">Срок считается от последнего общения</div>
+    <table class="freq">
+      <tr><th>Частота</th><th>Срок</th><th>«Скоро» начинается за</th></tr>
+      <tr><td>Раз в неделю</td><td>+7 дней</td><td>2 дня</td></tr>
+      <tr><td>Раз в месяц</td><td>+1 календарный месяц</td><td>7 дней</td></tr>
+      <tr><td>Раз в 3 месяца</td><td>+3 календарных месяца</td><td>7 дней</td></tr>
+      <tr><td>Раз в 6 месяцев</td><td>+6 календарных месяцев</td><td>7 дней</td></tr>
+      <tr><td>Раз в год</td><td>+12 календарных месяцев</td><td>7 дней</td></tr>
+      <tr><td>Конкретная дата</td><td>сама эта дата</td><td>7 дней</td></tr>
+      <tr><td>Не задано</td><td>срока нет, в блок не попадает</td><td>—</td></tr>
+    </table>
+    <div class="example">Общались 15 октября, «Раз в месяц» → срок 15 ноября.<br>Общались 31 января, «Раз в месяц» → срок 28 февраля (в високосный год 29-го): такого числа в месяце нет — берётся последний день.</div>
+  </div>
+  <div class="rule">
+    <div class="h">Последнее общение — последняя заметка</div>
+    <p>Берётся время создания самой свежей заметки. Заметок нет — время создания контакта. Правка старой заметки срок не двигает. Дни считаются по московскому времени.</p>
+    <div class="example">Контакт создан 10 января, «Раз в месяц», заметок нет → срок 10 февраля.<br>Поправил текст заметки недельной давности → срок прежний.</div>
+  </div>
+  <div class="rule">
+    <div class="h">Новая заметка запускает срок заново</div>
+    <p>При периоде частота остаётся, новый срок — через период от заметки.</p>
+    <div class="example">«Раз в месяц», пишу заметку 30 октября → частота та же, срок 30 ноября.</div>
+  </div>
+  <div class="rule">
+    <div class="h">Конкретная дата — разовая</div>
+    <p>У контакта либо период, либо дата, либо ничего. Заметка, написанная, когда срок скоро или уже прошёл, снимает дату: частота становится «Не задано». Заметка раньше окна «скоро» дату не трогает.</p>
+    <div class="example">Дата 15 ноября, заметка 14 ноября → «Не задано», контакт уходит из блока.<br>Дата 15 декабря, заметка 1 ноября → дата остаётся.<br>Заметка за 8 дней до даты → дата тоже остаётся: окно «скоро» — 7 дней.<br>Была дата, выбрал «Раз в месяц» → дата удаляется.</div>
+  </div>
+  <div class="rule">
+    <div class="h">Проверка даты: новую — не в прошлом, сохранённую — не трогаем<span class="chg">изменено</span></div>
+    <p>Дата обязательна. Новая или изменённая дата — не раньше сегодня. Дата, которая уже сохранена у контакта, проходит без проверки, даже если прошла.</p>
+    <div class="example">Сохранена дата 25 октября, сегодня 30-е. Правлю только телефон → сохраняется, дата и «просрочено» на месте.<br>Жму «Сохранить» в форме частоты в карточке, дату не трогаю → ошибки нет.<br>Меняю 25 октября на 27 октября → «Дата уже прошла».</div>
+  </div>
+  <div class="rule">
+    <div class="h">Три статуса на сегодня</div>
+    <ul class="points">
+      <li><b>Просрочено</b> — сегодня позже срока.</li>
+      <li><b>Скоро</b> — до срока осталось не больше окна (2 дня для недели, 7 для остальных), включая сам день срока.</li>
+      <li><b>В порядке</b> — всё остальное. Без частоты статуса нет.</li>
+    </ul>
+    <div class="example">Срок сегодня → «скоро», не «просрочено». Срок был вчера → просрочено на 1 день.<br>«Раз в неделю», до срока 3 дня → в порядке. «Раз в месяц», до срока 7 дней → скоро.</div>
+  </div>
+  <div class="rule">
+    <div class="h">Кто и в каком порядке в блоке</div>
+    <p>В блоке — просроченные и «скоро». Сверху просроченные: у кого больше дней сверх срока, тот выше. Ниже «скоро»: у кого срок ближе, тот выше. При равенстве — по имени.</p>
+    <div class="example">Анна: «Раз в неделю», 20 дней без общения → 13 дней сверх срока. Борис: «Раз в месяц», срок прошёл 10 дней назад. Анна выше Бориса.<br>Срок прошёл вчера — вверху; срок завтра — ниже.</div>
+  </div>
+  <div class="rule">
+    <div class="h">Строка блока<span class="chg">изменено</span></div>
+    <p>Имя, состояние срока, частота, кнопка «Связались». У просроченного — на сколько просрочено, у «скоро» — сам срок. Числа по-русски: «1 день», «2 дня», «5 дней», «11 дней», «21 день».</p>
+    <div class="example">«Раз в неделю», срок прошёл 13 дней назад → «просрочено на 13 дней · раз в неделю».<br>Срок 1 ноября, сегодня 30 октября → «До 1 ноября». Срок сегодня → «Срок — сегодня». Если срок в другом году — год пишется: «До 3 января 2027 г.».</div>
+  </div>
+  <div class="rule">
+    <div class="h">Свёрнутый и раскрытый блок<span class="chg">изменено</span></div>
+    <ul class="points">
+      <li>Свёрнутый: первые 5 и «Показать все (N)», где N — сколько всего в блоке. 5 и меньше — кнопки нет.</li>
+      <li>Раскрытый: по 10 строк и кнопка «Свернуть». Больше 10 — своя пагинация блока.</li>
+      <li>Всё переключается на месте, без перезагрузки и без обращения к серверу. Общий список при листании блока не меняется.</li>
+      <li>После «Свернуть» и нового раскрытия блок открывается на первой странице.</li>
+    </ul>
+    <div class="example">В блоке 8 → видно 5 и «Показать все (8)» → нажал → все 8 и «Свернуть», пагинации нет.<br>В блоке 23 → «Показать все (23)» → 10 строк, «Страница 1 из 3», «Назад» неактивна → «Вперёд» → строки 11–20 → ещё «Вперёд» → 3 строки, «Вперёд» неактивна.</div>
+  </div>
+  <div class="rule">
+    <div class="h">Блок сократился после «Связались»<span class="chg">новое</span></div>
+    <p>Если после «Связались» в блоке осталось 5 человек или меньше, кнопки «Показать все» и «Свернуть» и пагинация исчезают сразу, без перезагрузки: оставшиеся видны одним списком — и в раскрытом, и в свёрнутом блоке. Если не осталось никого — блок сразу показывает «Со всеми на связи» с иконкой.</p>
+    <div class="example">Блок из 6 раскрыт → «Связались» у одного → видны 5, кнопок «Свернуть» и «Показать все» нет.<br>Блок из 6 свёрнут → «Связались» у одного → видны 5, «Показать все» пропала.<br>В блоке один человек → «Связались» → «Со всеми на связи».</div>
+  </div>
+  <div class="rule">
+    <div class="h">Без JavaScript — все строки сразу<span class="chg">новое</span></div>
+    <p>Все строки блока приходят вместе со страницей. Если JavaScript в браузере не работает, блок показывает их одним списком — без «Показать все», «Свернуть» и пагинации.</p>
+  </div>
+  <div class="rule">
+    <div class="h">Когда в блоке никого</div>
+    <ul class="points">
+      <li>Частота есть хотя бы у одного, но никто не просрочен и не «скоро» → «Со всеми на связи» с иконкой.</li>
+      <li>Контакты есть, частоты нет ни у кого → подсказка «Задай частоту общения в карточке контакта…».</li>
+      <li>Контактов нет вообще → блока нет.</li>
+    </ul>
+  </div>
+  <div class="rule">
+    <div class="h">«Связались» — это обычная заметка<span class="chg">изменено</span></div>
+    <p>Кнопка создаёт заметку с текстом «Связались», дальше всё как у любой новой заметки: срок заново, конкретная дата снимается по правилу выше. Отменить или удалить нельзя, текст можно отредактировать.</p>
+    <p>В блоке нажатие не перезагружает страницу: блок остаётся раскрытым или свёрнутым и на той же странице. Если страница блока опустела — переходит на предыдущую. Без JavaScript — обычная отправка формы с возвратом на главную.</p>
+    <div class="example">Борис просрочен, «Раз в месяц» → «Связались» 30 октября → заметка «Связались», Борис уходит из блока, срок 30 ноября.<br>Блок из 23 раскрыт на странице 2 → «Связались» у одного → блок всё ещё на странице 2, после сворачивания «Показать все (22)».</div>
+  </div>
+  <div class="rule">
+    <div class="h">Частота и срок в карточке</div>
+    <ul class="points">
+      <li>«Не задано» — без срока.</li>
+      <li>В порядке или скоро — «Следующий раз — до 15 ноября».</li>
+      <li>Просрочено — «Пора связаться» и «просрочено на 5 дней».</li>
+    </ul>
+  </div>
+  <div class="rule">
+    <div class="h">Точки в общем списке</div>
+    <p>Пульсирующая точка у просроченных (терракотовая) и «скоро» (бирюзовая) — в обычном списке и в результатах поиска. У контактов без частоты и «в порядке» точки нет. Если в системе включено «уменьшить движение», точки перестают пульсировать.</p>
+  </div>
+</div>
+
+<!-- 4 -->
+<h2><span class="num">4</span>Модель данных до и после</h2>
+<p>Модель данных — какие таблицы лежат в базе и какие в них поля. Фича добавляет два необязательных поля в таблицу контактов. Новых таблиц нет, заметки не меняются. Схема «после» совпадает с готовой миграцией и с описанием таблицы в коде.</p>
+
+<h3>Сейчас</h3>
+<p class="scroll-hint">Схему можно листать вбок.</p>
+<div class="schema">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Схема сейчас: contacts и notes, у контакта много заметок">
+    <defs><marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow"/></marker></defs>
+    <rect class="box" x="30" y="24" width="280" height="196" rx="12"/>
+    <path class="head" d="M42 24 H298 A12 12 0 0 1 310 36 V58 H30 V36 A12 12 0 0 1 42 24 Z"/>
+    <text class="tname" x="46" y="46">contacts</text><text class="tru" x="294" y="46" text-anchor="end">контакты</text>
+    <text class="srow" x="46" y="84">id</text>
+    <text class="srow" x="46" y="108">name <tspan class="ru">— имя</tspan></text>
+    <text class="srow" x="46" y="132">about, how_we_met</text>
+    <text class="srow" x="46" y="156">phone, email</text>
+    <text class="srow" x="46" y="180">created_at <tspan class="ru">— когда создан</tspan></text>
+
+    <rect class="box" x="400" y="24" width="270" height="148" rx="12"/>
+    <path class="head" d="M412 24 H658 A12 12 0 0 1 670 36 V58 H400 V36 A12 12 0 0 1 412 24 Z"/>
+    <text class="tname" x="416" y="46">notes</text><text class="tru" x="654" y="46" text-anchor="end">заметки</text>
+    <text class="srow" x="416" y="84">id</text>
+    <text class="srow" x="416" y="108">contact_id <tspan class="ru">— чья заметка</tspan></text>
+    <text class="srow" x="416" y="132">body <tspan class="ru">— текст</tspan></text>
+    <text class="srow" x="416" y="156">created_at <tspan class="ru">— когда написана</tspan></text>
+    <path class="link" d="M310 104 H396" marker-end="url(#m1)"/>
+    <text class="snote" x="355" y="96" text-anchor="middle">много</text>
+  </svg>
+</div>
+
+<h3>После</h3>
+<div class="legend"><span><i class="sw new"></i>новое</span><span><i class="sw"></i>как было</span></div>
+<p class="scroll-hint">Схему можно листать вбок.</p>
+<div class="schema">
+  <svg viewBox="0 0 700 300" role="img" aria-label="Схема после: в contacts добавлены cadence и contact_on, notes без изменений">
+    <defs><marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" class="arrow"/></marker></defs>
+    <rect class="box" x="30" y="24" width="300" height="250" rx="12"/>
+    <path class="head" d="M42 24 H318 A12 12 0 0 1 330 36 V58 H30 V36 A12 12 0 0 1 42 24 Z"/>
+    <text class="tname" x="46" y="46">contacts</text><text class="tru" x="314" y="46" text-anchor="end">контакты</text>
+    <text class="srow" x="46" y="84">id</text>
+    <text class="srow" x="46" y="108">name, about, how_we_met</text>
+    <text class="srow" x="46" y="132">phone, email</text>
+    <text class="srow" x="46" y="156">created_at</text>
+    <rect class="rowbg" x="38" y="166" width="284" height="26" rx="6"/>
+    <text class="srow hl" x="46" y="184">cadence <tspan class="ru">— частота или пусто</tspan></text>
+    <rect class="rowbg" x="38" y="196" width="284" height="26" rx="6"/>
+    <text class="srow hl" x="46" y="214">contact_on <tspan class="ru">— дата, только при «date»</tspan></text>
+    <rect class="rowbg" x="38" y="226" width="284" height="38" rx="6"/>
+    <text class="srow hl" x="46" y="243">правило: <tspan class="ru">дата есть ⇔ частота</tspan></text>
+    <text class="srow hl" x="46" y="258"><tspan class="ru">«конкретная дата»</tspan></text>
+
+    <rect class="box" x="410" y="24" width="260" height="148" rx="12"/>
+    <path class="head" d="M422 24 H658 A12 12 0 0 1 670 36 V58 H410 V36 A12 12 0 0 1 422 24 Z"/>
+    <text class="tname" x="426" y="46">notes</text><text class="tru" x="654" y="46" text-anchor="end">как было</text>
+    <text class="srow" x="426" y="84">id</text>
+    <text class="srow" x="426" y="108">contact_id</text>
+    <text class="srow" x="426" y="132">body</text>
+    <text class="srow" x="426" y="156">created_at</text>
+    <path class="link" d="M330 104 H406" marker-end="url(#m2)"/>
+    <text class="snote" x="368" y="96" text-anchor="middle">много</text>
+    <text class="snote" x="540" y="205" text-anchor="middle">самая свежая created_at</text>
+    <text class="snote" x="540" y="223" text-anchor="middle">= последнее общение</text>
+  </svg>
+</div>
+<ul class="points">
+  <li><b>cadence</b> — частота. База принимает только список значений: <code>week</code>, <code>month</code>, <code>quarter</code>, <code>half_year</code>, <code>year</code>, <code>date</code>. Пусто — «Не задано».</li>
+  <li><b>contact_on</b> — дата для варианта «Конкретная дата». В остальных случаях пусто.</li>
+  <li><b>Правило в базе:</b> дата заполнена тогда и только тогда, когда частота — «конкретная дата». Период и дата не смешаются даже при ошибке в коде.</li>
+  <li><b>Последнее общение не хранится.</b> Его каждый раз вычисляют из заметок: так нечему расходиться.</li>
+</ul>
+
+<h3>Как приложение находит последнее общение</h3>
+<div class="lookup">
+  <div class="who-card">
+    <b>Анна: заметки есть</b>
+    <div class="ask">Заметки 3 сентября и 10 октября → берём самую свежую</div>
+    <span class="result">Последнее общение — 10 октября</span>
+  </div>
+  <div class="who-card">
+    <b>Глеб: заметок нет</b>
+    <div class="ask">Заметок нет → берём, когда создан контакт: 1 августа</div>
+    <span class="result">Последнее общение — 1 августа</span>
+  </div>
+</div>
+
+<h3>Миграция</h3>
+<p class="muted">Миграция — скрипт, который меняет устройство базы. Она одна: файл <code>drizzle/0001_unique_rachel_grey.sql</code>, пока не закоммичен. Шаги внутри неё:</p>
+<ol class="steps">
+  <li><div><h3>Список значений частоты <span class="tag-ok">данные не трогает</span></h3><p>Заводит в базе тип <code>contact_cadence</code> с шестью вариантами.</p></div></li>
+  <li><div><h3>Два поля у контактов <span class="tag-ok">данные не трогает</span></h3><p><code>cadence</code> и <code>contact_on</code>, оба могут быть пустыми. У всех существующих контактов они пустые — то есть «Не задано».</p></div></li>
+  <li><div><h3>Правило «дата только при конкретной дате» <span class="tag-ok">данные не трогает</span></h3><p>У старых строк оба поля пустые, поэтому правило выполняется сразу.</p></div></li>
+</ol>
+<ul class="points">
+  <li><b>Что станет с твоими контактами:</b> у всех частота «Не задано», имена, телефоны и заметки на месте. Блок покажет подсказку, пока у кого-нибудь не появится частота.</li>
+  <li><b>Выкатка</b> — как обычно: сначала миграция отдельным разовым шагом, потом новая версия, потом проверка <code>/health</code>.</li>
+</ul>
+<div class="callout">
+  <b>Откат</b>
+  <p class="muted">Можно вернуть прошлую версию приложения без отката базы: она просто не читает новые поля.</p>
+</div>
+
+<!-- 5 -->
+<h2><span class="num">5</span>Как проверить руками</h2>
+<div class="prep">
+  <b>Подготовка.</b> Запусти приложение локально (<code>pnpm dev</code>, см. README) и загрузи демо-данные <code>pnpm db:seed</code>. Сид работает только на пустой базе: если контакты уже есть, он пропустит запуск. По коду сида частота задана примерно у 10% из 1000 контактов, и из них около 60% просрочены или «скоро» — то есть в блоке будет порядка 60 человек (приблизительно, точное число зависит от даты). Даты «20 дней назад» руками не создать: такие сценарии проверяет автотест или они видны на демо-данных.
+  Метка у сценария — какой автотест его покроет по плану. Галочки только для удобства, не сохраняются.
+</div>
+
+<div class="check-group">
+  <h3>Частота в контакте</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Контакт без частоты<span class="auto">тест на базе</span></div><div class="st">Создать контакт, поле частоты не трогать <span class="arrow-t">→</span> в карточке «Не задано», в блоке его нет.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Существующие контакты после выкатки</div><div class="st">После выкатки открыть любой старый контакт <span class="arrow-t">→</span> частота «Не задано», данные и заметки на месте.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Частота в форме создания<span class="auto">e2e</span></div><div class="st">«Добавить контакт» → имя + «Раз в месяц» → «Сохранить» <span class="arrow-t">→</span> в карточке «Раз в месяц».</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Смена частоты в карточке<span class="auto">e2e, тест на базе</span></div><div class="st">В карточке «Связь» контакта с «Раз в месяц» выбрать «Раз в неделю» → «Сохранить» <span class="arrow-t">→</span> «Раз в неделю» и новый срок, на неделю от последней заметки.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Конкретная дата</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Дата не указана<span class="auto">тест проверки формы</span></div><div class="st">Выбрать «Конкретная дата», дату не ставить → «Сохранить» <span class="arrow-t">→</span> ошибка «Укажи дату», контакт не сохранился.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Дата в прошлом<span class="auto">тест проверки формы</span></div><div class="st">Поставить вчерашнюю дату → «Сохранить» <span class="arrow-t">→</span> ошибка «Дата уже прошла».</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Правка контакта с прошедшей датой<span class="auto">тест на базе</span></div><div class="st">Контакт с прошедшей датой (на демо-данных — просроченный с «конкретная дата») → «Редактировать» → поменять только телефон → «Сохранить» <span class="arrow-t">→</span> сохранилось, дата и «просрочено» не изменились.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Повторное сохранение частоты в карточке<span class="auto">тест проверки формы</span></div><div class="st">У того же контакта в карточке «Связь» нажать «Сохранить», ничего не меняя <span class="arrow-t">→</span> ошибки нет, дата та же.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Замена прошедшей даты на другую прошедшую<span class="auto">тест проверки формы</span></div><div class="st">У того же контакта поменять дату на другую прошедшую → «Сохранить» <span class="arrow-t">→</span> «Дата уже прошла», не сохранилось.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Смена даты на период<span class="auto">тест на базе</span></div><div class="st">У контакта с датой выбрать «Раз в месяц» → сохранить → открыть «Редактировать» <span class="arrow-t">→</span> выбран «Раз в месяц», даты нет.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Общение по разовой дате<span class="auto">тест на базе</span></div><div class="st">Контакт с датой через 3 дня → написать заметку <span class="arrow-t">→</span> частота «Не задано», в блоке его нет.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Заметка задолго до даты<span class="auto">тест на базе</span></div><div class="st">Контакт с датой через месяц → написать заметку <span class="arrow-t">→</span> дата на месте.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Последнее общение и срок</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Новая заметка<span class="auto">тест на базе</span></div><div class="st">Контакт «Раз в месяц» из блока → написать заметку <span class="arrow-t">→</span> в карточке «Следующий раз — до» (сегодня + месяц), в блоке его нет.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Правка старой заметки<span class="auto">тест на базе</span></div><div class="st">Поправить текст старой заметки <span class="arrow-t">→</span> срок в карточке не изменился.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Контакт без заметок<span class="auto">тест на базе</span></div><div class="st">Создать контакт с «Раз в месяц» без заметок <span class="arrow-t">→</span> срок — сегодня + месяц (от даты создания).</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Календарный месяц и конец месяца<span class="auto">тест расчёта</span></div><div class="st">15 октября + месяц → 15 ноября; 31 января + месяц → 28 февраля, в високосный год 29-го. Руками не проверить — только автотестом.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Частота сохраняется после общения<span class="auto">тест на базе</span></div><div class="st">Контакту «Раз в месяц» написать заметку <span class="arrow-t">→</span> частота по-прежнему «Раз в месяц».</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Статусы</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">День срока, вчера, окно недели, окно месяца<span class="auto">тест расчёта</span></div><div class="st">Срок сегодня → «скоро»; срок вчера → просрочено на 1 день; «Раз в неделю» и 3 дня до срока → в порядке; «Раз в месяц» и 7 дней → скоро. На демо-данных: среди «скоро» у недельных — не больше 2 дней до срока.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Блок «Пора связаться»: порядок и строки</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Порядок просроченных<span class="auto">тест на базе</span></div><div class="st">Сравнить строки: у кого «просрочено на» больше, тот выше.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Скоро ниже просроченных<span class="auto">тест на базе</span></div><div class="st">Все «до …» и «срок — сегодня» стоят под всеми «просрочено на …».</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Просроченный в блоке</div><div class="st">Строка просроченного <span class="arrow-t">→</span> «просрочено на N дней» красным и частота, например «раз в неделю». Склонение верное.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Скоро в блоке</div><div class="st">Строка «скоро» <span class="arrow-t">→</span> «До 1 ноября» (или «Срок — сегодня») и частота. Тексты проверяет тест расчёта.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Поиск<span class="auto">e2e</span></div><div class="st">Найти контакт по имени <span class="arrow-t">→</span> блока нет. Перейти на страницу 2 общего списка <span class="arrow-t">→</span> блока нет.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Переход в карточку</div><div class="st">Нажать на имя в строке блока <span class="arrow-t">→</span> открылась карточка этого человека.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Блок: раскрыть, листать, свернуть</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Больше пяти<span class="auto">тест среза; кнопки — руками</span></div><div class="st">Видно 5 строк и «Показать все (N)» → нажать <span class="arrow-t">→</span> страница не перезагрузилась, видны строки и «Свернуть». Если в блоке не больше 10 — пагинации нет.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Свернуть</div><div class="st">В раскрытом блоке нажать «Свернуть» <span class="arrow-t">→</span> без перезагрузки снова 5 строк и «Показать все (N)».</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Пять и меньше</div><div class="st">Когда в блоке 3 человека <span class="arrow-t">→</span> видны все 3, кнопки «Показать все» нет.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Много контактов в блоке</div><div class="st">На демо-данных (больше 10 в блоке) «Показать все» <span class="arrow-t">→</span> 10 строк, «Страница 1 из Y», стрелка «Назад» неактивна.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Листание блока<span class="auto">тест среза; без перезагрузки — руками</span></div><div class="st">Нажать «Вперёд» <span class="arrow-t">→</span> без перезагрузки строки 11–20 и «Страница 2 из Y»; общий список контактов ниже не изменился, адрес в браузере тоже.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Последняя страница</div><div class="st">Долистать до последней страницы блока <span class="arrow-t">→</span> там остаток строк, стрелка «Вперёд» неактивна.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Повторное раскрытие</div><div class="st">На последней странице «Свернуть» → снова «Показать все» <span class="arrow-t">→</span> блок на странице 1.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Браузер без JavaScript<span class="auto">e2e проверяет разметку</span></div><div class="st">Отключить JavaScript в настройках браузера → обновить главную <span class="arrow-t">→</span> в блоке все строки сразу, кнопок «Показать все», «Свернуть» и пагинации блока нет.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Блок сократился после «Связались»</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Осталось пять<span class="auto">тест среза</span><span class="warn">создаёт заметку</span></div><div class="st">Нажимать «Связались», пока в блоке не останется 6 → раскрыть блок → «Связались» у одного <span class="arrow-t">→</span> без перезагрузки видны 5, кнопок «Свернуть» и «Показать все» нет.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Пять в свёрнутом блоке<span class="warn">создаёт заметку</span></div><div class="st">В свёрнутом блоке из 6 нажать «Связались» у одного <span class="arrow-t">→</span> видны 5, «Показать все» нет.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Последний контакт<span class="warn">создаёт заметку</span></div><div class="st">Когда в блоке один человек, нажать «Связались» <span class="arrow-t">→</span> без перезагрузки «Со всеми на связи» с иконкой.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Пустой блок</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Все на связи</div><div class="st">Нажать «Связались» у всех в блоке <span class="arrow-t">→</span> «Со всеми на связи» и иконка.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Частота нигде не задана</div><div class="st">На базе, где ни у кого нет частоты (например, сразу после выкатки) <span class="arrow-t">→</span> подсказка про частоту.</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Кнопка «Связались»</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Связались из блока<span class="auto">e2e, без JavaScript</span></div><div class="st">Нажать «Связались» у просроченного «Раз в месяц» <span class="arrow-t">→</span> контакт ушёл из блока; в карточке заметка «Связались» и срок через месяц.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Связались в раскрытом блоке<span class="warn">создаёт заметку</span></div><div class="st">Раскрыть блок, перейти на страницу 2 → «Связались» у одного <span class="arrow-t">→</span> без перезагрузки контакт ушёл, блок всё ещё раскрыт на странице 2; после «Свернуть» число в «Показать все» на 1 меньше.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Связались в карточке</div><div class="st">В карточке нажать «Связались» <span class="arrow-t">→</span> сверху ленты заметка «Связались».</div></div></label>
+</div>
+
+<div class="check-group">
+  <h3>Карточка и точки в списке</h3>
+  <label class="check"><input type="checkbox"><div><div class="sc">Срок в будущем</div><div class="st">Контакт «Раз в месяц» в порядке <span class="arrow-t">→</span> «Раз в месяц» и «Следующий раз — до …».</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Просрочено в карточке</div><div class="st">Открыть просроченный контакт из блока <span class="arrow-t">→</span> «Пора связаться» и «просрочено на N дней», N совпадает со строкой блока.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Просроченный в списке<span class="auto">e2e: число точек</span></div><div class="st">В общем списке у просроченного терракотовая пульсирующая точка, у «скоро» — бирюзовая. Включить в системе «уменьшить движение» <span class="arrow-t">→</span> пульсация остановилась.</div></div></label>
+  <label class="check"><input type="checkbox"><div><div class="sc">Контакт без частоты</div><div class="st">У контакта «Не задано» <span class="arrow-t">→</span> точки нет, имя стоит ровно с остальными.</div></div></label>
+</div>
+
+<!-- 6 -->
+<h2><span class="num">6</span>Что агент решил сам</h2>
+<div class="two">
+  <div class="card">
+    <h3>Продуктовые — стоит просмотреть</h3>
+    <p class="small muted">Вид экранов утверждён тобой (решения 14–20 в <code>design/README.md</code>). Ниже — то, что записано в design.md и в документах не отмечено как согласованное.</p>
+    <ul class="points small">
+      <li>Часовой пояс — московский, зашит в код. Сменить — правка одной константы.</li>
+      <li>Без JavaScript поле даты в форме видно всегда; при выборе периода дата молча игнорируется.</li>
+      <li>«Связались» без JavaScript возвращает на главную или в карточку — откуда нажали.</li>
+      <li>Случайное «Связались» не отменить и не удалить, только отредактировать текст заметки. Удаление заметок — кандидат в бэклог.</li>
+      <li>Заметка за 8 дней до конкретной даты дату не снимет — прямое следствие окна в 7 дней.</li>
+      <li>Строка срока начинается с большой буквы: «До 1 ноября», «Срок — сегодня» (в спеке — с маленькой). Если дата в другом году, пишется год.</li>
+      <li>У контакта без частоты в карточке есть текст «Срок не задан: выбери, как часто связываться» — в спеке его нет.</li>
+      <li>В форме частоты в карточке: «Сохраняю…» на кнопке и «Сохранено» после успеха.</li>
+      <li>«Связались» без JavaScript из блока обновляет главную и остаётся на ней (без редиректа); из карточки — возвращает в карточку.</li>
+      <li>Если контакт уже удалён, «Связались» показывает «Контакт не найден» и ничего не создаёт.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>Технические — на экраны не влияют</h3>
+    <ul class="points small">
+      <li>Два поля в контактах и правило в базе, что период и дата не смешиваются.</li>
+      <li>Последнее общение не хранится отдельно, а вычисляется из заметок — нет второго источника, который может разойтись.</li>
+      <li>Все правила сроков — в одном файле кода, покрытом автотестами без базы.</li>
+      <li>Блок собирается одним запросом ко всем контактам с частотой и целиком приходит в странице; сворачивает и листает его уже браузер.</li>
+      <li>Чтобы без JavaScript были видны все строки, а с ним не мелькали 23 строки до сворачивания к 5, в начале страницы стоит крошечный скрипт-метка.</li>
+      <li>Сохранённую прошедшую дату форма узнаёт, сначала прочитав контакт из базы.</li>
+      <li>Снятие конкретной даты и запись заметки происходят одним действием: одно без другого не случится.</li>
+      <li>Цвет точки «просрочено» — новый токен приложения <code>--overdue</code>, в дизайн-системе его нет.</li>
+      <li>Что показано в блоке (5 строк, страница из 10), считает отдельная маленькая функция, чтобы её можно было проверить автотестом без браузера.</li>
+      <li>Точки в списке считаются теми же функциями, что и блок: правила не дублируются.</li>
+      <li>В сид-данные добавлены частоты: у ~10% контактов, чтобы локально были все три статуса.</li>
+      <li>Без новой библиотеки дат и без новых зависимостей.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 7 -->
+<h2><span class="num">7</span>Что осталось неясным</h2>
+<div class="card">
+  <p class="small muted">Вопросы из прошлых обзоров закрыты спекой: прошедшая дата при правке, «Свернуть», текст строки, много точек на странице, ссылка на решение 8, блок из 5 и меньше после «Связались», последний контакт в блоке.</p>
+  <div class="q"><b>1. Название сценария не совпадает с примером.</b>
+    <p class="small">Сценарий называется «Осталось меньше пяти в свёрнутом блоке», а в нём остаётся ровно 5. Смысл понятен — правило «5 и меньше», — но название стоит поправить.</p></div>
+  <div class="q"><b>2. Изменения не закоммичены.</b>
+    <p class="small">Код, миграция и тесты лежат в рабочей папке ветки <code>keep-in-touch</code>, коммита и PR нет. Когда коммитить и открывать PR?</p></div>
+  <div class="q"><b>3. Список «сценарий → чем покрыт» (задача 6.2) я не нашёл.</b>
+    <p class="small">Задача отмечена выполненной, но в прочитанных файлах изменения самого списка нет. Либо он лежит в другом месте, либо его стоит приложить. Здесь покрытие показано метками в чек-листе — по тестам, которые я прочитал.</p></div>
+  <div class="q"><b>4. Руками в браузере я ничего не проверял.</b>
+    <p class="small">Пульсация точек, фокус с клавиатуры, вид на ширине 390 и «без перезагрузки» в этот раз не смотрелись — только код и тесты. Эти пункты в чек-листе остаются на тебя.</p></div>
+  <div class="q"><b>5. Проверка «Связались» в браузере создаёт настоящую заметку.</b>
+    <p class="small">Не вопрос, а напоминание: по задаче 5.5 такие проверки — только на локальной демо-базе и с твоего согласия. Отменить заметку нельзя, поэтому на сервере эти сценарии лучше не проверять.</p></div>
+</div>
+
+<footer>Собрано по <code>openspec/changes/keep-in-touch/</code> (proposal, spec, design, tasks), утверждённым эскизам и решениям в <code>design/</code> и текущему коду в ветке <code>keep-in-touch</code>. Страница только показывает, ничего не меняет.</footer>
+</div>
+</body>
+</html>

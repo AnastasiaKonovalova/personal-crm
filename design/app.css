@@ -67,7 +67,7 @@
 
 /* pagination: carousel controls pattern */
 .ak-pager { display: flex; align-items: center; justify-content: center; gap: var(--space-controls); }
-.ak-pager .ak-carousel-btn[aria-disabled="true"] { opacity: .4; cursor: default; }
+.ak-pager .ak-carousel-btn[aria-disabled="true"], .ak-pager .ak-carousel-btn:disabled { opacity: .4; cursor: default; }
 .ak-pager-counter { font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--muted); letter-spacing: .04em; }
 .ak-pager-counter b { color: var(--teal-deep); font-weight: 700; }
 
@@ -123,3 +123,75 @@
 /* back link */
 .ak-back { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 14px; color: var(--muted); transition: color .2s; }
 .ak-back:hover { color: var(--teal-deep); }
+
+/* keep in touch ------------------------------------------------------------ */
+/* app token: overdue dot, warm red between accent and danger; 3.4:1 on surface (non-text) */
+:root { --overdue: #d9622b; }
+
+/* due dots: overdue = --overdue, soon = teal; both pulse (StatusPill dot pattern), reduced motion stops them via styles.css */
+.ak-due { flex: 0 0 8px; width: 8px; height: 8px; border-radius: var(--radius-round); }
+.ak-due-soon { background: var(--teal); animation: ak-pulse 2.6s infinite; }
+.ak-due-overdue { background: var(--overdue); animation: ak-pulse-overdue 2s infinite; }
+@keyframes ak-pulse-overdue { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--overdue) 60%, transparent) } 70% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--overdue) 0%, transparent) } 100% { box-shadow: 0 0 0 0 transparent } }
+.ak-due-text { color: var(--danger); font-weight: 600; white-space: nowrap; }
+
+/* list with due dots: every name gets an 8px slot so names stay aligned */
+.ak-list-due .ak-row-name { display: flex; align-items: center; gap: 10px; }
+.ak-list-due .ak-list-head > span:first-child { padding-left: 18px; }
+@media (max-width: 680px) { .ak-list-due .ak-row-meta { padding-left: 18px; } }
+
+/* "Пора связаться" block above the list */
+.ak-remind { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); overflow: hidden; }
+.ak-remind-head { display: flex; align-items: baseline; gap: var(--space-cta); padding: clamp(18px, 2.4vw, 24px) clamp(18px, 2.4vw, 28px) 12px; }
+.ak-remind-title { font-family: var(--font-display); font-weight: 600; font-size: clamp(22px, 2.6vw, 28px); letter-spacing: -.02em; line-height: 1.1; margin: 0; }
+.ak-remind-count { font-family: var(--font-display); font-size: 14px; font-weight: 600; color: var(--muted); letter-spacing: .04em; }
+.ak-remind-row { position: relative; display: grid; grid-template-columns: 8px 1fr auto; gap: 2px var(--space-grid); align-items: center; padding: 12px clamp(18px, 2.4vw, 28px); border-top: 1px solid var(--line); transition: background .2s; }
+.ak-remind-row:hover { background: var(--teal-soft); }
+.ak-remind-row > .ak-due { grid-column: 1; grid-row: 1; }
+.ak-remind-name { grid-column: 2; grid-row: 1; font-weight: 700; color: var(--ink); transition: color .2s; }
+.ak-remind-name::after { content: ""; position: absolute; inset: 0; } /* whole row opens the card */
+.ak-remind-row:hover .ak-remind-name { color: var(--teal-deep); }
+.ak-remind-meta { grid-column: 2; grid-row: 2; font-size: 14.5px; color: var(--muted); }
+.ak-remind-cadence { white-space: nowrap; }
+.ak-remind-cadence::before { content: "· "; }
+@media (max-width: 560px) { .ak-remind-cadence { display: block; } .ak-remind-cadence::before { content: none; } } /* overdue rows: cadence on its own line, no leading dot */
+.ak-remind-action { grid-column: 3; grid-row: 1 / span 2; position: relative; z-index: 1; margin: 0; }
+.ak-remind-foot { border-top: 1px solid var(--line); padding: 4px clamp(18px, 2.4vw, 28px); }
+.ak-remind-foot .ak-btn-text { color: var(--teal-deep); }
+.ak-remind-foot .ak-btn-text:hover { color: var(--ink); }
+/* expanded block: its own pager on the left, "Свернуть" on the right; stacked at 390 */
+.ak-remind-foot-paged { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-controls); padding-block: 10px; }
+@media (max-width: 560px) { .ak-remind-foot-paged { flex-direction: column; } }
+/* empty states of the block */
+.ak-remind-empty { display: flex; align-items: center; gap: var(--space-grid); padding: 6px clamp(18px, 2.4vw, 28px) clamp(18px, 2.4vw, 24px); }
+.ak-remind-empty p { margin: 0; }
+.ak-remind-empty-title { font-family: var(--font-display); font-weight: 600; font-size: 19px; letter-spacing: -.01em; color: var(--ink); }
+.ak-remind-hint { color: var(--muted); max-width: 52ch; }
+.ak-remind-hint b { color: var(--ink); font-weight: 700; }
+.ak-remind-empty-solo { padding: clamp(18px, 2.4vw, 24px) clamp(18px, 2.4vw, 28px); }
+.ak-glyph { flex: 0 0 auto; display: grid; place-items: center; width: var(--hit-icon-button); height: var(--hit-icon-button); border-radius: var(--radius-round); background: var(--teal-soft); color: var(--teal-deep); }
+.ak-glyph .ak-ico { width: 24px; height: 24px; }
+
+/* "Связались": ghost with the phone + check icon; in block rows on phones only the round icon stays (44px hit) */
+.ak-contacted .ak-ico { width: 22px; height: 22px; color: var(--teal-deep); }
+@media (max-width: 560px) {
+  .ak-remind .ak-contacted { width: var(--hit-carousel); height: var(--hit-carousel); padding: 0; justify-content: center; gap: 0; }
+  .ak-remind .ak-contacted-label { display: none; }
+}
+
+/* contact card: rhythm section (status + "Связались" + cadence form) */
+.ak-rhythm { display: grid; gap: var(--space-controls); }
+.ak-rhythm-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-grid); }
+.ak-rhythm-status { display: grid; gap: 2px; }
+.ak-rhythm-line { display: flex; align-items: center; gap: 10px; margin: 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(19px, 2.2vw, 23px); letter-spacing: -.01em; line-height: 1.2; color: var(--ink); }
+.ak-rhythm-sub { margin: 0; font-size: 14.5px; }
+.ak-rhythm .ak-cadence { padding-top: var(--space-controls); border-top: 1px solid var(--line); }
+.ak-cadence-label { font-family: var(--font-display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); } /* card label style, decision 9 */
+
+/* cadence field: native select as a pill + date input next to it */
+.ak-cadence { display: grid; gap: 8px; }
+.ak-cadence-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-cta); }
+.ak-select-box { position: relative; flex: 1 1 220px; min-width: 0; max-width: 320px; }
+.ak-select { appearance: none; -webkit-appearance: none; padding-right: 48px; cursor: pointer; }
+.ak-select-box .ak-ico { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.ak-input[type="date"] { flex: 0 1 220px; min-width: 0; }

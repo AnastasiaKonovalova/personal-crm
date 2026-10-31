@@ -7,6 +7,7 @@ import {
   updateContactAction,
   type ContactFormState,
 } from "@/app/contacts/actions";
+import { CadenceFields } from "@/components/cadence-fields";
 import { FieldError } from "@/components/field-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,6 +62,14 @@ export function ContactForm({ contact }: { contact?: EditedContact }) {
           </div>
         );
       })}
+      <CadenceFields
+        // remounted when the defaults change: React reads a select's defaultValue only on mount,
+        // and the form reset after a failed submit would otherwise bring back the first value
+        key={`${state.values?.cadence ?? contact?.cadence ?? ""}|${state.values?.contactOn ?? contact?.contactOn ?? ""}`}
+        defaultCadence={state.values?.cadence ?? contact?.cadence ?? ""}
+        defaultContactOn={state.values?.contactOn ?? contact?.contactOn ?? ""}
+        errors={state.errors}
+      />
       <div className="flex flex-wrap gap-cta">
         <Button type="submit" disabled={pending}>
           {pending ? "Сохраняю…" : "Сохранить"}
