@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   cadenceSchemaFor,
@@ -170,9 +171,9 @@ export async function setCadenceAction(
 }
 
 // "Связались" is a regular new note, so it follows the same rules (term restart, date clearing).
-// Forms that cannot update in place (the contact card, no JavaScript) send `returnTo` and get a
-// redirect, which also keeps a page refresh from adding the note twice; the block on the home page
-// leaves it out and stays where it is.
+// A plain form post (no JavaScript) gets a redirect to `returnTo`, so refreshing the page cannot
+// send the form again and add the note twice. A call from JavaScript carries the `next-action`
+// header and updates the page in place: no redirect, so the block keeps its expansion and page.
 export async function markContactedAction(
   _previous: MarkContactedState,
   formData: FormData,
@@ -187,8 +188,11 @@ export async function markContactedAction(
 
   revalidatePath("/");
   revalidatePath(`/contacts/${contactId}`);
-  if (returnTo === "/") redirect("/");
-  if (returnTo === "card") redirect(`/contacts/${contactId}`);
+  const calledFromJs = (await headers()).has("next-action");
+  if (!calledFromJs) {
+    if (returnTo === "/") redirect("/");
+    if (returnTo === "card") redirect(`/contacts/${contactId}`);
+  }
   return { savedAt: Date.now() };
 }
 

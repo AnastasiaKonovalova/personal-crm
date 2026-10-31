@@ -73,7 +73,8 @@ describe("keep in touch over HTTP", () => {
   it("«Связались» in the block without JavaScript: the contact leaves the block, the note appears", async () => {
     expect(contactId).toBeDefined();
     const response = await submitForm("/", {}, `name="contactId" value="${contactId}"`);
-    expect(response.status, "the block form stays on the home page").toBe(200);
+    // A redirect (not the page in the POST answer), so refreshing the page cannot send the form again
+    expect(response.headers.get("location") ?? "", `got ${response.status}`).toMatch(/\/$/);
 
     expect(await getPage("/")).not.toContain(`aria-label="Связались: ${contactName}"`);
     expect(await noteBodies(contactId!)).toEqual(["Связались"]);
@@ -159,5 +160,20 @@ describe("keep in touch over HTTP", () => {
       expect(await getPage("/?page=2")).not.toContain('id="reminders-title"');
       expect(await getPage("/")).toContain('id="reminders-title"');
     });
+  });
+
+  // Last: it adds one more contact with the marker, which the search count above does not expect
+  it("a contact whose term is tomorrow is shown in the block as «До <date>», not as overdue", async () => {
+    const { rows } = await withPool((pool) =>
+      pool.query<{ id: string }>(
+        "insert into contacts (name, cadence, created_at) values ($1, 'week', now() - interval '6 days') returning id",
+        [`${prefix} скоро`],
+      ),
+    );
+
+    const row = blockRow(await getPage("/"), rows[0].id);
+    expect(row).toMatch(/До \d+ \p{L}+/u);
+    expect(row).toContain("раз в неделю");
+    expect(row).not.toContain("просрочено");
   });
 });

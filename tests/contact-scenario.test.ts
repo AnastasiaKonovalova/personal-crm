@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { closeDb } from "@/db";
-import { toDateString } from "@/lib/keep-in-touch";
+import { addPeriod, toDateString } from "@/lib/keep-in-touch";
 import { cadenceSchemaFor, contactSchema, contactSchemaFor, type ContactInput } from "@/lib/validation";
 import {
   PAGE_SIZE,
@@ -269,7 +269,9 @@ describe("keep in touch", () => {
     await addNote(id, "Созвонились");
 
     expect((await getContact(id))?.cadence).toBe("month");
-    expect((await getContactWithNotes(id))?.keepInTouch.status?.kind).toBe("ok");
+    const card = await getContactWithNotes(id);
+    expect(card?.keepInTouch.status?.kind).toBe("ok");
+    expect(card?.keepInTouch.dueOn).toBe(addPeriod(toDateString(new Date()), "month"));
   });
 
   it("does not move the term when an old note is edited", async () => {
@@ -357,6 +359,22 @@ describe("keep in touch", () => {
     const card = await getContactWithNotes(id);
     expect(card?.contact.cadence).toBe("week");
     expect(card?.keepInTouch.status).toEqual({ kind: "overdue", days: 13 });
+  });
+
+  // What setCadenceAction does when the card's form is sent again without touching the date
+  it("keeps a saved past date when the frequency form of the card is sent again unchanged", async () => {
+    const date = dayFromToday(-5);
+    const id = await insertContact({ name: "Повторное сохранение", cadence: "date", contactOn: date, createdDaysAgo: 30 });
+    const saved = await getContact(id);
+
+    const parsed = cadenceSchemaFor(saved!.contactOn).safeParse({ cadence: "date", contactOn: saved!.contactOn });
+    expect(parsed.success).toBe(true);
+    expect(await setCadence(id, parsed.data!)).toBe(id);
+
+    const contact = await getContact(id);
+    expect(contact?.cadence).toBe("date");
+    expect(contact?.contactOn).toBe(date);
+    expect((await getContactWithNotes(id))?.keepInTouch.status).toEqual({ kind: "overdue", days: 5 });
   });
 
   it("switches from a specific date to a period and drops the date", async () => {

@@ -7,8 +7,9 @@ import { FieldError } from "@/components/field-error";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// "Связались": adds the note «Связались». `returnTo` makes the action redirect (the contact card);
-// without it the form stays where it is (the block on the home page updates in place).
+// "Связались": adds the note «Связались». `returnTo` makes the action redirect back to the page
+// ("/" or the contact card), but only when the form is posted without JavaScript: that keeps a page
+// refresh from sending it twice. With JavaScript the page updates in place and the action does not redirect.
 // `compact` is for rows of the block: on phones only the round icon stays, 44px.
 export function MarkContactedButton({
   contactId,

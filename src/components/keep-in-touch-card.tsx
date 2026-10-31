@@ -40,7 +40,7 @@ export function KeepInTouchCard({
               </p>
             )
           ) : (
-            <p className="text-muted-foreground">Срок не задан: выбери, как часто связываться</p>
+            <p className="text-muted-foreground">Выбери, как часто хочешь общаться</p>
           )}
         </div>
         <MarkContactedButton contactId={contactId} returnTo="card" />

@@ -96,7 +96,7 @@ export function RemindersBlock({ rows, hasCadence }: { rows: ReminderRow[]; hasC
             </p>
             {/* z-1, not higher: the sticky header is z-10 and the button must scroll under it */}
             <div className="relative z-1 col-start-3 row-span-2 row-start-1">
-              <MarkContactedButton contactId={row.id} name={row.name} compact />
+              <MarkContactedButton contactId={row.id} name={row.name} returnTo="/" compact />
             </div>
           </li>
         ))}
