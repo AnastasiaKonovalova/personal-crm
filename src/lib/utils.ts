@@ -19,6 +19,7 @@ const twMerge = extendTailwindMerge({
         "body",
         "meta",
         "field",
+        "status",
         "button",
         "nav",
         "caption",

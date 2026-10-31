@@ -2,10 +2,13 @@ import Form from "next/form";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 import { DeletedToast } from "@/components/deleted-toast";
+import { DueDot, DueDotLabel } from "@/components/due-dot";
 import { PageShell } from "@/components/page-shell";
+import { RemindersBlock } from "@/components/reminders-block";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { listContacts } from "@/server/contacts";
+import { CADENCE_LABELS, dueText, toDateString } from "@/lib/keep-in-touch";
+import { listContacts, listReminders } from "@/server/contacts";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -45,6 +48,18 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
 
   const { items, total, page, pageCount } = await listContacts({ query, page: requestedPage });
 
+  // The "Пора связаться" block is for the first page of the plain list: not in search, not on page 2+,
+  // and not when there are no contacts at all
+  const reminders = !query && page === 1 && total > 0 ? await listReminders() : null;
+  const today = toDateString(new Date());
+  const reminderRows = (reminders?.items ?? []).map((item) => ({
+    id: item.id,
+    name: item.name,
+    kind: item.status.kind === "overdue" ? ("overdue" as const) : ("soon" as const),
+    text: dueText(item.status, item.dueOn, today),
+    cadenceLabel: CADENCE_LABELS[item.cadence].toLowerCase(),
+  }));
+
   return (
     <PageShell aurora className="grid gap-heading">
       <div className="flex flex-wrap items-end justify-between gap-grid">
@@ -64,6 +79,8 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
           </Link>
         </Button>
       </div>
+
+      {reminders && <RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />}
 
       <Form action="/" className="flex flex-wrap gap-cta" role="search">
         {/* 200px basis keeps «Найти» on the same line at 390 */}
@@ -108,7 +125,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
             aria-hidden="true"
             className={`${rowGrid} border-b border-line bg-background font-display text-badge text-muted-foreground uppercase max-[680px]:hidden`}
           >
-            <span>Имя</span>
+            <span className="pl-[18px]">Имя</span>
             <span>Кто это</span>
             <span>Откуда знакомы</span>
             <span />
@@ -120,10 +137,14 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
                   href={`/contacts/${contact.id}`}
                   className={`${rowGrid} group transition-colors duration-200 hover:bg-teal-soft focus-visible:-outline-offset-2 focus-visible:bg-teal-soft max-[680px]:grid-cols-[1fr_20px] max-[680px]:gap-x-3 max-[680px]:gap-y-0.5 max-[680px]:px-5 max-[680px]:py-4`}
                 >
-                  <span className="font-bold text-ink group-hover:text-teal-deep group-focus-visible:text-teal-deep max-[680px]:col-start-1">
-                    {contact.name}
+                  <span className="flex items-center gap-2.5 font-bold text-ink group-hover:text-teal-deep group-focus-visible:text-teal-deep max-[680px]:col-start-1">
+                    <DueDot kind={contact.status?.kind} />
+                    <span>
+                      {contact.name}
+                      <DueDotLabel kind={contact.status?.kind} />
+                    </span>
                   </span>
-                  <span className="text-meta text-muted-foreground max-[680px]:col-start-1">
+                  <span className="text-meta text-muted-foreground max-[680px]:col-start-1 max-[680px]:pl-[18px]">
                     {contact.about ?? "—"}
                   </span>
                   <span className="text-meta text-muted-foreground max-[680px]:hidden">

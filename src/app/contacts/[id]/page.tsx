@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { BackLink } from "@/components/back-link";
 import { DeleteContactButton } from "@/components/delete-contact-button";
+import { KeepInTouchCard } from "@/components/keep-in-touch-card";
 import { NoteForm } from "@/components/note-form";
 import { NoteItem } from "@/components/note-item";
 import { PageShell } from "@/components/page-shell";
@@ -30,7 +31,7 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
   if (!data) {
     notFound();
   }
-  const { contact, notes } = data;
+  const { contact, notes, keepInTouch } = data;
 
   return (
     <PageShell width="narrow" className="grid gap-heading">
@@ -48,6 +49,15 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
           <DeleteContactButton contactId={contact.id} />
         </div>
       </div>
+
+      <KeepInTouchCard
+        className={cardClasses}
+        contactId={contact.id}
+        cadence={contact.cadence}
+        contactOn={contact.contactOn}
+        dueOn={keepInTouch.dueOn}
+        status={keepInTouch.status}
+      />
 
       <section className={cardClasses} aria-label="Данные контакта">
         <dl>

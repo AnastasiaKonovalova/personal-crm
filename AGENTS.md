@@ -16,7 +16,7 @@
 
 ## Стек
 
-- Next.js (App Router), TypeScript
+- Next.js (App Router), TypeScript. Документация установленной версии лежит в `node_modules/next/dist/docs/`: в API, в которых не уверен, смотри её, а не память
 - React, Tailwind CSS, shadcn/ui; цвета, шрифты и отступы - только через дизайн-токены
 - PostgreSQL, Drizzle: схема и миграции в коде
 - pnpm, `pnpm-lock.yaml` в git

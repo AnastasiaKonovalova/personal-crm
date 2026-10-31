@@ -23,7 +23,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ru" className={`${wixMadeforDisplay.variable} ${manrope.variable}`}>
+    // suppressHydrationWarning: the script below adds data-js to <html> before React sees it
+    <html lang="ru" className={`${wixMadeforDisplay.variable} ${manrope.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Marks a working JavaScript before the first paint; globals.css hides the JS-only
+            controls without it and trims the "Пора связаться" block only with it */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.setAttribute('data-js','')" }} />
+      </head>
       <body className="min-h-screen antialiased">
         <header className="sticky top-0 z-10 border-b border-line bg-header-glass backdrop-blur-[10px]">
           <div className="mx-auto flex h-header-height max-w-content items-center px-gutter-fluid">

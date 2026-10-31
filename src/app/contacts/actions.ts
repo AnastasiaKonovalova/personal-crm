@@ -2,14 +2,43 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { contactSchema, firstErrors, noteSchema, type ContactField } from "@/lib/validation";
-import { addNote, createContact, deleteContact, updateContact, updateNote } from "@/server/contacts";
+import {
+  cadenceSchemaFor,
+  contactSchema,
+  contactSchemaFor,
+  firstErrors,
+  noteSchema,
+  type ContactField,
+} from "@/lib/validation";
+import {
+  addNote,
+  createContact,
+  deleteContact,
+  getContact,
+  setCadence,
+  updateContact,
+  updateNote,
+} from "@/server/contacts";
 
 export type ContactFormState = {
   values?: Partial<Record<ContactField, string>>;
   errors?: Partial<Record<ContactField, string>>;
   formError?: string;
 };
+
+export type CadenceFormState = {
+  values?: { cadence: string; contactOn: string };
+  errors?: { cadence?: string; contactOn?: string };
+  formError?: string;
+  savedAt?: number;
+};
+
+export type MarkContactedState = {
+  error?: string;
+  savedAt?: number;
+};
+
+const CONTACTED_NOTE = "Связались";
 
 export type NoteFormState = {
   body?: string;
@@ -29,6 +58,8 @@ function readContactValues(formData: FormData): Record<ContactField, string> {
     howWeMet: readString(formData, "howWeMet"),
     phone: readString(formData, "phone"),
     email: readString(formData, "email"),
+    cadence: readString(formData, "cadence"),
+    contactOn: readString(formData, "contactOn"),
   };
 }
 
@@ -55,7 +86,13 @@ export async function updateContactAction(
 ): Promise<ContactFormState> {
   const contactId = readString(formData, "contactId");
   const values = readContactValues(formData);
-  const parsed = contactSchema.safeParse(values);
+
+  // The saved date may stay even if it has passed, so validation needs to know it
+  const saved = await getContact(contactId);
+  if (!saved) {
+    return { values, formError: "Контакт не найден" };
+  }
+  const parsed = contactSchemaFor(saved.contactOn).safeParse(values);
   if (!parsed.success) {
     return { values, errors: firstErrors(parsed.error) };
   }
@@ -96,7 +133,62 @@ export async function addNoteAction(
     return { body, error: "Контакт не найден" };
   }
 
+  // A new note moves the contact's term, so the "Пора связаться" block on the home page changes too
+  revalidatePath("/");
   revalidatePath(`/contacts/${contactId}`);
+  return { savedAt: Date.now() };
+}
+
+// Changes the frequency from the contact card
+export async function setCadenceAction(
+  _previous: CadenceFormState,
+  formData: FormData,
+): Promise<CadenceFormState> {
+  const contactId = readString(formData, "contactId");
+  const values = {
+    cadence: readString(formData, "cadence"),
+    contactOn: readString(formData, "contactOn"),
+  };
+
+  const saved = await getContact(contactId);
+  if (!saved) {
+    return { values, formError: "Контакт не найден" };
+  }
+  const parsed = cadenceSchemaFor(saved.contactOn).safeParse(values);
+  if (!parsed.success) {
+    return { values, errors: firstErrors(parsed.error) };
+  }
+
+  const id = await setCadence(contactId, parsed.data);
+  if (!id) {
+    return { values, formError: "Контакт не найден" };
+  }
+
+  revalidatePath("/");
+  revalidatePath(`/contacts/${id}`);
+  return { savedAt: Date.now() };
+}
+
+// "Связались" is a regular new note, so it follows the same rules (term restart, date clearing).
+// Forms that cannot update in place (the contact card, no JavaScript) send `returnTo` and get a
+// redirect, which also keeps a page refresh from adding the note twice; the block on the home page
+// leaves it out and stays where it is.
+export async function markContactedAction(
+  _previous: MarkContactedState,
+  formData: FormData,
+): Promise<MarkContactedState> {
+  const contactId = readString(formData, "contactId");
+  const returnTo = readString(formData, "returnTo");
+
+  const note = await addNote(contactId, CONTACTED_NOTE);
+  if (!note) {
+    return { error: "Контакт не найден" };
+  }
+
+  revalidatePath("/");
+  revalidatePath(`/contacts/${contactId}`);
+  if (returnTo === "/") redirect("/");
+  if (returnTo === "card") redirect(`/contacts/${contactId}`);
   return { savedAt: Date.now() };
 }
 

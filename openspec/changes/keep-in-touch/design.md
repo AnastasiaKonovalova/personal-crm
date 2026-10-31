@@ -24,7 +24,7 @@
 
 - `cadence` - Postgres enum `contact_cadence`: `week`, `month`, `quarter`, `half_year`, `year`, `date`; `NULL` = «Не задано»
 - `contact_on` - `date`, заполнен только при `cadence = 'date'`
-- `CHECK ((cadence = 'date') = (contact_on IS NOT NULL))` - период и дата не смешиваются на уровне базы
+- `CHECK (coalesce(cadence = 'date', false) = (contact_on IS NOT NULL))` - период и дата не смешиваются на уровне базы. `coalesce` нужен: при `cadence = NULL` простое сравнение даёт NULL, а CHECK пропускает NULL, и дата без частоты прошла бы
 
 Последнее общение не храним: это `max(notes.created_at)`, иначе `coalesce(..., contacts.created_at)`. Отдельный столбец `last_contacted_at` пришлось бы синхронизировать при каждой заметке, а индекс по заметкам уже есть.
 
