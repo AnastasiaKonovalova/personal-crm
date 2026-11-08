@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Эскиз: «Свои люди» в приложении</title>
+<!-- Temporary design proposal: rename the app to «Свои люди» (see specs/backlog.md).
+     Delete this file once the change is in the mockups and in the code. -->
+<style>
+  @font-face { font-family: "Wix Madefor Display"; src: url("../../src/app/fonts/WixMadeforDisplay.woff2") format("woff2"); font-weight: 400 800; }
+  @font-face { font-family: "Manrope"; src: url("../../src/app/fonts/Manrope.woff2") format("woff2"); font-weight: 400 800; }
+
+  /* app tokens (src/design-system/tokens.css) */
+  :root {
+    --bg: #f4f0e7; --surface: #fbf8f1; --line: #e0d9c8; --ink: #504636; --muted: #6e665a;
+    --accent: #f1b559; --teal: #27aab1; --teal-deep: #166f74;
+    --header-glass: rgba(244, 240, 231, 0.82);
+    --header-height: 70px; --gutter-fluid: clamp(20px, 5vw, 52px);
+    --text-brand: 17px; --text-caption: 13px;
+    --display: "Wix Madefor Display", "Manrope", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 32px 16px 64px; background: #e9e4d8; color: var(--ink); font-family: "Manrope", system-ui, sans-serif; line-height: 1.6; }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  h1 { font-family: var(--display); font-size: 26px; margin: 0 0 4px; }
+  h2 { font-family: var(--display); font-size: 19px; margin: 40px 0 4px; }
+  .note { color: var(--muted); font-size: 14px; margin: 0 0 14px; max-width: 70ch; }
+  .label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; }
+
+  .frame { background: var(--bg); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .frame.mobile { width: 390px; max-width: 100%; }
+  .page { padding: 28px var(--gutter-fluid) 36px; }
+  .page .title { font-family: var(--display); font-weight: 700; font-size: 34px; letter-spacing: -0.025em; line-height: 1.05; margin: 0; }
+  .page .meta { color: var(--muted); font-size: 14.5px; margin-top: 8px; }
+
+  /* header as in layout.tsx */
+  header { border-bottom: 1px solid var(--line); background: var(--header-glass); }
+  header .in { height: var(--header-height); display: flex; align-items: center; padding: 0 var(--gutter-fluid); }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 600; font-size: var(--text-brand); color: var(--ink); text-decoration: none; white-space: nowrap; }
+  .brand b { color: var(--accent); font-weight: inherit; }
+  .brand svg { flex: none; }
+  .sub { margin-left: 14px; padding-left: 14px; border-left: 1px solid var(--line); font-size: var(--text-caption); color: var(--muted); white-space: nowrap; }
+  .mobile .sub { display: none; }
+
+  footer { border-top: 1px solid var(--line); padding: 20px var(--gutter-fluid) 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  footer .brand { font-size: 15px; }
+  footer .right { margin-left: auto; font-size: var(--text-caption); color: var(--muted); }
+
+  .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .grow { flex: 1 1 560px; min-width: 0; }
+
+  /* browser tabs */
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; background: #dcd6c8; padding: 8px 8px 0; border-radius: 10px 10px 0 0; }
+  .tab { display: flex; align-items: center; gap: 8px; background: #efeae0; border-radius: 8px 8px 0 0; padding: 8px 14px; font-size: 13px; max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tab.on { background: var(--bg); }
+  .tab span { overflow: hidden; text-overflow: ellipsis; }
+  .old { opacity: .75; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>«Свои люди» в приложении: эскиз</h1>
+<p class="note">Временное предложение по дизайну. После того как изменения внесены в эскизы <code>design/</code> и в код, файл удалить (задача в <code>specs/backlog.md</code>). Цвета, шрифты и размеры взяты из токенов приложения. Знак взят из лендинга: золотой круг и бирюзовое кольцо, цвета <code>accent</code> и <code>teal-deep</code>.</p>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="mark" viewBox="0 0 38 28"><circle cx="14" cy="14" r="12" fill="#f1b559"/><circle cx="24" cy="14" r="11" fill="none" stroke="#166f74" stroke-width="2.4"/></symbol>
+</svg>
+
+<!-- current -->
+<h2>Сейчас</h2>
+<div class="frame old">
+  <header><div class="in"><a class="brand" href="#">Личная CRM<b>.</b></a></div></header>
+  <div class="page"><p class="title">Контакты</p></div>
+</div>
+
+<!-- A -->
+<h2>Вариант А: подпись рядом с брендом, только на десктопе</h2>
+<p class="note">На десктопе «личная CRM» стоит мелко и приглушённо, отделена тонкой чертой. На мобильном 390px подписи нет, остаётся только в заголовке вкладки.</p>
+<div class="row">
+  <div class="grow">
+    <div class="label">Десктоп</div>
+    <div class="frame">
+      <header><div class="in"><a class="brand" href="#"><svg width="33" height="24"><use href="#mark"/></svg><span>Свои люди<b>.</b></span></a><span class="sub">личная CRM</span></div></header>
+      <div class="page"><p class="title">Контакты</p><div class="meta">12 человек</div></div>
+    </div>
+  </div>
+  <div>
+    <div class="label">Мобильный, 390</div>
+    <div class="frame mobile">
+      <header><div class="in"><a class="brand" href="#"><svg width="33" height="24"><use href="#mark"/></svg><span>Свои люди<b>.</b></span></a><span class="sub">личная CRM</span></div></header>
+      <div class="page"><p class="title">Контакты</p><div class="meta">12 человек</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- B -->
+<h2>Вариант Б: в интерфейсе только бренд</h2>
+<p class="note">Шапка как у лендинга. «Личная CRM» есть только во вкладке браузера и в описании страницы.</p>
+<div class="frame">
+  <header><div class="in"><a class="brand" href="#"><svg width="33" height="24"><use href="#mark"/></svg><span>Свои люди<b>.</b></span></a></div></header>
+  <div class="page"><p class="title">Контакты</p><div class="meta">12 человек</div></div>
+</div>
+
+<!-- C -->
+<h2>Вариант В: подвал как в лендинге</h2>
+<p class="note">В шапке только бренд, а внизу каждого экрана новый подвал: бренд слева, «личная CRM» справа.</p>
+<div class="frame">
+  <header><div class="in"><a class="brand" href="#"><svg width="33" height="24"><use href="#mark"/></svg><span>Свои люди<b>.</b></span></a></div></header>
+  <div class="page"><p class="title">Контакты</p><div class="meta">12 человек</div></div>
+  <footer><span class="brand"><svg width="27" height="20"><use href="#mark"/></svg><span>Свои люди<b>.</b></span></span><span class="right">личная CRM</span></footer>
+</div>
+
+<!-- tabs -->
+<h2>Вкладка браузера (одинаково во всех вариантах)</h2>
+<p class="note">Заголовки страниц: <code>&lt;title&gt;</code>.</p>
+<div class="tabs">
+  <div class="tab on"><svg width="18" height="13"><use href="#mark"/></svg><span>Свои люди — личная CRM</span></div>
+  <div class="tab"><svg width="18" height="13"><use href="#mark"/></svg><span>Новый контакт — Свои люди</span></div>
+  <div class="tab"><svg width="18" height="13"><use href="#mark"/></svg><span>Редактирование контакта — Свои люди</span></div>
+</div>
+<p class="note" style="margin-top:10px">Иконка во вкладке (favicon со знаком) пока только идея: есть ли у приложения сейчас своя иконка, не проверено. Если нужна, делать отдельным пунктом.</p>
+
+</div>
+</body>
+</html>
