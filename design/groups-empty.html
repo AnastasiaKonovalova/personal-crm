@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Групп пока нет — эскиз</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/tokens.css">
+  <link rel="stylesheet" href="vendor/styles.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="ak-root">
+  <header class="ak-header">
+    <div class="ak-wrap ak-bar">
+      <a class="ak-brand" href="contacts-groups.html">Личная CRM<b>.</b></a>
+    </div>
+  </header>
+
+  <div class="ak-aurora-zone">
+    <div class="ak-aurora" aria-hidden="true"></div>
+    <main class="ak-wrap ak-main ak-stack-y">
+      <div class="ak-page-head">
+        <div>
+          <div class="ak-label">Всего: 0</div>
+          <h1 class="ak-page-title">Группы</h1>
+        </div>
+      </div>
+
+      <nav class="ak-switch" aria-label="Разделы"><a href="contacts-groups.html">Контакты</a><a href="groups.html" aria-current="page">Группы</a></nav>
+
+      <form class="ak-card ak-group-form" novalidate>
+        <label class="ak-field-label" for="new-group">Новая группа</label>
+        <div class="ak-group-form-row">
+          <input class="ak-input" id="new-group" name="name" maxlength="50" placeholder="Например, Теннис" value="">
+          <button class="ak-btn ak-btn-primary" type="submit"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Создать</button>
+        </div>
+      </form>
+
+      <div class="ak-empty">
+        <h2 class="ak-empty-title">Групп пока нет</h2>
+        <p>Создай первую — например, «Семья» или «Теннис». Людей в группы добавляют в их карточке.</p>
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>
