@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { cadenceSchemaFor, contactSchema, contactSchemaFor, noteSchema } from "@/lib/validation";
+import {
+  cadenceSchemaFor,
+  contactSchema,
+  contactSchemaFor,
+  groupNameSchema,
+  noteSchema,
+  normalizeGroupName,
+} from "@/lib/validation";
 
 const emptyContact = { name: "", about: "", howWeMet: "", phone: "", email: "" };
 
@@ -22,6 +29,8 @@ describe("contactSchema", () => {
       email: null,
       cadence: null,
       contactOn: null,
+      groupIds: [],
+      newGroup: null,
     });
   });
 
@@ -125,5 +134,76 @@ describe("noteSchema", () => {
 
   it("keeps the note text trimmed", () => {
     expect(noteSchema.parse({ body: "  Созвонились  " }).body).toBe("Созвонились");
+  });
+});
+
+const GROUP_A = "7d4f1c2e-8a3b-4c5d-9e6f-0a1b2c3d4e5f";
+const GROUP_B = "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d";
+
+describe("groupNameSchema", () => {
+  const errorOf = (name: string) => groupNameSchema.safeParse({ name }).error?.issues[0]?.message;
+
+  it("rejects an empty name (scenario «Пустое имя»)", () => {
+    expect(errorOf("")).toBe("Укажи название");
+    expect(errorOf("   ")).toBe("Укажи название");
+  });
+
+  it("rejects a name longer than 50 characters (scenario «Слишком длинное имя»)", () => {
+    expect(errorOf("я".repeat(51))).toBe("Не длиннее 50 символов");
+  });
+
+  it("accepts a name of exactly 50 characters after trimming", () => {
+    expect(groupNameSchema.parse({ name: `  ${"я".repeat(50)}  ` }).name).toBe("я".repeat(50));
+  });
+});
+
+describe("normalizeGroupName", () => {
+  it("treats «Ёлка» and «елка» as one name", () => {
+    expect(normalizeGroupName("Ёлка")).toBe(normalizeGroupName("елка"));
+  });
+
+  it("ignores case and surrounding spaces", () => {
+    expect(normalizeGroupName("  Друзья ")).toBe(normalizeGroupName("друзья"));
+  });
+
+  it("keeps different names different", () => {
+    expect(normalizeGroupName("Теннис")).not.toBe(normalizeGroupName("Теннис по субботам"));
+  });
+});
+
+describe("contact groups in the contact form", () => {
+  const named = { ...emptyContact, name: "Анна" };
+
+  it("defaults to no groups and no new group", () => {
+    const result = contactSchema.parse(named);
+    expect(result.groupIds).toEqual([]);
+    expect(result.newGroup).toBeNull();
+  });
+
+  it("drops duplicate group ids", () => {
+    const result = contactSchema.parse({ ...named, groupIds: [GROUP_A, GROUP_B, GROUP_A] });
+    expect(result.groupIds).toEqual([GROUP_A, GROUP_B]);
+  });
+
+  it("rejects a malformed group id", () => {
+    const result = contactSchema.safeParse({ ...named, groupIds: ["not-a-uuid"] });
+    expect(result.error?.issues[0]?.path[0]).toBe("groupIds");
+  });
+
+  it("trims the new group name and treats spaces as no new group", () => {
+    expect(contactSchema.parse({ ...named, newGroup: "  Аналитики " }).newGroup).toBe("Аналитики");
+    expect(contactSchema.parse({ ...named, newGroup: "   " }).newGroup).toBeNull();
+  });
+
+  it("rejects a new group name longer than 50 characters (scenario «Ошибка имени новой группы»)", () => {
+    const result = contactSchema.safeParse({ ...named, newGroup: "я".repeat(51) });
+    expect(result.error?.issues.map((issue) => [issue.path[0], issue.message])).toEqual([
+      ["newGroup", "Не длиннее 50 символов"],
+    ]);
+  });
+
+  it("reports the contact name error alongside the new group (scenario «Ошибка формы не теряет группы»)", () => {
+    const result = contactSchema.safeParse({ ...emptyContact, groupIds: [GROUP_A], newGroup: "Аналитики" });
+    expect(result.error?.issues.map((issue) => issue.path[0])).toEqual(["name"]);
   });
 });

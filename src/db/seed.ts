@@ -1,9 +1,10 @@
 import { fakerRU as faker } from "@faker-js/faker";
-import { count } from "drizzle-orm";
+import { count, sql } from "drizzle-orm";
 import { closeDb, getDb } from "./index";
-import { type contactCadence, contacts, notes } from "./schema";
+import { type contactCadence, contactGroups, contacts, groups, notes } from "./schema";
 
-// Fills an empty database with fictional contacts. Refuses to run if contacts already exist.
+// Fills an empty database with fictional contacts and groups. Each part is skipped
+// if its table already has rows.
 
 const CONTACT_COUNT = 1000;
 const BATCH_SIZE = 500;
@@ -254,14 +255,92 @@ function buildNotes(contact: ReturnType<typeof buildContact>) {
   }));
 }
 
+const GROUP_NAMES = [
+  "Цигун по выходным",
+  "Бывшие коллеги",
+  "Соседи",
+  "Однокурсники",
+  "Родители из детского сада",
+  "Ремонт квартиры",
+  "Книжный клуб",
+  // Exactly 50 characters: the longest allowed name
+  "Знакомые с конференций по дизайну интерьеров, 2025",
+];
+const LONG_GROUP_NAME = GROUP_NAMES[GROUP_NAMES.length - 1];
+
+// Group counts for the first contacts in list order, so the first page always shows
+// rows with 0, 1, 2, 3 and 5 groups
+const FIRST_PAGE_GROUP_COUNTS = [5, 0, 2, 1, 3, 0, 5, 2, 1, 0];
+
+type Db = ReturnType<typeof getDb>;
+
+function pickGroupCount() {
+  return faker.helpers.weightedArrayElement([
+    { weight: 40, value: 0 },
+    { weight: 30, value: 1 },
+    { weight: 15, value: 2 },
+    { weight: 7, value: 3 },
+    { weight: 4, value: 4 },
+    { weight: 4, value: 5 },
+  ]);
+}
+
+// Runs separately from contacts, so a database seeded before groups existed gets groups too
+async function seedGroups(db: Db) {
+  const [{ total }] = await db.select({ total: count() }).from(groups);
+  if (total > 0) {
+    console.log(`Groups skipped: the groups table already has ${total} rows`);
+    return;
+  }
+
+  faker.seed(20261112);
+  const contactIds = (
+    await db
+      .select({ id: contacts.id })
+      .from(contacts)
+      .orderBy(sql`lower(${contacts.name})`, contacts.id)
+  ).map((row) => row.id);
+
+  const groupRows = GROUP_NAMES.map((name) => ({ id: faker.string.uuid(), name }));
+  const longGroupId = groupRows.find((group) => group.name === LONG_GROUP_NAME)!.id;
+  const otherGroupIds = groupRows.filter((group) => group.id !== longGroupId).map((group) => group.id);
+
+  const memberships = contactIds.flatMap((contactId, index) => {
+    const fixedCount = FIRST_PAGE_GROUP_COUNTS[index];
+    const groupCount = fixedCount ?? pickGroupCount();
+    // Rows with 5 groups on the first page include the long name
+    const picked =
+      fixedCount === 5
+        ? [longGroupId, ...faker.helpers.arrayElements(otherGroupIds, 4)]
+        : faker.helpers.arrayElements(
+            groupRows.map((group) => group.id),
+            groupCount,
+          );
+    return picked.map((groupId) => ({ contactId, groupId }));
+  });
+
+  await db.transaction(async (tx) => {
+    await tx.insert(groups).values(groupRows);
+    for (let start = 0; start < memberships.length; start += BATCH_SIZE) {
+      await tx.insert(contactGroups).values(memberships.slice(start, start + BATCH_SIZE));
+    }
+  });
+
+  console.log(`Seeded ${groupRows.length} groups and ${memberships.length} memberships`);
+}
+
 async function main() {
   const db = getDb();
   const [{ total }] = await db.select({ total: count() }).from(contacts);
   if (total > 0) {
-    console.log(`Seed skipped: the contacts table already has ${total} rows`);
-    return;
+    console.log(`Contacts skipped: the contacts table already has ${total} rows`);
+  } else {
+    await seedContacts(db);
   }
+  await seedGroups(db);
+}
 
+async function seedContacts(db: Db) {
   faker.seed(20261014);
   const seedContacts = Array.from({ length: CONTACT_COUNT }, buildContact);
 

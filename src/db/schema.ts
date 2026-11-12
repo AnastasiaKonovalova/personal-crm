@@ -1,5 +1,16 @@
 import { sql } from "drizzle-orm";
-import { check, date, index, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  check,
+  date,
+  index,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 export const contactCadence = pgEnum("contact_cadence", [
   "week",
@@ -46,5 +57,36 @@ export const notes = pgTable(
   (table) => [index("notes_contact_id_created_at_idx").on(table.contactId, table.createdAt)],
 );
 
+export const groups = pgTable(
+  "groups",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // Same normalization as normalizeGroupName in code: case and "ё/е" do not differ
+    uniqueIndex("groups_name_normalized_idx").on(sql`lower(translate(${table.name}, 'Ёё', 'Ее'))`),
+    check("groups_name_length_check", sql`char_length(${table.name}) <= 50`),
+  ],
+);
+
+export const contactGroups = pgTable(
+  "contact_groups",
+  {
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "cascade" }),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.contactId, table.groupId] }),
+    index("contact_groups_group_id_idx").on(table.groupId),
+  ],
+);
+
 export type Contact = typeof contacts.$inferSelect;
 export type Note = typeof notes.$inferSelect;
+export type Group = typeof groups.$inferSelect;

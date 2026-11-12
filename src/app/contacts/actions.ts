@@ -8,23 +8,35 @@ import {
   contactSchema,
   contactSchemaFor,
   firstErrors,
+  groupNameSchema,
   noteSchema,
   type ContactField,
 } from "@/lib/validation";
 import {
+  addContactToGroup,
   addNote,
   createContact,
   deleteContact,
   getContact,
+  removeContactFromGroup,
   setCadence,
   updateContact,
   updateNote,
 } from "@/server/contacts";
 
+// The text fields plus the group ticks and the "Новая группа" text, returned as typed on an error
+export type ContactFormValues = Record<ContactField, string> & { groupIds: string[]; newGroup: string };
+
 export type ContactFormState = {
-  values?: Partial<Record<ContactField, string>>;
-  errors?: Partial<Record<ContactField, string>>;
+  values?: Partial<ContactFormValues>;
+  errors?: Partial<Record<ContactField | "groupIds" | "newGroup", string>>;
   formError?: string;
+};
+
+export type GroupFieldState = {
+  groupName?: string;
+  error?: string;
+  savedAt?: number;
 };
 
 export type CadenceFormState = {
@@ -52,7 +64,12 @@ function readString(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-function readContactValues(formData: FormData): Record<ContactField, string> {
+// Ticked groups come as several values of one field
+function readStrings(formData: FormData, key: string) {
+  return formData.getAll(key).filter((value): value is string => typeof value === "string");
+}
+
+function readContactValues(formData: FormData): ContactFormValues {
   return {
     name: readString(formData, "name"),
     about: readString(formData, "about"),
@@ -61,7 +78,14 @@ function readContactValues(formData: FormData): Record<ContactField, string> {
     email: readString(formData, "email"),
     cadence: readString(formData, "cadence"),
     contactOn: readString(formData, "contactOn"),
+    groupIds: readStrings(formData, "groupIds"),
+    newGroup: readString(formData, "newGroup"),
   };
+}
+
+// A plain form post (no JavaScript) has no `next-action` header
+async function calledFromJs() {
+  return (await headers()).has("next-action");
 }
 
 export async function createContactAction(
@@ -75,7 +99,8 @@ export async function createContactAction(
   }
 
   const id = await createContact(parsed.data);
-  revalidatePath("/");
+  // A new group may have appeared: the groups page and the filter change too
+  revalidatePath("/", "layout");
   redirect(`/contacts/${id}`);
 }
 
@@ -103,8 +128,7 @@ export async function updateContactAction(
     return { values, formError: "Контакт не найден" };
   }
 
-  revalidatePath("/");
-  revalidatePath(`/contacts/${id}`);
+  revalidatePath("/", "layout");
   redirect(`/contacts/${id}`);
 }
 
@@ -113,8 +137,8 @@ export async function deleteContactAction(formData: FormData) {
   const contactId = readString(formData, "contactId");
   await deleteContact(contactId);
 
-  revalidatePath("/");
-  revalidatePath(`/contacts/${contactId}`);
+  // Group counts on the groups page change too
+  revalidatePath("/", "layout");
   redirect("/?deleted=1");
 }
 
@@ -188,8 +212,7 @@ export async function markContactedAction(
 
   revalidatePath("/");
   revalidatePath(`/contacts/${contactId}`);
-  const calledFromJs = (await headers()).has("next-action");
-  if (!calledFromJs) {
+  if (!(await calledFromJs())) {
     if (returnTo === "/") redirect("/");
     if (returnTo === "card") redirect(`/contacts/${contactId}`);
   }
@@ -215,4 +238,40 @@ export async function updateNoteAction(
 
   revalidatePath(`/contacts/${contactId}`);
   return { savedAt: Date.now() };
+}
+
+// The card field "Группа: выбрать или новая": an existing name adds the contact to that group,
+// a new name creates it. Without JavaScript it returns to the card, like "Связались".
+export async function addContactToGroupAction(
+  _previous: GroupFieldState,
+  formData: FormData,
+): Promise<GroupFieldState> {
+  const contactId = readString(formData, "contactId");
+  const groupName = readString(formData, "groupName");
+  const parsed = groupNameSchema.safeParse({ name: groupName });
+  if (!parsed.success) {
+    return { groupName, error: firstErrors(parsed.error).name };
+  }
+
+  const groupId = await addContactToGroup(contactId, parsed.data.name);
+  if (!groupId) {
+    return { groupName, error: "Контакт не найден" };
+  }
+
+  revalidatePath("/", "layout");
+  if (!(await calledFromJs())) {
+    redirect(`/contacts/${contactId}`);
+  }
+  return { savedAt: Date.now() };
+}
+
+// "Убрать" in the confirmation dialog. The redirect drops ?removeGroup= and closes the dialog,
+// with and without JavaScript; a membership already removed elsewhere is not an error
+export async function removeContactFromGroupAction(formData: FormData) {
+  const contactId = readString(formData, "contactId");
+  const groupId = readString(formData, "groupId");
+  await removeContactFromGroup(contactId, groupId);
+
+  revalidatePath("/", "layout");
+  redirect(`/contacts/${contactId}`);
 }

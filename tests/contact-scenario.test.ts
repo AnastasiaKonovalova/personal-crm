@@ -147,7 +147,9 @@ describe("editing", () => {
     expect(await updateContact(createdId!, input)).toBe(createdId);
 
     const card = await getContactWithNotes(createdId!);
-    expect(card?.contact).toMatchObject(input);
+    // Groups are not contact columns; they are covered by the group scenarios
+    const { groupIds: _groupIds, newGroup: _newGroup, ...fields } = input;
+    expect(card?.contact).toMatchObject(fields);
     expect(card?.contact.howWeMet).toBeNull();
   });
 
