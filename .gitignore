@@ -27,6 +27,10 @@ build/
 dist/
 *.tsbuildinfo
 
+# playwright
+/test-results/
+/playwright-report/
+
 # logs
 *.log
 npm-debug.log*

@@ -12,7 +12,7 @@
     "start": "next start",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts && playwright test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "node --env-file=.env --import tsx src/db/seed.ts"
@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "10.6.0",
+    "@playwright/test": "1.65.0",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "^24",
     "@types/pg": "8.23.1",
