@@ -27,7 +27,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ru" className={`${wixMadeforDisplay.variable} ${manrope.variable}`} suppressHydrationWarning>
       <head>
         {/* Marks a working JavaScript before the first paint; globals.css hides the JS-only
-            controls without it and trims the "Пора связаться" block only with it */}
+            controls without it and trims the "Пора связаться" block only with it.
+            A raw <script> on purpose: next/script with beforeInteractive only queues an inline script
+            (self.__next_s) and runs it after Next's bundles load - after the first paint, so JS-only
+            controls would flash. React's dev warning "Encountered a script tag" is harmless here */}
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.setAttribute('data-js','')" }} />
       </head>
       <body className="min-h-screen antialiased">

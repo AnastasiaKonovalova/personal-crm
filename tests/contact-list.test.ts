@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contactsHref, listCaption } from "@/lib/contact-list";
+import { contactsHref, groupPageHref, listCaption } from "@/lib/contact-list";
 
 const GROUP = "11111111-1111-4111-8111-111111111111";
 
@@ -18,6 +18,20 @@ describe("contactsHref", () => {
 
   it("drops only the search for «Сбросить» inside a group («Сброс поиска внутри группы»)", () => {
     expect(contactsHref({ groupId: GROUP })).toBe(`/?group=${GROUP}`);
+  });
+});
+
+describe("groupPageHref", () => {
+  it("is the bare group page without search and page («Сброс поиска в группе»)", () => {
+    expect(groupPageHref({ groupId: GROUP })).toBe(`/groups/${GROUP}`);
+    expect(groupPageHref({ groupId: GROUP, query: "", page: 1 })).toBe(`/groups/${GROUP}`);
+  });
+
+  it("keeps the search in page links and stays on the group page («Страницы в группе»)", () => {
+    expect(groupPageHref({ groupId: GROUP, page: 2 })).toBe(`/groups/${GROUP}?page=2`);
+    expect(groupPageHref({ groupId: GROUP, query: "Анна", page: 3 })).toBe(
+      `/groups/${GROUP}?q=%D0%90%D0%BD%D0%BD%D0%B0&page=3`,
+    );
   });
 });
 

@@ -70,7 +70,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
                 {/* the name link covers the whole row; the actions come later in the DOM, so they sit above it.
                     No z-index on them: it would trap the no-JS dialog inside this row's stacking context */}
                 <Link
-                  href={`/?group=${group.id}`}
+                  href={`/groups/${group.id}`}
                   className="font-bold [overflow-wrap:anywhere] text-ink transition-colors duration-200 after:absolute after:inset-0 group-hover:text-teal-deep focus-visible:text-teal-deep focus-visible:outline-offset-[-2px] max-[560px]:col-start-1"
                 >
                   {group.name}

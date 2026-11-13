@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { ContactsSearch } from "@/components/contacts-search";
+import { ContactsSearch, SearchRow } from "@/components/contacts-search";
 import { EmptyList } from "@/components/empty-list";
 
 // The server render of the search row and the group filter: what a visitor sees before (or without) JavaScript
@@ -82,10 +82,52 @@ describe("ContactsSearch", () => {
   });
 });
 
-describe("EmptyList", () => {
-  function title(props: { query: string; inGroup: boolean }) {
-    return renderToStaticMarkup(createElement(EmptyList, props)).match(/<h2[^>]*>([^<]*)<\/h2>/)?.[1];
+describe("SearchRow on the group page", () => {
+  const groupPage = `/groups/${TENNIS}`;
+
+  function renderRow(query: string) {
+    return renderToStaticMarkup(
+      createElement(SearchRow, { query, resetHref: groupPage, label: "Поиск по имени в группе «Теннис»" }),
+    );
   }
+
+  it("has only the search field, no group filter", () => {
+    const html = renderRow("");
+    expect(html).toMatch(/<input[^>]*name="q"/);
+    expect(html).not.toContain("<select");
+    expect(html).not.toContain("Тут можно создавать группы контактов");
+    expect(html).toContain("Поиск по имени в группе «Теннис»");
+  });
+
+  it("resets the search and stays on the group page («Сброс поиска в группе»)", () => {
+    const html = renderRow("Анна");
+    const reset = html.match(/<a([^>]*)>Сбросить<\/a>/)?.[1] ?? "";
+    expect(reset).toContain(`href="${groupPage}"`);
+    expect(reset).toContain('aria-label="Сбросить поиск"');
+  });
+
+  it("has no «Сбросить» without search", () => {
+    expect(renderRow("")).not.toContain("Сбросить");
+  });
+});
+
+describe("EmptyList", () => {
+  function render(props: { query: string; inGroup: boolean; hint?: string }) {
+    return renderToStaticMarkup(createElement(EmptyList, props));
+  }
+  function title(props: { query: string; inGroup: boolean }) {
+    return render(props).match(/<h2[^>]*>([^<]*)<\/h2>/)?.[1];
+  }
+
+  it("shows the hint of the group page under an empty group («Пустая группа на её странице»)", () => {
+    const html = render({ query: "", inGroup: true, hint: "Добавь контакт кнопкой выше." });
+    expect(html.match(/<h2[^>]*>([^<]*)<\/h2>/)?.[1]).toBe("В группе пока никого нет");
+    expect(html).toMatch(/<p[^>]*>Добавь контакт кнопкой выше.<\/p>/);
+  });
+
+  it("has no hint on the main page filter", () => {
+    expect(render({ query: "", inGroup: true })).not.toContain("<p");
+  });
 
   it("says the group is empty («Пустая группа»)", () => {
     expect(title({ query: "", inGroup: true })).toBe("В группе пока никого нет");
