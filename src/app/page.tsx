@@ -5,6 +5,7 @@ import { DeletedToast } from "@/components/deleted-toast";
 import { DueDot, DueDotLabel } from "@/components/due-dot";
 import { PageShell } from "@/components/page-shell";
 import { RemindersBlock } from "@/components/reminders-block";
+import { SectionSwitch } from "@/components/section-switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CADENCE_LABELS, dueText, toDateString } from "@/lib/keep-in-touch";
@@ -80,7 +81,9 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
         </Button>
       </div>
 
-      {reminders && <RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />}
+      <SectionSwitch current="contacts" />
+
+      {reminders &&<RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />}
 
       <Form action="/" className="flex flex-wrap gap-cta" role="search">
         {/* 200px basis keeps «Найти» on the same line at 390 */}

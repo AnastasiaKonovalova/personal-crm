@@ -262,6 +262,12 @@
 /* «Найти» + «Сбросить» wrap as one unit: on a narrow screen both go to the next line together */
 .ak-search-actions { display: flex; flex: none; align-items: center; gap: var(--space-cta); }
 
+/* group page (/groups/<id>): back links to all groups and all contacts, the group under the title (variant B);
+   no switch and no group filter, the search stays inside the group */
+.ak-backs { display: grid; justify-items: start; gap: var(--space-tag); }
+.ak-page-sub { display: block; margin-top: 8px; font-weight: 600; font-size: clamp(19px, 2.2vw, 23px); letter-spacing: -.01em; line-height: 1.2; color: var(--muted); overflow-wrap: anywhere; }
+.ak-page-sub b { font-weight: 600; color: var(--ink); }
+
 /* groups page */
 .ak-group-form { display: grid; gap: 8px; }
 .ak-group-form-row { display: flex; flex-wrap: wrap; gap: var(--space-cta); }
