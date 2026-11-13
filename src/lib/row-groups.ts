@@ -1,7 +1,8 @@
-// How many groups a list row shows per screen width (design.md p.6, decision 22 in design/README.md).
-// The markup renders the first groups and one "+N" badge per width; CSS hides what a width does not need.
+// How many groups a list row shows per screen width (design.md p.6, decision 22 in design/README.md):
+// above 1100px up to three, 1100px and narrower one. The markup renders the first groups and one "+N"
+// badge per layout; CSS hides what a width does not need.
 
-export const ROW_GROUP_LIMITS = { wide: 3, medium: 2, narrow: 1 } as const;
+export const ROW_GROUP_LIMITS = { wide: 3, compact: 1 } as const;
 
 export type RowWidth = keyof typeof ROW_GROUP_LIMITS;
 
@@ -29,7 +30,6 @@ export function layoutRowGroups<T>(groups: T[]): RowGroupsLayout<T> {
   return {
     rendered: groups.slice(0, ROW_GROUP_LIMITS.wide),
     wide: atWidth(groups, ROW_GROUP_LIMITS.wide),
-    medium: atWidth(groups, ROW_GROUP_LIMITS.medium),
-    narrow: atWidth(groups, ROW_GROUP_LIMITS.narrow),
+    compact: atWidth(groups, ROW_GROUP_LIMITS.compact),
   };
 }

@@ -5,6 +5,7 @@ import { DeletedToast } from "@/components/deleted-toast";
 import { DueDot, DueDotLabel } from "@/components/due-dot";
 import { PageShell } from "@/components/page-shell";
 import { RemindersBlock } from "@/components/reminders-block";
+import { RowGroups } from "@/components/row-groups";
 import { SectionSwitch } from "@/components/section-switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,9 +14,15 @@ import { listContacts, listReminders } from "@/server/contacts";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-// Columns of the contact list; below 680px only the name, "who" and the chevron stay
+// Columns of the contact list (design.md п.6): the groups column is wider above 1100px;
+// at 680px and below only the name, "who", the groups line and the chevron stay
 const rowGrid =
-  "grid grid-cols-[1.1fr_1.4fr_1.4fr_20px] items-center gap-grid px-[clamp(18px,2.4vw,28px)] py-3.5";
+  "grid grid-cols-[1fr_1.2fr_1fr_1.6fr_20px] items-center gap-grid px-[clamp(18px,2.4vw,28px)] py-3.5 max-[1100px]:grid-cols-[1fr_1.2fr_1fr_1.3fr_20px]";
+
+// Keyboard focus of the row link shows on the whole row, as when the row itself was the link
+const rowFocus =
+  "has-[a:focus-visible]:bg-teal-soft has-[a:focus-visible]:outline-2 has-[a:focus-visible]:-outline-offset-2 has-[a:focus-visible]:outline-ring has-[a:focus-visible]:outline-solid";
+const rowActive = "group-hover:text-teal-deep group-has-[a:focus-visible]:text-teal-deep";
 
 function pageHref(query: string, page: number) {
   const params = new URLSearchParams();
@@ -131,32 +138,37 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
             <span className="pl-[18px]">Имя</span>
             <span>Кто это</span>
             <span>Откуда знакомы</span>
+            <span>Группы</span>
             <span />
           </div>
           <ul>
             {items.map((contact) => (
-              <li key={contact.id} className="border-b border-line last:border-b-0">
-                <Link
-                  href={`/contacts/${contact.id}`}
-                  className={`${rowGrid} group transition-colors duration-200 hover:bg-teal-soft focus-visible:-outline-offset-2 focus-visible:bg-teal-soft max-[680px]:grid-cols-[1fr_20px] max-[680px]:gap-x-3 max-[680px]:gap-y-0.5 max-[680px]:px-5 max-[680px]:py-4`}
+              // The row is not a link: «+N» buttons can't sit inside <a>. The name link's ::after covers the row
+              // (design.md п.7), so a click anywhere but «+N» opens the card
+              <li
+                key={contact.id}
+                className={`${rowGrid} ${rowFocus} group relative border-b border-line transition-colors duration-200 last:border-b-0 hover:bg-teal-soft max-[680px]:grid-cols-[1fr_20px] max-[680px]:gap-x-3 max-[680px]:gap-y-0.5 max-[680px]:px-5 max-[680px]:py-4`}
+              >
+                <span className={`flex items-center gap-2.5 font-bold text-ink ${rowActive} max-[680px]:col-start-1`}>
+                  <DueDot kind={contact.status?.kind} />
+                  <Link
+                    href={`/contacts/${contact.id}`}
+                    className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+                  >
+                    {contact.name}
+                    <DueDotLabel kind={contact.status?.kind} />
+                  </Link>
+                </span>
+                <span className="text-meta text-muted-foreground max-[680px]:col-start-1 max-[680px]:pl-[18px]">
+                  {contact.about ?? "—"}
+                </span>
+                <span className="text-meta text-muted-foreground max-[680px]:hidden">{contact.howWeMet ?? "—"}</span>
+                <RowGroups groups={contact.groups} />
+                <span
+                  className={`flex text-muted-foreground transition-[color,transform] duration-[350ms] ease-spring group-hover:translate-x-[3px] group-has-[a:focus-visible]:translate-x-[3px] ${rowActive} motion-reduce:transition-none max-[680px]:col-start-2 max-[680px]:row-span-2 max-[680px]:row-start-1`}
                 >
-                  <span className="flex items-center gap-2.5 font-bold text-ink group-hover:text-teal-deep group-focus-visible:text-teal-deep max-[680px]:col-start-1">
-                    <DueDot kind={contact.status?.kind} />
-                    <span>
-                      {contact.name}
-                      <DueDotLabel kind={contact.status?.kind} />
-                    </span>
-                  </span>
-                  <span className="text-meta text-muted-foreground max-[680px]:col-start-1 max-[680px]:pl-[18px]">
-                    {contact.about ?? "—"}
-                  </span>
-                  <span className="text-meta text-muted-foreground max-[680px]:hidden">
-                    {contact.howWeMet ?? "—"}
-                  </span>
-                  <span className="flex text-muted-foreground transition-[color,transform] duration-[350ms] ease-spring group-hover:translate-x-[3px] group-hover:text-teal-deep group-focus-visible:translate-x-[3px] group-focus-visible:text-teal-deep motion-reduce:transition-none max-[680px]:col-start-2 max-[680px]:row-span-2 max-[680px]:row-start-1">
-                    <ChevronRight aria-hidden="true" className="size-5" />
-                  </span>
-                </Link>
+                  <ChevronRight aria-hidden="true" className="size-5" />
+                </span>
               </li>
             ))}
           </ul>

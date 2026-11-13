@@ -224,22 +224,22 @@
 .ak-row-linked:has(.ak-row-link:focus-visible) { background: var(--teal-soft); outline: 2px solid var(--teal-deep); outline-offset: -2px; }
 .ak-row-linked:hover .ak-row-link, .ak-row-linked:has(.ak-row-link:focus-visible) .ak-row-link { color: var(--teal-deep); }
 .ak-row-groups { position: relative; display: flex; align-items: center; gap: var(--space-chip); min-width: 0; }
-/* how many chips fit: 3 above 1100px, 2 at 681-1100px, 1 at 680px and below; each width has its own «+N».
-   Scoped to .ak-row-groups so these rules win over the base chip and button styles */
+/* how many chips fit: 3 above 1100px, 1 at 1100px and below (owner 2026-11-13: two were cut to a couple of
+   letters at 900); each layout has its own «+N». Scoped to .ak-row-groups so these rules win over the base
+   chip and button styles */
 .ak-row-groups .ak-gchip { max-width: 9em; }
-.ak-row-groups .ak-gmore-2, .ak-row-groups .ak-gmore-1 { display: none; }
+.ak-row-groups .ak-gmore-1 { display: none; }
 @media (max-width: 1100px) {
   .ak-list-groups .ak-list-head, .ak-list-groups .ak-row { grid-template-columns: 1fr 1.2fr 1fr 1.3fr 20px; }
-  .ak-row-groups .ak-gchip-3, .ak-row-groups .ak-gmore-3 { display: none; }
-  .ak-row-groups .ak-gmore-2 { display: inline-block; }
+  .ak-row-groups .ak-gchip { max-width: none; }
+  .ak-row-groups .ak-gchip-2, .ak-row-groups .ak-gchip-3, .ak-row-groups .ak-gmore-3 { display: none; }
+  .ak-row-groups .ak-gmore-1 { display: inline-block; }
 }
 @media (max-width: 680px) {
   .ak-list-groups .ak-row { grid-template-columns: 1fr 20px; }
   .ak-list-groups .ak-row-groups { grid-column: 1; padding-left: 18px; margin-top: 6px; }
   .ak-list-groups .ak-row-groups:empty { display: none; }
   .ak-row-groups .ak-gchip { max-width: 16em; }
-  .ak-row-groups .ak-gchip-2, .ak-row-groups .ak-gmore-2 { display: none; }
-  .ak-row-groups .ak-gmore-1 { display: inline-block; }
 }
 
 /* popover with the rest of the groups: native [popover] in the top layer, placed under its «+N» by a small script.

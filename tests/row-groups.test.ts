@@ -10,29 +10,28 @@ describe("layoutRowGroups", () => {
     expect(wide.more).toEqual({ count: 2, hidden: ["Дельта", "Эпсилон"] });
   });
 
-  it("medium screen, five groups: two first and +3 (scenario «Средний экран, пять групп»)", () => {
-    const { medium } = layoutRowGroups(names(5));
-    expect(medium.visible).toEqual(["Альфа", "Бета"]);
-    expect(medium.more).toEqual({ count: 3, hidden: ["Гамма", "Дельта", "Эпсилон"] });
+  it("1100px and narrower, five groups: one first and +4 (scenario «Средний экран, пять групп»)", () => {
+    const { compact } = layoutRowGroups(names(5));
+    expect(compact.visible).toEqual(["Альфа"]);
+    expect(compact.more).toEqual({ count: 4, hidden: ["Бета", "Гамма", "Дельта", "Эпсилон"] });
   });
 
-  it("narrow screen, three groups: one first and +2 (scenario «Узкий экран, три группы»)", () => {
-    const { narrow } = layoutRowGroups(names(3));
-    expect(narrow.visible).toEqual(["Альфа"]);
-    expect(narrow.more).toEqual({ count: 2, hidden: ["Бета", "Гамма"] });
+  it("1100px and narrower, three groups: one first and +2 (scenario «Узкий экран, три группы»)", () => {
+    const { compact } = layoutRowGroups(names(3));
+    expect(compact.visible).toEqual(["Альфа"]);
+    expect(compact.more).toEqual({ count: 2, hidden: ["Бета", "Гамма"] });
   });
 
-  it("no badge when the groups fit (scenario «Групп не больше, чем помещается»)", () => {
+  it("no badge on a wide screen when the groups fit (scenario «Групп не больше, чем помещается»)", () => {
     const layout = layoutRowGroups(names(2));
     expect(layout.wide).toEqual({ visible: ["Альфа", "Бета"], more: null });
-    expect(layout.medium).toEqual({ visible: ["Альфа", "Бета"], more: null });
-    expect(layout.narrow.more).toEqual({ count: 1, hidden: ["Бета"] });
+    expect(layout.compact.more).toEqual({ count: 1, hidden: ["Бета"] });
   });
 
   it("nothing for a contact without groups (scenario «Без групп»)", () => {
     const layout = layoutRowGroups([]);
     expect(layout.rendered).toEqual([]);
-    for (const width of [layout.wide, layout.medium, layout.narrow]) {
+    for (const width of [layout.wide, layout.compact]) {
       expect(width).toEqual({ visible: [], more: null });
     }
   });
@@ -47,6 +46,6 @@ describe("layoutRowGroups", () => {
       { id: "1", name: "Друзья" },
       { id: "2", name: "Теннис" },
     ];
-    expect(layoutRowGroups(groups).narrow).toEqual({ visible: [groups[0]], more: { count: 1, hidden: [groups[1]] } });
+    expect(layoutRowGroups(groups).compact).toEqual({ visible: [groups[0]], more: { count: 1, hidden: [groups[1]] } });
   });
 });
