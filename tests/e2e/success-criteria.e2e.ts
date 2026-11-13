@@ -127,7 +127,9 @@ describe("pagination", () => {
   });
 
   afterAll(async () => {
-    await withPool((pool) => pool.query("delete from contacts where name like $1", [`${pagerPrefix} %`]));
+    await withPool((pool) =>
+      pool.query("delete from contacts where name like $1", [`${pagerPrefix} %`]),
+    );
   });
 
   it("the full list shows the page count of all contacts", async () => {

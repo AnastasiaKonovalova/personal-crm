@@ -27,7 +27,10 @@ function validName(name: string) {
 }
 
 // Without JavaScript the page is reloaded by a redirect, so refreshing cannot send the form again
-export async function createGroupAction(_previous: GroupFormState, formData: FormData): Promise<GroupFormState> {
+export async function createGroupAction(
+  _previous: GroupFormState,
+  formData: FormData,
+): Promise<GroupFormState> {
   const name = readString(formData, "name");
   const valid = validName(name);
   if ("error" in valid) {
@@ -47,7 +50,10 @@ export async function createGroupAction(_previous: GroupFormState, formData: For
 }
 
 // Renaming happens on /groups?edit=<id>; success redirects to /groups and closes the edit mode
-export async function renameGroupAction(_previous: GroupFormState, formData: FormData): Promise<GroupFormState> {
+export async function renameGroupAction(
+  _previous: GroupFormState,
+  formData: FormData,
+): Promise<GroupFormState> {
   const groupId = readString(formData, "groupId");
   const name = readString(formData, "name");
   const valid = validName(name);

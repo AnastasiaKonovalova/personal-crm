@@ -25,7 +25,10 @@ import {
 } from "@/server/contacts";
 
 // The text fields plus the group ticks and the "Новая группа" text, returned as typed on an error
-export type ContactFormValues = Record<ContactField, string> & { groupIds: string[]; newGroup: string };
+export type ContactFormValues = Record<ContactField, string> & {
+  groupIds: string[];
+  newGroup: string;
+};
 
 export type ContactFormState = {
   values?: Partial<ContactFormValues>;

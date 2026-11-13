@@ -20,7 +20,11 @@ describe("contactSchema", () => {
   });
 
   it("trims values and turns empty optional fields into null", () => {
-    const result = contactSchema.parse({ ...emptyContact, name: "  Анна Смирнова  ", about: "   " });
+    const result = contactSchema.parse({
+      ...emptyContact,
+      name: "  Анна Смирнова  ",
+      about: "   ",
+    });
     expect(result).toEqual({
       name: "Анна Смирнова",
       about: null,
@@ -60,8 +64,13 @@ describe("contactSchema", () => {
 
 describe("contact cadence", () => {
   const named = { ...emptyContact, name: "Анна" };
-  const errorsOf = (result: { success: boolean; error?: { issues: { path: PropertyKey[]; message: string }[] } }) =>
-    Object.fromEntries((result.error?.issues ?? []).map((issue) => [String(issue.path[0]), issue.message]));
+  const errorsOf = (result: {
+    success: boolean;
+    error?: { issues: { path: PropertyKey[]; message: string }[] };
+  }) =>
+    Object.fromEntries(
+      (result.error?.issues ?? []).map((issue) => [String(issue.path[0]), issue.message]),
+    );
 
   it("saves a contact without a cadence as not set", () => {
     const result = contactSchema.parse(named);
@@ -70,7 +79,11 @@ describe("contact cadence", () => {
   });
 
   it("accepts every period and drops a stray date", () => {
-    const result = contactSchemaFor(null, TODAY).parse({ ...named, cadence: "month", contactOn: "2026-12-01" });
+    const result = contactSchemaFor(null, TODAY).parse({
+      ...named,
+      cadence: "month",
+      contactOn: "2026-12-01",
+    });
     expect(result.cadence).toBe("month");
     expect(result.contactOn).toBeNull();
   });
@@ -81,19 +94,31 @@ describe("contact cadence", () => {
   });
 
   it("requires a date for a specific date", () => {
-    const result = contactSchemaFor(null, TODAY).safeParse({ ...named, cadence: "date", contactOn: "" });
+    const result = contactSchemaFor(null, TODAY).safeParse({
+      ...named,
+      cadence: "date",
+      contactOn: "",
+    });
     expect(errorsOf(result)).toEqual({ contactOn: "Укажи дату" });
   });
 
   it("rejects a malformed or impossible date", () => {
     for (const contactOn of ["15.11.2026", "2026-02-30"]) {
-      const result = contactSchemaFor(null, TODAY).safeParse({ ...named, cadence: "date", contactOn });
+      const result = contactSchemaFor(null, TODAY).safeParse({
+        ...named,
+        cadence: "date",
+        contactOn,
+      });
       expect(errorsOf(result)).toEqual({ contactOn: "Некорректная дата" });
     }
   });
 
   it("rejects a past date when creating", () => {
-    const result = contactSchemaFor(null, TODAY).safeParse({ ...named, cadence: "date", contactOn: "2026-10-29" });
+    const result = contactSchemaFor(null, TODAY).safeParse({
+      ...named,
+      cadence: "date",
+      contactOn: "2026-10-29",
+    });
     expect(errorsOf(result)).toEqual({ contactOn: "Дата уже прошла" });
   });
 
@@ -115,15 +140,27 @@ describe("contact cadence", () => {
   });
 
   it("rejects replacing the saved past date with another past date", () => {
-    const result = contactSchemaFor("2026-10-25", TODAY).safeParse({ ...named, cadence: "date", contactOn: "2026-10-27" });
+    const result = contactSchemaFor("2026-10-25", TODAY).safeParse({
+      ...named,
+      cadence: "date",
+      contactOn: "2026-10-27",
+    });
     expect(errorsOf(result)).toEqual({ contactOn: "Дата уже прошла" });
   });
 
   it("validates the frequency form of the card the same way", () => {
     const schema = cadenceSchemaFor("2026-10-25", TODAY);
-    expect(schema.parse({ cadence: "date", contactOn: "2026-10-25" })).toEqual({ cadence: "date", contactOn: "2026-10-25" });
-    expect(schema.parse({ cadence: "week", contactOn: "2026-10-25" })).toEqual({ cadence: "week", contactOn: null });
-    expect(errorsOf(schema.safeParse({ cadence: "date", contactOn: "2026-10-27" }))).toEqual({ contactOn: "Дата уже прошла" });
+    expect(schema.parse({ cadence: "date", contactOn: "2026-10-25" })).toEqual({
+      cadence: "date",
+      contactOn: "2026-10-25",
+    });
+    expect(schema.parse({ cadence: "week", contactOn: "2026-10-25" })).toEqual({
+      cadence: "week",
+      contactOn: null,
+    });
+    expect(errorsOf(schema.safeParse({ cadence: "date", contactOn: "2026-10-27" }))).toEqual({
+      contactOn: "Дата уже прошла",
+    });
   });
 });
 
@@ -203,7 +240,11 @@ describe("contact groups in the contact form", () => {
   });
 
   it("reports the contact name error alongside the new group (scenario «Ошибка формы не теряет группы»)", () => {
-    const result = contactSchema.safeParse({ ...emptyContact, groupIds: [GROUP_A], newGroup: "Аналитики" });
+    const result = contactSchema.safeParse({
+      ...emptyContact,
+      groupIds: [GROUP_A],
+      newGroup: "Аналитики",
+    });
     expect(result.error?.issues.map((issue) => issue.path[0])).toEqual(["name"]);
   });
 });

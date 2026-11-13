@@ -42,14 +42,20 @@ async function insertContact(name: string) {
       [`${name} ${marker}`],
     );
     contactIds.push(rows[0].id);
-    await pool.query("insert into notes (contact_id, body) values ($1, $2)", [rows[0].id, `Заметка ${marker}`]);
+    await pool.query("insert into notes (contact_id, body) values ($1, $2)", [
+      rows[0].id,
+      `Заметка ${marker}`,
+    ]);
     return rows[0].id;
   });
 }
 
 async function addMember(contactId: string, groupId: string) {
   await withSeparateConnection((pool) =>
-    pool.query("insert into contact_groups (contact_id, group_id) values ($1, $2)", [contactId, groupId]),
+    pool.query("insert into contact_groups (contact_id, group_id) values ($1, $2)", [
+      contactId,
+      groupId,
+    ]),
   );
 }
 
@@ -75,7 +81,9 @@ describe("creating groups", () => {
   it("rejects the same name in another case (scenario «Такое имя уже есть»)", async () => {
     await created(`Друзья ${marker}`);
     expect(await createGroup(`друзья ${marker}`)).toEqual({ error: DUPLICATE_GROUP_ERROR });
-    const matching = (await listGroups()).filter((group) => group.name.toLowerCase() === `друзья ${marker}`);
+    const matching = (await listGroups()).filter(
+      (group) => group.name.toLowerCase() === `друзья ${marker}`,
+    );
     expect(matching).toHaveLength(1);
   });
 
@@ -88,11 +96,23 @@ describe("creating groups", () => {
 
 describe("listing groups", () => {
   it("sorts groups by name, «ё» as «е» and ignoring case", async () => {
-    const names = [`я-${marker} теннис`, `я-${marker} Семья`, `я-${marker} ёж`, `я-${marker} Есенин`];
+    const names = [
+      `я-${marker} теннис`,
+      `я-${marker} Семья`,
+      `я-${marker} ёж`,
+      `я-${marker} Есенин`,
+    ];
     for (const name of names) await created(name);
-    const ours = (await listGroups()).filter((group) => group.name.startsWith(`я-${marker}`)).map((g) => g.name);
+    const ours = (await listGroups())
+      .filter((group) => group.name.startsWith(`я-${marker}`))
+      .map((g) => g.name);
     // "ёж" is sorted as "еж": "ж" comes before "с"
-    expect(ours).toEqual([`я-${marker} ёж`, `я-${marker} Есенин`, `я-${marker} Семья`, `я-${marker} теннис`]);
+    expect(ours).toEqual([
+      `я-${marker} ёж`,
+      `я-${marker} Есенин`,
+      `я-${marker} Семья`,
+      `я-${marker} теннис`,
+    ]);
   });
 
   it("counts contacts of a group (scenario «Число контактов меняется»)", async () => {
@@ -111,7 +131,11 @@ describe("renaming groups", () => {
     await addMember(contactId, groupId);
 
     expect(await renameGroup(groupId, `Теннис по субботам ${marker}`)).toEqual({ id: groupId });
-    expect(await groupOf(groupId)).toEqual({ id: groupId, name: `Теннис по субботам ${marker}`, contactCount: 1 });
+    expect(await groupOf(groupId)).toEqual({
+      id: groupId,
+      name: `Теннис по субботам ${marker}`,
+      contactCount: 1,
+    });
   });
 
   it("allows changing only the case (scenario «Смена регистра»)", async () => {
@@ -123,7 +147,9 @@ describe("renaming groups", () => {
   it("rejects the name of another group", async () => {
     await created(`Соседи ${marker}`);
     const groupId = await created(`Коллеги ${marker}`);
-    expect(await renameGroup(groupId, `СОСЕДИ ${marker}`)).toEqual({ error: DUPLICATE_GROUP_ERROR });
+    expect(await renameGroup(groupId, `СОСЕДИ ${marker}`)).toEqual({
+      error: DUPLICATE_GROUP_ERROR,
+    });
     expect((await groupOf(groupId))!.name).toBe(`Коллеги ${marker}`);
   });
 
@@ -137,7 +163,11 @@ describe("deleting groups", () => {
   it("keeps the contacts, their notes and other groups (scenario «Удаление группы с контактами»)", async () => {
     const analysts = await created(`Аналитики ${marker}`);
     const other = await created(`Бег ${marker}`);
-    const members = [await insertContact("Аналитик 1"), await insertContact("Аналитик 2"), await insertContact("Аналитик 3")];
+    const members = [
+      await insertContact("Аналитик 1"),
+      await insertContact("Аналитик 2"),
+      await insertContact("Аналитик 3"),
+    ];
     for (const contactId of members) await addMember(contactId, analysts);
     await addMember(members[0], other);
 

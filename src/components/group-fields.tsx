@@ -13,14 +13,21 @@ type GroupFieldsProps = {
 // Group ticks and «Новая группа» in the contact form (mockup design/contact-new-groups.html).
 // Native checkboxes in pill labels, so the form works without JavaScript; checked = accent-soft
 // with an accent border and a check icon (meaning not by colour alone, decision 24)
-export function GroupFields({ groups, defaultGroupIds, defaultNewGroup, errors }: GroupFieldsProps) {
+export function GroupFields({
+  groups,
+  defaultGroupIds,
+  defaultNewGroup,
+  errors,
+}: GroupFieldsProps) {
   const ticked = new Set(defaultGroupIds);
 
   return (
     <>
       {groups.length > 0 && (
         <fieldset className="grid min-w-0 gap-2">
-          <legend className="mb-2 font-sans text-nav leading-none font-semibold text-ink">Группы</legend>
+          <legend className="mb-2 font-sans text-nav leading-none font-semibold text-ink">
+            Группы
+          </legend>
           <div className="flex min-w-0 flex-wrap gap-tag">
             {groups.map((group) => (
               <label
@@ -34,7 +41,10 @@ export function GroupFields({ groups, defaultGroupIds, defaultNewGroup, errors }
                   defaultChecked={ticked.has(group.id)}
                   className="pointer-events-none absolute opacity-0"
                 />
-                <Check aria-hidden="true" className="hidden size-4 shrink-0 group-has-checked/pick:block" />
+                <Check
+                  aria-hidden="true"
+                  className="hidden size-4 shrink-0 group-has-checked/pick:block"
+                />
                 <span className="truncate" title={group.name}>
                   {group.name}
                 </span>

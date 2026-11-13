@@ -16,7 +16,10 @@ export function CadenceForm({
   cadence: string | null;
   contactOn: string | null;
 }) {
-  const [state, formAction, pending] = useActionState<CadenceFormState, FormData>(setCadenceAction, {});
+  const [state, formAction, pending] = useActionState<CadenceFormState, FormData>(
+    setCadenceAction,
+    {},
+  );
 
   return (
     <form action={formAction} className="grid gap-2 border-t border-line pt-controls" noValidate>

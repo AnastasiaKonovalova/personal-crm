@@ -23,9 +23,14 @@ class RedirectSignal extends Error {
   }
 }
 
-const { createContactAction, updateContactAction, addContactToGroupAction, removeContactFromGroupAction } =
-  await import("@/app/contacts/actions");
-const { createGroupAction, renameGroupAction, deleteGroupAction } = await import("@/app/groups/actions");
+const {
+  createContactAction,
+  updateContactAction,
+  addContactToGroupAction,
+  removeContactFromGroupAction,
+} = await import("@/app/contacts/actions");
+const { createGroupAction, renameGroupAction, deleteGroupAction } =
+  await import("@/app/groups/actions");
 const { closeDb } = await import("@/db");
 const { createContact, getContactWithNotes } = await import("@/server/contacts");
 const { createGroup, listGroups } = await import("@/server/groups");
@@ -62,7 +67,15 @@ function formData(fields: Record<string, string | string[]>) {
   return data;
 }
 
-const emptyContactFields = { name: "", about: "", howWeMet: "", phone: "", email: "", cadence: "", contactOn: "" };
+const emptyContactFields = {
+  name: "",
+  about: "",
+  howWeMet: "",
+  phone: "",
+  email: "",
+  cadence: "",
+  contactOn: "",
+};
 
 async function redirectOf(run: () => Promise<unknown>) {
   try {
@@ -104,7 +117,10 @@ describe("contact form with groups", () => {
 
   it("reports a too long new group name and saves no contact (scenario «Ошибка имени новой группы»)", async () => {
     const name = `Длинная группа ${marker}`;
-    const state = await createContactAction({}, formData({ ...emptyContactFields, name, newGroup: "я".repeat(51) }));
+    const state = await createContactAction(
+      {},
+      formData({ ...emptyContactFields, name, newGroup: "я".repeat(51) }),
+    );
 
     expect(state.errors).toEqual({ newGroup: "Не длиннее 50 символов" });
     expect(state.values?.newGroup).toBe("я".repeat(51));
@@ -119,7 +135,12 @@ describe("contact form with groups", () => {
     const url = await redirectOf(() =>
       createContactAction(
         {},
-        formData({ ...emptyContactFields, name: `С группами ${marker}`, groupIds: [family], newGroup: `Новая ${marker}` }),
+        formData({
+          ...emptyContactFields,
+          name: `С группами ${marker}`,
+          groupIds: [family],
+          newGroup: `Новая ${marker}`,
+        }),
       ),
     );
 
@@ -146,7 +167,15 @@ describe("contact form with groups", () => {
     const id = await contact("Правка-2");
     const tennis = await group("Теннис-2");
     const url = await redirectOf(() =>
-      updateContactAction({}, formData({ ...emptyContactFields, name: `Правка-2 ${marker}`, contactId: id, groupIds: [tennis] })),
+      updateContactAction(
+        {},
+        formData({
+          ...emptyContactFields,
+          name: `Правка-2 ${marker}`,
+          contactId: id,
+          groupIds: [tennis],
+        }),
+      ),
     );
 
     expect(url).toBe(`/contacts/${id}`);
@@ -165,7 +194,9 @@ describe("groups in the contact card", () => {
   it("adds to a group and returns to the card without JavaScript", async () => {
     const id = await contact("Добавить");
     const family = await group("Семья-3");
-    const url = await redirectOf(() => addContactToGroupAction({}, formData({ contactId: id, groupName: ` Семья-3 ${marker} ` })));
+    const url = await redirectOf(() =>
+      addContactToGroupAction({}, formData({ contactId: id, groupName: ` Семья-3 ${marker} ` })),
+    );
 
     expect(url).toBe(`/contacts/${id}`);
     expect(await groupNamesOf(id)).toEqual([`Семья-3 ${marker}`]);
@@ -175,14 +206,20 @@ describe("groups in the contact card", () => {
   it("updates in place with JavaScript", async () => {
     nextState.calledFromJs = true;
     const id = await contact("С JS");
-    const state = await addContactToGroupAction({}, formData({ contactId: id, groupName: `Соседи ${marker}` }));
+    const state = await addContactToGroupAction(
+      {},
+      formData({ contactId: id, groupName: `Соседи ${marker}` }),
+    );
 
     expect(state.savedAt).toBeTypeOf("number");
     expect(await groupNamesOf(id)).toEqual([`Соседи ${marker}`]);
   });
 
   it("reports a missing contact and creates no group (scenario «Контакт удалили в другой вкладке»)", async () => {
-    const state = await addContactToGroupAction({}, formData({ contactId: randomUUID(), groupName: `Никуда ${marker}` }));
+    const state = await addContactToGroupAction(
+      {},
+      formData({ contactId: randomUUID(), groupName: `Никуда ${marker}` }),
+    );
     expect(state).toEqual({ groupName: `Никуда ${marker}`, error: "Контакт не найден" });
     expect(await groupNamed(`Никуда ${marker}`)).toBeUndefined();
   });
@@ -190,9 +227,14 @@ describe("groups in the contact card", () => {
   it("removes from a group and returns to the card without the dialog", async () => {
     const id = await contact("Убрать");
     const tennis = await group("Теннис-3");
-    await addContactToGroupAction({}, formData({ contactId: id, groupName: `Теннис-3 ${marker}` })).catch(() => undefined);
+    await addContactToGroupAction(
+      {},
+      formData({ contactId: id, groupName: `Теннис-3 ${marker}` }),
+    ).catch(() => undefined);
 
-    const url = await redirectOf(() => removeContactFromGroupAction(formData({ contactId: id, groupId: tennis })));
+    const url = await redirectOf(() =>
+      removeContactFromGroupAction(formData({ contactId: id, groupId: tennis })),
+    );
     expect(url).toBe(`/contacts/${id}`);
     expect(await groupNamesOf(id)).toEqual([]);
     expect(await groupNamed(`Теннис-3 ${marker}`)).toBeDefined();
@@ -201,7 +243,10 @@ describe("groups in the contact card", () => {
 
 describe("the «Группы» page", () => {
   it("rejects an empty name (scenario «Пустое имя»)", async () => {
-    expect(await createGroupAction({}, formData({ name: "   " }))).toEqual({ name: "   ", error: "Укажи название" });
+    expect(await createGroupAction({}, formData({ name: "   " }))).toEqual({
+      name: "   ",
+      error: "Укажи название",
+    });
   });
 
   it("rejects a name that already exists (scenario «Такое имя уже есть»)", async () => {
@@ -213,7 +258,9 @@ describe("the «Группы» page", () => {
   });
 
   it("creates a group: back to the page without JavaScript, in place with it", async () => {
-    expect(await redirectOf(() => createGroupAction({}, formData({ name: `Бег ${marker}` })))).toBe("/groups");
+    expect(await redirectOf(() => createGroupAction({}, formData({ name: `Бег ${marker}` })))).toBe(
+      "/groups",
+    );
     expect((await groupNamed(`Бег ${marker}`))?.contactCount).toBe(0);
 
     nextState.calledFromJs = true;
@@ -224,7 +271,9 @@ describe("the «Группы» page", () => {
 
   it("renames a group and leaves the edit mode", async () => {
     const id = await group("Теннис-4");
-    const url = await redirectOf(() => renameGroupAction({}, formData({ groupId: id, name: `Теннис по субботам ${marker}` })));
+    const url = await redirectOf(() =>
+      renameGroupAction({}, formData({ groupId: id, name: `Теннис по субботам ${marker}` })),
+    );
     expect(url).toBe("/groups");
     expect((await groupNamed(`Теннис по субботам ${marker}`))?.id).toBe(id);
   });
@@ -232,7 +281,9 @@ describe("the «Группы» page", () => {
   it("keeps the edit mode on a rename error", async () => {
     await group("Соседи-2");
     const id = await group("Коллеги");
-    expect(await renameGroupAction({}, formData({ groupId: id, name: `соседи-2 ${marker}` }))).toEqual({
+    expect(
+      await renameGroupAction({}, formData({ groupId: id, name: `соседи-2 ${marker}` })),
+    ).toEqual({
       name: `соседи-2 ${marker}`,
       error: "Такая группа уже есть",
     });
@@ -241,7 +292,9 @@ describe("the «Группы» page", () => {
       error: "Не длиннее 50 символов",
     });
     // Scenario «Группу удалили в другой вкладке»
-    expect(await renameGroupAction({}, formData({ groupId: randomUUID(), name: `Нет ${marker}` }))).toEqual({
+    expect(
+      await renameGroupAction({}, formData({ groupId: randomUUID(), name: `Нет ${marker}` })),
+    ).toEqual({
       name: `Нет ${marker}`,
       error: "Группа не найдена",
     });

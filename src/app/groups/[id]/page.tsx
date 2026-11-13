@@ -34,10 +34,15 @@ export default async function GroupPage({
     notFound();
   }
 
-  const { items, total, page, pageCount } = await listContacts({ query, page: requestedPage, groupId: group.id });
+  const { items, total, page, pageCount } = await listContacts({
+    query,
+    page: requestedPage,
+    groupId: group.id,
+  });
 
   // The same rules as on the main page: first page, no search, the group has contacts
-  const reminders = !query && page === 1 && total > 0 ? await listReminders({ groupId: group.id }) : null;
+  const reminders =
+    !query && page === 1 && total > 0 ? await listReminders({ groupId: group.id }) : null;
   const today = toDateString(new Date());
   const reminderRows = (reminders?.items ?? []).map((item) => ({
     id: item.id,
@@ -80,11 +85,17 @@ export default async function GroupPage({
         </Button>
       </div>
 
-      {reminders && <RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />}
+      {reminders && (
+        <RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />
+      )}
 
       {/* keyed by the search: after «Сбросить» or Back the field shows the new state, not the typed text */}
       <Form key={query} action={groupHref} className="grid gap-cta" role="search">
-        <SearchRow query={query} resetHref={groupHref} label={`Поиск по имени в группе «${group.name}»`} />
+        <SearchRow
+          query={query}
+          resetHref={groupHref}
+          label={`Поиск по имени в группе «${group.name}»`}
+        />
       </Form>
 
       <ContactList

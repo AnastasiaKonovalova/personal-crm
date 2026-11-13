@@ -16,7 +16,10 @@ const nameInputClasses = "flex-[1_1_220px] max-w-[420px]";
 
 // «Новая группа» at the top of /groups. After a save with JS the form is remounted, so the field is empty
 export function CreateGroupForm({ className }: { className?: string }) {
-  const [state, formAction, pending] = useActionState<GroupFormState, FormData>(createGroupAction, {});
+  const [state, formAction, pending] = useActionState<GroupFormState, FormData>(
+    createGroupAction,
+    {},
+  );
 
   return (
     <form key={state.savedAt} action={formAction} className={className} noValidate>
@@ -46,7 +49,10 @@ export function CreateGroupForm({ className }: { className?: string }) {
 
 // Renaming in place of the group's row (/groups?edit=<id>); success redirects to /groups
 export function RenameGroupForm({ group }: { group: { id: string; name: string } }) {
-  const [state, formAction, pending] = useActionState<GroupFormState, FormData>(renameGroupAction, {});
+  const [state, formAction, pending] = useActionState<GroupFormState, FormData>(
+    renameGroupAction,
+    {},
+  );
   const inputId = `rename-${group.id}`;
   const errorId = `rename-${group.id}-error`;
 

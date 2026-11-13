@@ -65,11 +65,13 @@ export function GroupsMore({ hidden, className }: { hidden: Group[]; className: 
       if (event.pointerType === "mouse") later(open, OPEN_DELAY_MS);
     };
     const onButtonLeave = (event: PointerEvent) => {
-      if (event.pointerType === "mouse") later(() => !popover.matches(":hover") && close(), CLOSE_DELAY_MS);
+      if (event.pointerType === "mouse")
+        later(() => !popover.matches(":hover") && close(), CLOSE_DELAY_MS);
     };
     const onPopoverEnter = () => clearTimeout(timer);
     const onPopoverLeave = (event: PointerEvent) => {
-      if (event.pointerType === "mouse") later(() => !button.matches(":hover") && close(), CLOSE_DELAY_MS);
+      if (event.pointerType === "mouse")
+        later(() => !button.matches(":hover") && close(), CLOSE_DELAY_MS);
     };
 
     popover.addEventListener("beforetoggle", onBeforeToggle);

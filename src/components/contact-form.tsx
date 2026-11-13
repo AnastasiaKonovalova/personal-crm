@@ -15,7 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ContactField } from "@/lib/validation";
 
-const fields: { name: ContactField; label: string; type?: string; placeholder?: string; required?: boolean }[] = [
+const fields: {
+  name: ContactField;
+  label: string;
+  type?: string;
+  placeholder?: string;
+  required?: boolean;
+}[] = [
   { name: "name", label: "Имя", placeholder: "Анна Смирнова", required: true },
   { name: "about", label: "Кто это", placeholder: "Дизайнер, соседка по даче" },
   { name: "howWeMet", label: "Откуда знакомы", placeholder: "Учились вместе на курсах" },

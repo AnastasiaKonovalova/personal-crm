@@ -50,7 +50,9 @@ function ConfirmButton({ label, pendingLabel }: { label: string; pendingLabel: s
 }
 
 function HiddenFields({ fields }: { fields: Record<string, string> }) {
-  return Object.entries(fields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />);
+  return Object.entries(fields).map(([name, value]) => (
+    <input key={name} type="hidden" name={name} value={value} />
+  ));
 }
 
 // Confirmation that works with and without JavaScript. Without JS the trigger navigates to the page with
@@ -112,8 +114,18 @@ export function ConfirmDialog({
         {trigger}
         {initiallyOpen && (
           <div className={alertDialogOverlayClasses}>
-            <div role="alertdialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} className={alertDialogContentClasses}>
-              <a href={closeHref} aria-label="Закрыть" className={`${closeButtonClasses} absolute top-cta right-cta`}>
+            <div
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              aria-describedby={descriptionId}
+              className={alertDialogContentClasses}
+            >
+              <a
+                href={closeHref}
+                aria-label="Закрыть"
+                className={`${closeButtonClasses} absolute top-cta right-cta`}
+              >
                 <X aria-hidden="true" className="size-5" />
               </a>
               <h2 id={titleId} className={alertDialogTitleClasses}>

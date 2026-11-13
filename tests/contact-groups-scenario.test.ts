@@ -46,7 +46,14 @@ async function group(name: string) {
 }
 
 function form(fields: { name: string; groupIds?: string[]; newGroup?: string; about?: string }) {
-  return contactSchema.parse({ about: "", howWeMet: "", phone: "", email: "", ...fields, name: `${fields.name} ${marker}` });
+  return contactSchema.parse({
+    about: "",
+    howWeMet: "",
+    phone: "",
+    email: "",
+    ...fields,
+    name: `${fields.name} ${marker}`,
+  });
 }
 
 async function contact(name: string, groupIds: string[] = []) {
@@ -75,7 +82,10 @@ async function insertWithCadence(name: string, cadence: "week" | "month", create
 
 async function addMembers(groupId: string, contactIds: string[]) {
   await withSeparateConnection((pool) =>
-    pool.query("insert into contact_groups (contact_id, group_id) select unnest($1::uuid[]), $2", [contactIds, groupId]),
+    pool.query("insert into contact_groups (contact_id, group_id) select unnest($1::uuid[]), $2", [
+      contactIds,
+      groupId,
+    ]),
   );
 }
 
@@ -91,7 +101,9 @@ describe("groups in the contact form", () => {
 
   it("creates the new group and puts the contact in it (scenario «Новая группа в форме»)", async () => {
     const id = await contact("Новая группа");
-    expect(await updateContact(id, form({ name: "Новая группа", newGroup: `Аналитики ${marker}` }))).toBe(id);
+    expect(
+      await updateContact(id, form({ name: "Новая группа", newGroup: `Аналитики ${marker}` })),
+    ).toBe(id);
 
     const created = (await listGroups()).find((item) => item.name === `Аналитики ${marker}`);
     expect(created?.contactCount).toBe(1);
@@ -103,7 +115,9 @@ describe("groups in the contact form", () => {
     const id = await createContact(form({ name: "Сосед", newGroup: `соседи ${marker}` }));
 
     expect(await idsInGroup(neighbours)).toEqual([id]);
-    const matching = (await listGroups()).filter((item) => item.name.toLowerCase() === `соседи ${marker}`);
+    const matching = (await listGroups()).filter(
+      (item) => item.name.toLowerCase() === `соседи ${marker}`,
+    );
     expect(matching).toHaveLength(1);
   });
 
@@ -124,7 +138,9 @@ describe("groups in the contact form", () => {
 
   it("does not touch groups when the contact is missing", async () => {
     const family = await group("Семья-2");
-    expect(await updateContact(randomUUID(), form({ name: "Никто", groupIds: [family] }))).toBeNull();
+    expect(
+      await updateContact(randomUUID(), form({ name: "Никто", groupIds: [family] })),
+    ).toBeNull();
     expect(await idsInGroup(family)).toEqual([]);
   });
 
@@ -178,7 +194,9 @@ describe("groups in the contact card", () => {
     const id = await contact("Существующая");
 
     expect(await addContactToGroup(id, `друзья-5 ${marker}`)).toBe(friends);
-    expect((await listGroups()).filter((item) => item.name.toLowerCase() === `друзья-5 ${marker}`)).toHaveLength(1);
+    expect(
+      (await listGroups()).filter((item) => item.name.toLowerCase() === `друзья-5 ${marker}`),
+    ).toHaveLength(1);
   });
 
   it("adding twice keeps one membership", async () => {
@@ -199,8 +217,14 @@ describe("groups in the contact card", () => {
 
 describe("groups in the contact list", () => {
   it("gives every row its groups by name", async () => {
-    const id = await contact("Строка", [await group("Ж-группа"), await group("Ёж-группа"), await group("А-группа")]);
-    const row = (await listContacts({ page: 1, query: `Строка ${marker}` })).items.find((item) => item.id === id);
+    const id = await contact("Строка", [
+      await group("Ж-группа"),
+      await group("Ёж-группа"),
+      await group("А-группа"),
+    ]);
+    const row = (await listContacts({ page: 1, query: `Строка ${marker}` })).items.find(
+      (item) => item.id === id,
+    );
     expect(row?.groups.map((item) => item.name)).toEqual([
       `А-группа ${marker}`,
       `Ёж-группа ${marker}`,
@@ -228,7 +252,10 @@ describe("groups in the contact list", () => {
         [marker],
       ),
     );
-    await addMembers(big, rows.map((row) => row.id));
+    await addMembers(
+      big,
+      rows.map((row) => row.id),
+    );
 
     const first = await listContacts({ page: 1, groupId: big });
     const second = await listContacts({ page: 2, groupId: big });
@@ -254,7 +281,9 @@ describe("groups in the contact list", () => {
       expect(result.group).toBeNull();
       expect(result.total).toBe(all.total);
     }
-    expect((await listReminders({ groupId: randomUUID() })).totalCount).toBe((await listReminders()).totalCount);
+    expect((await listReminders({ groupId: randomUUID() })).totalCount).toBe(
+      (await listReminders()).totalCount,
+    );
   });
 });
 

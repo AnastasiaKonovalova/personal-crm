@@ -108,14 +108,46 @@ const NOTE_TEMPLATES = [
 ];
 
 const TRANSLIT: Record<string, string> = {
-  а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i",
-  й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t",
-  у: "u", ф: "f", х: "kh", ц: "ts", ч: "ch", ш: "sh", щ: "shch", ъ: "", ы: "y", ь: "",
-  э: "e", ю: "yu", я: "ya",
+  а: "a",
+  б: "b",
+  в: "v",
+  г: "g",
+  д: "d",
+  е: "e",
+  ё: "e",
+  ж: "zh",
+  з: "z",
+  и: "i",
+  й: "y",
+  к: "k",
+  л: "l",
+  м: "m",
+  н: "n",
+  о: "o",
+  п: "p",
+  р: "r",
+  с: "s",
+  т: "t",
+  у: "u",
+  ф: "f",
+  х: "kh",
+  ц: "ts",
+  ч: "ch",
+  ш: "sh",
+  щ: "shch",
+  ъ: "",
+  ы: "y",
+  ь: "",
+  э: "e",
+  ю: "yu",
+  я: "ya",
 };
 
 function transliterate(value: string) {
-  return [...value.toLowerCase()].map((char) => TRANSLIT[char] ?? char).join("").replace(/[^a-z0-9]/g, "");
+  return [...value.toLowerCase()]
+    .map((char) => TRANSLIT[char] ?? char)
+    .join("")
+    .replace(/[^a-z0-9]/g, "");
 }
 
 // Area code 000 does not exist, so these numbers cannot belong to real people
@@ -182,7 +214,11 @@ function buildKeepInTouch() {
 
   const [min, max] = daysToDueRange(cadence, status);
   const daysSinceContact = PERIOD_DAYS[cadence] - faker.number.int({ min, max });
-  return { cadence, contactOn: null, lastContactAt: new Date(Date.now() - daysSinceContact * DAY_MS) };
+  return {
+    cadence,
+    contactOn: null,
+    lastContactAt: new Date(Date.now() - daysSinceContact * DAY_MS),
+  };
 }
 
 function buildContact() {
@@ -196,17 +232,23 @@ function buildContact() {
   const createdAt = !keepInTouch
     ? faker.date.past({ years: 3 })
     : hasNotes
-      ? new Date(keepInTouch.lastContactAt.getTime() - faker.number.int({ min: 1, max: 400 }) * DAY_MS)
+      ? new Date(
+          keepInTouch.lastContactAt.getTime() - faker.number.int({ min: 1, max: 400 }) * DAY_MS,
+        )
       : keepInTouch.lastContactAt;
 
   return {
     row: {
       id: faker.string.uuid(),
       name: `${firstName} ${lastName}`,
-      about: faker.helpers.maybe(() => faker.helpers.arrayElement(ROLES), { probability: 0.9 }) ?? null,
-      howWeMet: faker.helpers.maybe(() => faker.helpers.arrayElement(ORIGINS), { probability: 0.85 }) ?? null,
+      about:
+        faker.helpers.maybe(() => faker.helpers.arrayElement(ROLES), { probability: 0.9 }) ?? null,
+      howWeMet:
+        faker.helpers.maybe(() => faker.helpers.arrayElement(ORIGINS), { probability: 0.85 }) ??
+        null,
       phone: faker.helpers.maybe(fakePhone, { probability: 0.8 }) ?? null,
-      email: faker.helpers.maybe(() => fakeEmail(firstName, lastName), { probability: 0.7 }) ?? null,
+      email:
+        faker.helpers.maybe(() => fakeEmail(firstName, lastName), { probability: 0.7 }) ?? null,
       cadence: keepInTouch?.cadence ?? null,
       contactOn: keepInTouch?.contactOn ?? null,
       createdAt,
@@ -303,7 +345,9 @@ async function seedGroups(db: Db) {
 
   const groupRows = GROUP_NAMES.map((name) => ({ id: faker.string.uuid(), name }));
   const longGroupId = groupRows.find((group) => group.name === LONG_GROUP_NAME)!.id;
-  const otherGroupIds = groupRows.filter((group) => group.id !== longGroupId).map((group) => group.id);
+  const otherGroupIds = groupRows
+    .filter((group) => group.id !== longGroupId)
+    .map((group) => group.id);
 
   const memberships = contactIds.flatMap((contactId, index) => {
     const fixedCount = FIRST_PAGE_GROUP_COUNTS[index];

@@ -9,7 +9,13 @@ const SELECT_ID = "group-filter";
 // «Фильтр по группам» (design.md п.8): a native select whose caption sits inside the same field.
 // Without JavaScript «Найти» applies it together with the search; with JavaScript a choice applies at once.
 // «Все группы» (empty value) is the reset: there is no separate button
-export function GroupFilter({ groups, groupId }: { groups: { id: string; name: string }[]; groupId?: string }) {
+export function GroupFilter({
+  groups,
+  groupId,
+}: {
+  groups: { id: string; name: string }[];
+  groupId?: string;
+}) {
   return (
     <span className="relative block max-w-80 max-[680px]:max-w-none">
       <label
@@ -23,7 +29,10 @@ export function GroupFilter({ groups, groupId }: { groups: { id: string; name: s
         name="group"
         defaultValue={groupId ?? ""}
         onChange={(event) => event.currentTarget.form?.requestSubmit()}
-        className={cn(fieldClasses, "cursor-pointer appearance-none rounded-card pt-[27px] pr-12 pb-[9px]")}
+        className={cn(
+          fieldClasses,
+          "cursor-pointer appearance-none rounded-card pt-[27px] pr-12 pb-[9px]",
+        )}
       >
         <option value="">Все группы</option>
         {groups.map((group) => (

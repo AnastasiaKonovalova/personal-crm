@@ -63,7 +63,9 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
 
       <SectionSwitch current="contacts" />
 
-      {reminders &&<RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />}
+      {reminders && (
+        <RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />
+      )}
 
       {/* keyed by the address: after «Сбросить» or Back the fields show the new state, not the typed text */}
       <Form key={`${query}|${groupId ?? ""}`} action="/" className="grid gap-cta" role="search">

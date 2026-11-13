@@ -35,10 +35,9 @@ function render(props: Partial<Parameters<typeof ContactList>[0]>) {
 describe("ContactList", () => {
   it("renders a row per contact, each name links to the card", () => {
     const html = render({});
-    const links = [...html.matchAll(/<a[^>]*href="(\/contacts\/[^"]*)"[^>]*>([^<]*)/g)].map(([, href, text]) => [
-      href,
-      text,
-    ]);
+    const links = [...html.matchAll(/<a[^>]*href="(\/contacts\/[^"]*)"[^>]*>([^<]*)/g)].map(
+      ([, href, text]) => [href, text],
+    );
     expect(links).toEqual([
       ["/contacts/c1", "Иван Петров"],
       ["/contacts/c2", "Ольга Егорова"],

@@ -10,7 +10,8 @@ const optionalText = (max: number) =>
 
 function isRealDate(value: string) {
   return (
-    /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
   );
 }
 
@@ -113,7 +114,10 @@ export function contactSchemaFor(savedContactOn: string | null, today?: string) 
 
 // Frequency alone, for the form in the contact card
 export function cadenceSchemaFor(savedContactOn: string | null, today?: string) {
-  return z.object(cadenceShape).superRefine(checkCadence(savedContactOn, today)).transform(dropStrayDate);
+  return z
+    .object(cadenceShape)
+    .superRefine(checkCadence(savedContactOn, today))
+    .transform(dropStrayDate);
 }
 
 // For creating a contact: there is no saved date yet
@@ -121,7 +125,10 @@ export const contactSchema = contactSchemaFor(null);
 
 export type ContactInput = z.output<typeof contactSchema>;
 // Text fields of the form; groups are sent as several values and handled separately
-export type ContactField = Exclude<keyof z.input<typeof contactSchema>, keyof typeof contactGroupsShape>;
+export type ContactField = Exclude<
+  keyof z.input<typeof contactSchema>,
+  keyof typeof contactGroupsShape
+>;
 
 export const noteSchema = z.object({
   body: z.string().trim().min(1, "Заметка пустая").max(5000, "Не длиннее 5000 символов"),

@@ -45,7 +45,13 @@ export function NoteItem({ contactId, note, createdAtLabel }: NoteItemProps) {
           {createdAtLabel}
         </time>
         {!editing && (
-          <Button type="button" variant="ghost" size="sm" className="px-0" onClick={() => setEditing(true)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="px-0"
+            onClick={() => setEditing(true)}
+          >
             <Pencil />
             Изменить
           </Button>
@@ -74,7 +80,13 @@ export function NoteItem({ contactId, note, createdAtLabel }: NoteItemProps) {
             <Button type="submit" variant="outline" size="sm" disabled={pending}>
               {pending ? "Сохраняю…" : "Сохранить"}
             </Button>
-            <Button type="button" variant="ghost" size="sm" className="px-0" onClick={() => setEditing(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="px-0"
+              onClick={() => setEditing(false)}
+            >
               Отмена
             </Button>
           </div>

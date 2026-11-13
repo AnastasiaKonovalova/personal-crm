@@ -8,7 +8,12 @@ export const closeButtonClasses =
 
 export function CloseButton({ className, ...props }: React.ComponentProps<"button">) {
   return (
-    <button type="button" aria-label="Закрыть" className={cn(closeButtonClasses, className)} {...props}>
+    <button
+      type="button"
+      aria-label="Закрыть"
+      className={cn(closeButtonClasses, className)}
+      {...props}
+    >
       <X aria-hidden="true" className="size-5" />
     </button>
   );

@@ -99,6 +99,9 @@ export async function existingGroupIds(executor: Executor, ids: string[]) {
 // The group the list is filtered by; null for a malformed id or a deleted group
 export async function findGroup(id: string | undefined) {
   if (!id || !UUID_PATTERN.test(id)) return null;
-  const [found] = await getDb().select({ id: groups.id, name: groups.name }).from(groups).where(eq(groups.id, id));
+  const [found] = await getDb()
+    .select({ id: groups.id, name: groups.name })
+    .from(groups)
+    .where(eq(groups.id, id));
   return found ?? null;
 }

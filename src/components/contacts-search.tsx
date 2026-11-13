@@ -7,7 +7,15 @@ import { contactsHref } from "@/lib/contact-list";
 
 // The search row: field, «Найти» and «Сбросить» (only while a search is set). Shared by the main page
 // and the group page; «Сбросить» drops only the search and keeps the rest of the address (resetHref)
-export function SearchRow({ query, resetHref, label }: { query: string; resetHref: string; label: string }) {
+export function SearchRow({
+  query,
+  resetHref,
+  label,
+}: {
+  query: string;
+  resetHref: string;
+  label: string;
+}) {
   return (
     <div className="flex flex-wrap gap-cta">
       {/* 200px basis keeps «Найти» on the same line at 390 */}
@@ -17,7 +25,13 @@ export function SearchRow({ query, resetHref, label }: { query: string; resetHre
           aria-hidden="true"
           className="pointer-events-none absolute top-1/2 left-[18px] size-5 -translate-y-1/2 text-muted-foreground"
         />
-        <Input name="q" type="search" defaultValue={query} placeholder="Поиск по имени" className="pl-12" />
+        <Input
+          name="q"
+          type="search"
+          defaultValue={query}
+          placeholder="Поиск по имени"
+          className="pl-12"
+        />
       </label>
       {/* «Найти» and «Сбросить» wrap as one unit */}
       <span className="flex flex-none items-center gap-cta">

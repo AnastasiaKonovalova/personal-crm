@@ -13,7 +13,9 @@ function render(groupNames: string[]) {
 }
 
 function chips(html: string) {
-  return [...html.matchAll(/<span[^>]*data-group-chip[^>]*>([^<]*)<\/span>/g)].map((match) => match[1]);
+  return [...html.matchAll(/<span[^>]*data-group-chip[^>]*>([^<]*)<\/span>/g)].map(
+    (match) => match[1],
+  );
 }
 
 // Each «+N» button with the items of the popover it targets
@@ -37,14 +39,21 @@ describe("RowGroups", () => {
     expect(chips(html)).toEqual(["Аналитики", "Дача", "Друзья"]);
     expect(badges(html)).toEqual([
       { text: "+2", label: "Ещё 2 группы", action: "show", hidden: ["Соседи", "Цигун"] },
-      { text: "+4", label: "Ещё 4 группы", action: "show", hidden: ["Дача", "Друзья", "Соседи", "Цигун"] },
+      {
+        text: "+4",
+        label: "Ещё 4 группы",
+        action: "show",
+        hidden: ["Дача", "Друзья", "Соседи", "Цигун"],
+      },
     ]);
   });
 
   it("has only the compact «+1» when two groups fit the wide screen", () => {
     const html = render(names.slice(0, 2));
     expect(chips(html)).toEqual(["Аналитики", "Дача"]);
-    expect(badges(html)).toEqual([{ text: "+1", label: "Ещё 1 группа", action: "show", hidden: ["Дача"] }]);
+    expect(badges(html)).toEqual([
+      { text: "+1", label: "Ещё 1 группа", action: "show", hidden: ["Дача"] },
+    ]);
   });
 
   it("is an empty cell without groups", () => {

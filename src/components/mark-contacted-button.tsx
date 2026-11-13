@@ -22,7 +22,10 @@ export function MarkContactedButton({
   returnTo?: "/" | "card";
   compact?: boolean;
 }) {
-  const [state, formAction, pending] = useActionState<MarkContactedState, FormData>(markContactedAction, {});
+  const [state, formAction, pending] = useActionState<MarkContactedState, FormData>(
+    markContactedAction,
+    {},
+  );
 
   return (
     <form action={formAction} className="grid justify-items-end gap-1">

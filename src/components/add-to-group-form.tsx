@@ -17,7 +17,10 @@ type AddToGroupFormProps = {
 // The card field «Группа: выбрать или новая» (design.md п.5): an existing name adds the contact to that
 // group, a new name creates it. A plain form post without JavaScript returns to the card
 export function AddToGroupForm({ contactId, suggestions }: AddToGroupFormProps) {
-  const [state, formAction, pending] = useActionState<GroupFieldState, FormData>(addContactToGroupAction, {});
+  const [state, formAction, pending] = useActionState<GroupFieldState, FormData>(
+    addContactToGroupAction,
+    {},
+  );
 
   return (
     <form action={formAction} className="grid gap-2" noValidate>

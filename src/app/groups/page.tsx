@@ -46,11 +46,14 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
       {/* keyed by the edit mode: opening or closing a rename remounts the form, so its old error goes away */}
       <CreateGroupForm
         key={editId ?? "list"}
-        className="rounded-card border border-line bg-surface p-[clamp(22px,2.6vw,30px)]" />
+        className="rounded-card border border-line bg-surface p-[clamp(22px,2.6vw,30px)]"
+      />
 
       {groups.length === 0 ? (
         <div className="rounded-contact border border-line bg-surface bg-[radial-gradient(circle_at_85%_0,var(--accent-soft),transparent_55%)] px-[clamp(24px,4vw,48px)] py-[clamp(36px,5vw,64px)] text-center">
-          <h2 className="mx-auto max-w-[22ch] font-display text-empty-title font-semibold">Групп пока нет</h2>
+          <h2 className="mx-auto max-w-[22ch] font-display text-empty-title font-semibold">
+            Групп пока нет
+          </h2>
           <p className="mx-auto mt-3.5 max-w-[44ch] text-muted-foreground">
             Создай первую — например, «Семья» или «Теннис». Людей в группы добавляют в их карточке.
           </p>
@@ -71,7 +74,7 @@ export default async function GroupsPage({ searchParams }: { searchParams: Searc
                     No z-index on them: it would trap the no-JS dialog inside this row's stacking context */}
                 <Link
                   href={`/groups/${group.id}`}
-                  className="font-bold [overflow-wrap:anywhere] text-ink transition-colors duration-200 after:absolute after:inset-0 group-hover:text-teal-deep focus-visible:text-teal-deep focus-visible:outline-offset-[-2px] max-[560px]:col-start-1"
+                  className="font-bold [overflow-wrap:anywhere] text-ink transition-colors duration-200 group-hover:text-teal-deep after:absolute after:inset-0 focus-visible:text-teal-deep focus-visible:outline-offset-[-2px] max-[560px]:col-start-1"
                 >
                   {group.name}
                 </Link>

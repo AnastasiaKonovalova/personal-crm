@@ -22,7 +22,10 @@ function blockRow(html: string, id: string) {
 
 async function noteBodies(id: string) {
   const { rows } = await withPool((pool) =>
-    pool.query<{ body: string }>("select body from notes where contact_id = $1 order by created_at", [id]),
+    pool.query<{ body: string }>(
+      "select body from notes where contact_id = $1 order by created_at",
+      [id],
+    ),
   );
   return rows.map((row) => row.body);
 }
@@ -58,7 +61,9 @@ describe("keep in touch over HTTP", () => {
   it("a contact created 20 days ago is 13 days overdue and shown in the block", async () => {
     expect(contactId).toBeDefined();
     await withPool((pool) =>
-      pool.query("update contacts set created_at = now() - interval '20 days' where id = $1", [contactId]),
+      pool.query("update contacts set created_at = now() - interval '20 days' where id = $1", [
+        contactId,
+      ]),
     );
 
     const html = await getPage("/");
@@ -95,7 +100,11 @@ describe("keep in touch over HTTP", () => {
 
   it("changes the frequency in the card without JavaScript", async () => {
     expect(contactId).toBeDefined();
-    const response = await submitForm(`/contacts/${contactId}`, { cadence: "month", contactOn: "" }, 'name="cadence"');
+    const response = await submitForm(
+      `/contacts/${contactId}`,
+      { cadence: "month", contactOn: "" },
+      'name="cadence"',
+    );
     expect(response.status, "frequency form").toBe(200);
 
     const card = await getPage(`/contacts/${contactId}`);

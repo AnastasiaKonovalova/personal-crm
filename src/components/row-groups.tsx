@@ -26,9 +26,14 @@ export function RowGroups({ groups }: { groups: Group[] }) {
           {group.name}
         </span>
       ))}
-      {layout.wide.more && <GroupsMore hidden={layout.wide.more.hidden} className="max-[1100px]:hidden" />}
+      {layout.wide.more && (
+        <GroupsMore hidden={layout.wide.more.hidden} className="max-[1100px]:hidden" />
+      )}
       {layout.compact.more && (
-        <GroupsMore hidden={layout.compact.more.hidden} className="hidden max-[1100px]:inline-block" />
+        <GroupsMore
+          hidden={layout.compact.more.hidden}
+          className="hidden max-[1100px]:inline-block"
+        />
       )}
     </span>
   );

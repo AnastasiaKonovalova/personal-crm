@@ -27,12 +27,21 @@ const removeClasses = `relative grid size-8 flex-none place-items-center rounded
 
 // «Группы» in the contact card (design.md п.5, mockups contact-groups-a.html and contact-groups-none.html):
 // pills by name leading to the group page, a cross with a confirmation, and one field to add
-export function ContactGroupsCard({ className, contact, groups, allGroups, removeGroupId }: ContactGroupsCardProps) {
+export function ContactGroupsCard({
+  className,
+  contact,
+  groups,
+  allGroups,
+  removeGroupId,
+}: ContactGroupsCardProps) {
   const cardHref = `/contacts/${contact.id}`;
 
   return (
     // grid-cols-1 (minmax(0, 1fr)): a long group name must truncate, not widen the card on a narrow screen
-    <section className={`${className} grid grid-cols-1 gap-controls`} aria-labelledby="groups-title">
+    <section
+      className={`${className} grid grid-cols-1 gap-controls`}
+      aria-labelledby="groups-title"
+    >
       <h2 id="groups-title" className="font-display text-badge text-muted-foreground uppercase">
         Группы
       </h2>
@@ -41,7 +50,10 @@ export function ContactGroupsCard({ className, contact, groups, allGroups, remov
       ) : (
         <ul className="flex flex-wrap gap-tag">
           {groups.map((group) => (
-            <li key={group.id} className="inline-flex max-w-full items-center rounded-pill bg-surface-2 pr-0.5 pl-3.5">
+            <li
+              key={group.id}
+              className="inline-flex max-w-full items-center rounded-pill bg-surface-2 pr-0.5 pl-3.5"
+            >
               <Link
                 href={`/groups/${group.id}`}
                 title={group.name}

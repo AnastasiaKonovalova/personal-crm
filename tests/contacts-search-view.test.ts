@@ -39,7 +39,11 @@ describe("ContactsSearch", () => {
 
   it("selects the current group", () => {
     const html = render({ groupId: TENNIS });
-    expect(options(html).filter((option) => option.selected).map((option) => option.text)).toEqual(["Теннис"]);
+    expect(
+      options(html)
+        .filter((option) => option.selected)
+        .map((option) => option.text),
+    ).toEqual(["Теннис"]);
   });
 
   it("labels the select with its caption", () => {
@@ -52,7 +56,9 @@ describe("ContactsSearch", () => {
   it("offers a link to create groups instead of the filter when there are none", () => {
     const html = renderToStaticMarkup(createElement(ContactsSearch, { query: "", groups: [] }));
     expect(html).not.toContain("<select");
-    expect(html).toMatch(/<a[^>]*href="\/groups#new-group"[^>]*>Тут можно создавать группы контактов<\/a>/);
+    expect(html).toMatch(
+      /<a[^>]*href="\/groups#new-group"[^>]*>Тут можно создавать группы контактов<\/a>/,
+    );
   });
 
   it("has no create-groups link when groups exist", () => {
@@ -78,7 +84,9 @@ describe("ContactsSearch", () => {
 
   it("keeps «Найти» and «Сбросить» in one wrapper that does not wrap inside", () => {
     const html = render({ query: "Анна" });
-    expect(html).toMatch(/<span[^>]*class="[^"]*flex-none[^"]*"[^>]*><button[^>]*>Найти<\/button><a[^>]*>Сбросить<\/a><\/span>/);
+    expect(html).toMatch(
+      /<span[^>]*class="[^"]*flex-none[^"]*"[^>]*><button[^>]*>Найти<\/button><a[^>]*>Сбросить<\/a><\/span>/,
+    );
   });
 });
 
@@ -87,7 +95,11 @@ describe("SearchRow on the group page", () => {
 
   function renderRow(query: string) {
     return renderToStaticMarkup(
-      createElement(SearchRow, { query, resetHref: groupPage, label: "Поиск по имени в группе «Теннис»" }),
+      createElement(SearchRow, {
+        query,
+        resetHref: groupPage,
+        label: "Поиск по имени в группе «Теннис»",
+      }),
     );
   }
 

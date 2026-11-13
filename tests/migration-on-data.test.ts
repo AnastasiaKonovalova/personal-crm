@@ -17,7 +17,13 @@ import { describe, expect, it } from "vitest";
 
 const MIGRATIONS = path.resolve("drizzle");
 
-type JournalEntry = { idx: number; version: string; when: number; tag: string; breakpoints: boolean };
+type JournalEntry = {
+  idx: number;
+  version: string;
+  when: number;
+  tag: string;
+  breakpoints: boolean;
+};
 type Journal = { version: string; dialect: string; entries: JournalEntry[] };
 // Table -> its columns in order
 type Shape = Record<string, string[]>;
@@ -45,7 +51,11 @@ async function withPool<T>(database: string | null, run: (pool: Pool) => Promise
 const quote = (name: string) => `"${name.replace(/"/g, '""')}"`;
 
 // A migrations folder with the given entries; `extra` holds SQL of entries that are not in ./drizzle
-async function migrationsFolder(journal: Journal, entries: JournalEntry[], extra: Record<string, string>) {
+async function migrationsFolder(
+  journal: Journal,
+  entries: JournalEntry[],
+  extra: Record<string, string>,
+) {
   const folder = await mkdtemp(path.join(tmpdir(), "crm-migrations-"));
   await mkdir(path.join(folder, "meta"));
   for (const { tag } of entries) {
@@ -53,7 +63,10 @@ async function migrationsFolder(journal: Journal, entries: JournalEntry[], extra
     if (tag in extra) await writeFile(target, extra[tag]);
     else await copyFile(path.join(MIGRATIONS, `${tag}.sql`), target);
   }
-  await writeFile(path.join(folder, "meta", "_journal.json"), JSON.stringify({ ...journal, entries }));
+  await writeFile(
+    path.join(folder, "meta", "_journal.json"),
+    JSON.stringify({ ...journal, entries }),
+  );
   return folder;
 }
 
@@ -99,7 +112,10 @@ type MigrationReport = {
 const EXTRA_TAG = "9999_extra";
 
 // `target` is a tag from the journal, or SQL appended as an extra latest migration (the self-check)
-async function checkMigration(target: { tag: string } | { sql: string }, { fill, inspect }: Check): Promise<MigrationReport> {
+async function checkMigration(
+  target: { tag: string } | { sql: string },
+  { fill, inspect }: Check,
+): Promise<MigrationReport> {
   const journal = await readJournal();
   const extra: Record<string, string> = {};
   let entries = journal.entries;
@@ -125,7 +141,8 @@ async function checkMigration(target: { tag: string } | { sql: string }, { fill,
       await fill(pool);
       const shape = await shapeOf(pool);
       const rows: Record<string, Row[]> = {};
-      for (const [table, columns] of Object.entries(shape)) rows[table] = await rowsOf(pool, table, columns);
+      for (const [table, columns] of Object.entries(shape))
+        rows[table] = await rowsOf(pool, table, columns);
       return { shape, rows };
     });
 
@@ -146,24 +163,33 @@ async function checkMigration(target: { tag: string } | { sql: string }, { fill,
         }
         // Only the columns that existed before: a new column is not a change of the old data
         const afterRows = await rowsOf(pool, table, kept);
-        if (JSON.stringify(comparable(afterRows, kept)) !== JSON.stringify(comparable(before.rows[table], kept))) {
+        if (
+          JSON.stringify(comparable(afterRows, kept)) !==
+          JSON.stringify(comparable(before.rows[table], kept))
+        ) {
           problems.push(`${table}: rows changed`);
         }
         const added = shape[table].filter((column) => !columns.includes(column));
         if (added.length > 0) newColumns[table] = added;
       }
 
-      const rowsBefore = Object.fromEntries(Object.entries(before.rows).map(([table, rows]) => [table, rows.length]));
+      const rowsBefore = Object.fromEntries(
+        Object.entries(before.rows).map(([table, rows]) => [table, rows.length]),
+      );
       return {
         rowsBefore,
         problems,
-        newTables: Object.keys(shape).filter((table) => !before.shape[table]).sort(),
+        newTables: Object.keys(shape)
+          .filter((table) => !before.shape[table])
+          .sort(),
         newColumns,
         inspected: inspect ? await inspect(pool) : undefined,
       };
     });
   } finally {
-    await withPool(null, (pool) => pool.query(`drop database if exists ${quote(database)} with (force)`));
+    await withPool(null, (pool) =>
+      pool.query(`drop database if exists ${quote(database)} with (force)`),
+    );
     await rm(beforeFolder, { recursive: true, force: true });
     await rm(afterFolder, { recursive: true, force: true });
   }
@@ -217,7 +243,10 @@ describe("data checks per migration", () => {
       {
         fill: fillContactsWithoutCadence,
         inspect: async (pool) => ({
-          withCadence: await count(pool, "select count(*)::int as n from contacts where cadence is not null or contact_on is not null"),
+          withCadence: await count(
+            pool,
+            "select count(*)::int as n from contacts where cadence is not null or contact_on is not null",
+          ),
         }),
       },
     );
@@ -250,12 +279,32 @@ describe("data checks per migration", () => {
 // The check itself, on extra migrations appended after the real ones
 describe("the data check", () => {
   it.each([
-    ["changes a value", `UPDATE "contacts" SET "about" = NULL WHERE "name" = 'Анна Тестова';`, ["contacts: rows changed"]],
-    ["deletes a row", `DELETE FROM "notes" WHERE "body" LIKE 'Поздравить%';`, ["notes: rows changed"]],
-    ["adds a row", `INSERT INTO "contacts" ("name") VALUES ('Лишний');`, ["contacts: rows changed"]],
-    ["drops a column", `ALTER TABLE "contacts" DROP COLUMN "phone";`, ["contacts.phone: column is gone"]],
+    [
+      "changes a value",
+      `UPDATE "contacts" SET "about" = NULL WHERE "name" = 'Анна Тестова';`,
+      ["contacts: rows changed"],
+    ],
+    [
+      "deletes a row",
+      `DELETE FROM "notes" WHERE "body" LIKE 'Поздравить%';`,
+      ["notes: rows changed"],
+    ],
+    [
+      "adds a row",
+      `INSERT INTO "contacts" ("name") VALUES ('Лишний');`,
+      ["contacts: rows changed"],
+    ],
+    [
+      "drops a column",
+      `ALTER TABLE "contacts" DROP COLUMN "phone";`,
+      ["contacts.phone: column is gone"],
+    ],
     ["drops a table", `DROP TABLE "notes";`, ["notes: table is gone"]],
-    ["changes a column type", `ALTER TABLE "contacts" ALTER COLUMN "created_at" TYPE date;`, ["contacts: rows changed"]],
+    [
+      "changes a column type",
+      `ALTER TABLE "contacts" ALTER COLUMN "created_at" TYPE date;`,
+      ["contacts: rows changed"],
+    ],
     [
       "adds a column and damages an old one",
       `ALTER TABLE "contacts" ADD COLUMN "nickname" text; UPDATE "contacts" SET "email" = NULL;`,
@@ -273,7 +322,9 @@ describe("the data check", () => {
 
   it("does not raise a false alarm for a harmless new column and table", async () => {
     const report = await checkMigration(
-      { sql: `ALTER TABLE "contacts" ADD COLUMN "nickname" text; CREATE TABLE "tags" ("id" uuid PRIMARY KEY);` },
+      {
+        sql: `ALTER TABLE "contacts" ADD COLUMN "nickname" text; CREATE TABLE "tags" ("id" uuid PRIMARY KEY);`,
+      },
       { fill: fillContactsWithCadence },
     );
     expect(report.problems).toEqual([]);
@@ -286,7 +337,8 @@ describe("the data check", () => {
       { sql: `ALTER TABLE "contacts" ADD COLUMN "archived" boolean NOT NULL DEFAULT false;` },
       {
         fill: fillContactsWithCadence,
-        inspect: (pool) => count(pool, "select count(*)::int as n from contacts where archived = false"),
+        inspect: (pool) =>
+          count(pool, "select count(*)::int as n from contacts where archived = false"),
       },
     );
     expect(report.problems).toEqual([]);

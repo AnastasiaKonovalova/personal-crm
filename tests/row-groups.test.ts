@@ -46,6 +46,9 @@ describe("layoutRowGroups", () => {
       { id: "1", name: "Друзья" },
       { id: "2", name: "Теннис" },
     ];
-    expect(layoutRowGroups(groups).compact).toEqual({ visible: [groups[0]], more: { count: 1, hidden: [groups[1]] } });
+    expect(layoutRowGroups(groups).compact).toEqual({
+      visible: [groups[0]],
+      more: { count: 1, hidden: [groups[1]] },
+    });
   });
 });

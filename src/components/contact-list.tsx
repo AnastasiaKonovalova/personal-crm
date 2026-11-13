@@ -26,7 +26,15 @@ const rowFocus =
 const rowActive = "group-hover:text-teal-deep group-has-[a:focus-visible]:text-teal-deep";
 
 // Round pagination arrow; on the first/last page it stays visible but inactive
-function PageArrow({ href, label, children }: { href?: string; label: string; children: React.ReactNode }) {
+function PageArrow({
+  href,
+  label,
+  children,
+}: {
+  href?: string;
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <Button asChild variant="outline" size="icon">
       {href ? (
@@ -79,7 +87,9 @@ export function ContactList({
                 key={contact.id}
                 className={`${rowGrid} ${rowFocus} group relative border-b border-line transition-colors duration-200 last:border-b-0 hover:bg-teal-soft max-[680px]:grid-cols-[1fr_20px] max-[680px]:gap-x-3 max-[680px]:gap-y-0.5 max-[680px]:px-5 max-[680px]:py-4`}
               >
-                <span className={`flex items-center gap-2.5 font-bold text-ink ${rowActive} max-[680px]:col-start-1`}>
+                <span
+                  className={`flex items-center gap-2.5 font-bold text-ink ${rowActive} max-[680px]:col-start-1`}
+                >
                   <DueDot kind={contact.status?.kind} />
                   <Link
                     href={`/contacts/${contact.id}`}
@@ -92,7 +102,9 @@ export function ContactList({
                 <span className="text-meta text-muted-foreground max-[680px]:col-start-1 max-[680px]:pl-[18px]">
                   {contact.about ?? "—"}
                 </span>
-                <span className="text-meta text-muted-foreground max-[680px]:hidden">{contact.howWeMet ?? "—"}</span>
+                <span className="text-meta text-muted-foreground max-[680px]:hidden">
+                  {contact.howWeMet ?? "—"}
+                </span>
                 <RowGroups groups={contact.groups} />
                 <span
                   className={`flex text-muted-foreground transition-[color,transform] duration-[350ms] ease-spring group-hover:translate-x-[3px] group-has-[a:focus-visible]:translate-x-[3px] ${rowActive} motion-reduce:transition-none max-[680px]:col-start-2 max-[680px]:row-span-2 max-[680px]:row-start-1`}
