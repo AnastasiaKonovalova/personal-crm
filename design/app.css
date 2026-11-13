@@ -195,3 +195,125 @@
 .ak-select { appearance: none; -webkit-appearance: none; padding-right: 48px; cursor: pointer; }
 .ak-select-box .ak-ico { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .ak-input[type="date"] { flex: 0 1 220px; min-width: 0; }
+
+/* groups ------------------------------------------------------------------- */
+/* switcher «Контакты / Группы»: LangSwitch pattern (pill group, active segment gold); ink on gold 5.1:1 */
+.ak-switch { display: inline-flex; justify-self: start; gap: 4px; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-pill); }
+.ak-switch a { font-family: var(--font-sans); font-weight: 700; font-size: 15px; line-height: 1.6; color: var(--muted); padding: 8px 20px; border-radius: var(--radius-pill); transition: color .2s, background .2s; }
+.ak-switch a:hover { color: var(--teal-deep); }
+.ak-switch a[aria-current="page"] { background: var(--accent); color: var(--ink); }
+
+/* group chip in a list row: TagList pattern (surface-2 pill), long names cut with an ellipsis */
+.ak-gchip { flex: 0 1 auto; min-width: 4.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-display); font-size: 12.5px; line-height: 1.6; color: var(--muted); background: var(--surface-2); padding: 3px 10px; border-radius: var(--radius-pill); }
+/* «+N»: interactive, so a bordered pill with teal-deep text; hit area grown to 44px with ::before */
+.ak-gmore { position: relative; z-index: 1; flex: none; font-family: var(--font-display); font-weight: 600; font-size: 12.5px; line-height: 1.6; color: var(--teal-deep); background: var(--surface); border: 1px solid var(--line); padding: 2px 9px; border-radius: var(--radius-pill); cursor: pointer; transition: border-color .2s; }
+.ak-gmore::before { content: ""; position: absolute; inset: -9px -4px; }
+.ak-gmore:hover, .ak-gmore[aria-expanded="true"] { border-color: var(--teal-deep); }
+.ak-root .ak-gmore:focus-visible { outline: 2px solid var(--teal-deep); outline-offset: 3px; }
+
+/* list with a groups column; the row is a div, the name link covers it (like the «Пора связаться» rows),
+   so «+N» can sit on top as a real button */
+.ak-list-groups { overflow: visible; }
+.ak-list-groups .ak-list-head { border-radius: var(--radius-card) var(--radius-card) 0 0; }
+.ak-list-groups .ak-list-head, .ak-list-groups .ak-row { grid-template-columns: 1fr 1.2fr 1fr 1.6fr 20px; }
+.ak-list-groups .ak-row:last-child { border-radius: 0 0 var(--radius-card) var(--radius-card); }
+.ak-row-linked { position: relative; }
+.ak-row-link { color: inherit; }
+.ak-row-link::after { content: ""; position: absolute; inset: 0; }
+.ak-root .ak-row-link:focus-visible { outline: none; }
+.ak-row-linked:has(.ak-row-link:focus-visible) { background: var(--teal-soft); outline: 2px solid var(--teal-deep); outline-offset: -2px; }
+.ak-row-linked:hover .ak-row-link, .ak-row-linked:has(.ak-row-link:focus-visible) .ak-row-link { color: var(--teal-deep); }
+.ak-row-groups { position: relative; display: flex; align-items: center; gap: var(--space-chip); min-width: 0; }
+/* how many chips fit: 3 above 1100px, 1 at 1100px and below (owner 2026-11-13: two were cut to a couple of
+   letters at 900); each layout has its own «+N». Scoped to .ak-row-groups so these rules win over the base
+   chip and button styles */
+.ak-row-groups .ak-gchip { max-width: 9em; }
+.ak-row-groups .ak-gmore-1 { display: none; }
+@media (max-width: 1100px) {
+  .ak-list-groups .ak-list-head, .ak-list-groups .ak-row { grid-template-columns: 1fr 1.2fr 1fr 1.3fr 20px; }
+  .ak-row-groups .ak-gchip { max-width: none; }
+  .ak-row-groups .ak-gchip-2, .ak-row-groups .ak-gchip-3, .ak-row-groups .ak-gmore-3 { display: none; }
+  .ak-row-groups .ak-gmore-1 { display: inline-block; }
+}
+@media (max-width: 680px) {
+  .ak-list-groups .ak-row { grid-template-columns: 1fr 20px; }
+  .ak-list-groups .ak-row-groups { grid-column: 1; padding-left: 18px; margin-top: 6px; }
+  .ak-list-groups .ak-row-groups:empty { display: none; }
+  .ak-row-groups .ak-gchip { max-width: 16em; }
+}
+
+/* popover with the rest of the groups: native [popover] in the top layer, placed under its «+N» by a small script.
+   Dialog/popover mapping (surface, line, no shadow); small, so radius-card. No display here: the browser hides it until open */
+.ak-pop { position: fixed; inset: auto; margin: 0; width: max-content; min-width: 180px; max-width: min(300px, calc(100vw - 32px)); gap: 8px; padding: 14px 18px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); }
+.ak-pop:popover-open { display: grid; }
+.ak-pop-title { font-family: var(--font-display); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.ak-pop ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ak-pop li { font-size: 14.5px; color: var(--ink); overflow-wrap: anywhere; }
+
+/* group filter (variant B, reworked): its own labelled row under the search row, same form, so «Найти» applies both
+   without JS; first option «Все группы» */
+.ak-search-form { display: grid; gap: var(--space-cta); }
+/* labelled select: one field holds both the caption and the value (TextField shell, taller, so radius-card);
+   the select fills the whole box, so a click anywhere, the caption included, opens it. «Все группы» is the reset */
+.ak-select-labeled { display: block; max-width: 320px; }
+@media (max-width: 680px) { .ak-select-labeled { max-width: none; } } /* narrow: same width as the search row above */
+.ak-select-labeled .ak-select { border-radius: var(--radius-card); padding: 27px 48px 9px 20px; }
+.ak-select-label { position: absolute; top: 9px; left: 21px; z-index: 1; font-family: var(--font-sans); font-weight: 600; font-size: 12.5px; line-height: 1.4; color: var(--muted); pointer-events: none; }
+/* «Найти» + «Сбросить» wrap as one unit: on a narrow screen both go to the next line together */
+.ak-search-actions { display: flex; flex: none; align-items: center; gap: var(--space-cta); }
+
+/* group page (/groups/<id>): back links to all groups and all contacts, the group under the title (variant B);
+   no switch and no group filter, the search stays inside the group */
+.ak-backs { display: grid; justify-items: start; gap: var(--space-tag); }
+.ak-page-sub { display: block; margin-top: 8px; font-weight: 600; font-size: clamp(19px, 2.2vw, 23px); letter-spacing: -.01em; line-height: 1.2; color: var(--muted); overflow-wrap: anywhere; }
+.ak-page-sub b { font-weight: 600; color: var(--ink); }
+
+/* groups page */
+.ak-group-form { display: grid; gap: 8px; }
+.ak-group-form-row { display: flex; flex-wrap: wrap; gap: var(--space-cta); }
+.ak-group-form-row .ak-input { flex: 1 1 220px; min-width: 0; max-width: 420px; }
+.ak-glist { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); overflow: hidden; }
+.ak-glist-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--space-grid); align-items: center; padding: 10px clamp(18px, 2.4vw, 28px); border-bottom: 1px solid var(--line); transition: background .2s; }
+.ak-glist-row:last-child { border-bottom: 0; }
+.ak-glist-row:hover { background: var(--teal-soft); }
+.ak-glist-name { font-weight: 700; color: var(--ink); overflow-wrap: anywhere; transition: color .2s; }
+.ak-glist-name::after { content: ""; position: absolute; inset: 0; }
+.ak-glist-row:hover .ak-glist-name { color: var(--teal-deep); }
+.ak-glist-count { font-family: var(--font-display); font-size: 14px; font-weight: 600; letter-spacing: .04em; color: var(--muted); white-space: nowrap; }
+.ak-glist-actions { position: relative; z-index: 1; display: flex; gap: 4px; }
+.ak-glist-edit { display: grid; gap: 8px; padding: 14px clamp(18px, 2.4vw, 28px); border-bottom: 1px solid var(--line); background: var(--bg); }
+.ak-glist-edit .ak-group-form-row { align-items: center; }
+@media (max-width: 560px) {
+  .ak-glist-row { grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-cta); }
+  .ak-glist-count { grid-column: 1; grid-row: 2; }
+  .ak-glist-actions { grid-column: 2; grid-row: 1 / span 2; }
+  .ak-glist-actions .ak-btn { width: var(--hit-carousel); height: var(--hit-carousel); padding: 0; justify-content: center; gap: 0; }
+  .ak-glist-actions .ak-btn-label { display: none; }
+}
+
+/* groups in the contact card */
+.ak-groups-card { display: grid; gap: var(--space-controls); }
+.ak-groups-card .ak-cadence-label { margin: 0; }
+.ak-gtags { display: flex; flex-wrap: wrap; gap: var(--space-tag); margin: 0; padding: 0; list-style: none; }
+.ak-gtag { display: inline-flex; align-items: center; max-width: 100%; background: var(--surface-2); border-radius: var(--radius-pill); padding: 0 2px 0 14px; }
+.ak-gtag a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 14px; line-height: 1.6; color: var(--ink); padding: 6px 2px 6px 0; transition: color .2s; }
+.ak-gtag a:hover { color: var(--teal-deep); }
+.ak-gtag button, .ak-gtag-x { position: relative; flex: none; display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: var(--radius-round); background: none; color: var(--muted); cursor: pointer; transition: color .2s, background .2s; }
+.ak-gtag button::before, .ak-gtag-x::before { content: ""; position: absolute; inset: -6px; }
+.ak-gtag button:hover, .ak-gtag-x:hover { color: var(--teal-deep); background: var(--teal-soft); }
+.ak-gtag .ak-ico { width: 16px; height: 16px; }
+.ak-gadd { display: flex; flex-wrap: wrap; gap: var(--space-cta); }
+.ak-gadd .ak-input { flex: 1 1 240px; min-width: 0; max-width: 420px; }
+.ak-groups-none { margin: 0; color: var(--muted); }
+
+/* group checkboxes (card variant B and contact forms): pills, checked = accent-soft + accent border + check icon */
+.ak-gpick { display: flex; flex-wrap: wrap; gap: var(--space-tag); margin: 0; padding: 0; border: 0; min-width: 0; }
+.ak-gpick label { position: relative; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; font-weight: 600; font-size: 14px; line-height: 1.6; color: var(--ink); background: var(--surface); border: 1px solid var(--line); padding: 6px 14px; border-radius: var(--radius-pill); cursor: pointer; transition: border-color .2s, background .2s; }
+.ak-gpick label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ak-gpick input { position: absolute; opacity: 0; pointer-events: none; }
+.ak-gpick label:hover { border-color: var(--teal-deep); }
+.ak-gpick label:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); }
+.ak-gpick label:has(input:focus-visible) { outline: 2px solid var(--teal-deep); outline-offset: 3px; }
+.ak-gpick .ak-ico { display: none; width: 16px; height: 16px; }
+.ak-gpick label:has(input:checked) .ak-ico { display: block; }
+.ak-field-hint { margin: 0; font-size: 13px; color: var(--muted); }

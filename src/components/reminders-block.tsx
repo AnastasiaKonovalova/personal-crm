@@ -34,19 +34,33 @@ export function RemindersBlock({ rows, hasCadence }: { rows: ReminderRow[]; hasC
 
   if (rows.length === 0) {
     return hasCadence ? (
-      <section className="overflow-hidden rounded-card border border-line bg-surface" aria-labelledby="reminders-title">
-        <h2 id="reminders-title" className="px-[clamp(18px,2.4vw,28px)] pt-[clamp(18px,2.4vw,24px)] pb-3 font-display text-notes-title font-semibold">
+      <section
+        className="overflow-hidden rounded-card border border-line bg-surface"
+        aria-labelledby="reminders-title"
+      >
+        <h2
+          id="reminders-title"
+          className="px-[clamp(18px,2.4vw,28px)] pt-[clamp(18px,2.4vw,24px)] pb-3 font-display text-notes-title font-semibold"
+        >
           Пора связаться
         </h2>
-        <div className={`flex items-center gap-grid ${edgePadding} pt-1.5 pb-[clamp(18px,2.4vw,24px)]`}>
-          <span className="grid size-12 shrink-0 place-items-center rounded-round bg-teal-soft text-teal-deep" aria-hidden="true">
+        <div
+          className={`flex items-center gap-grid ${edgePadding} pt-1.5 pb-[clamp(18px,2.4vw,24px)]`}
+        >
+          <span
+            className="grid size-12 shrink-0 place-items-center rounded-round bg-teal-soft text-teal-deep"
+            aria-hidden="true"
+          >
             <HeartHandshake className="size-6" />
           </span>
           <p className="font-display text-body-lg font-semibold text-ink">Со всеми на связи</p>
         </div>
       </section>
     ) : (
-      <section className="overflow-hidden rounded-card border border-line bg-surface" aria-label="Пора связаться">
+      <section
+        className="overflow-hidden rounded-card border border-line bg-surface"
+        aria-label="Пора связаться"
+      >
         <p className="max-w-[52ch] px-[clamp(18px,2.4vw,28px)] py-[clamp(18px,2.4vw,24px)] text-muted-foreground">
           Задай частоту общения в карточке контакта — и здесь появятся те, с кем{" "}
           <b className="font-bold text-ink">пора связаться</b>
@@ -56,12 +70,19 @@ export function RemindersBlock({ rows, hasCadence }: { rows: ReminderRow[]; hasC
   }
 
   return (
-    <section className="overflow-hidden rounded-card border border-line bg-surface" aria-labelledby="reminders-title">
-      <div className={`flex items-baseline gap-cta ${edgePadding} pt-[clamp(18px,2.4vw,24px)] pb-3`}>
+    <section
+      className="overflow-hidden rounded-card border border-line bg-surface"
+      aria-labelledby="reminders-title"
+    >
+      <div
+        className={`flex items-baseline gap-cta ${edgePadding} pt-[clamp(18px,2.4vw,24px)] pb-3`}
+      >
         <h2 id="reminders-title" className="font-display text-notes-title font-semibold">
           Пора связаться
         </h2>
-        <span className="font-display text-counter font-semibold text-muted-foreground">{rows.length}</span>
+        <span className="font-display text-counter font-semibold text-muted-foreground">
+          {rows.length}
+        </span>
       </div>
 
       <ul>
@@ -77,7 +98,7 @@ export function RemindersBlock({ rows, hasCadence }: { rows: ReminderRow[]; hasC
             {/* the link's ::after covers the whole row, so the row opens the card; the button sits above it */}
             <Link
               href={`/contacts/${row.id}`}
-              className="col-start-2 row-start-1 font-bold text-ink transition-colors duration-200 after:absolute after:inset-0 after:content-[''] group-hover:text-teal-deep"
+              className="col-start-2 row-start-1 font-bold text-ink transition-colors duration-200 group-hover:text-teal-deep after:absolute after:inset-0 after:content-['']"
             >
               {row.name}
               <DueDotLabel kind={row.kind} />
@@ -112,7 +133,10 @@ export function RemindersBlock({ rows, hasCadence }: { rows: ReminderRow[]; hasC
           }
         >
           {view.showPager && (
-            <nav className="flex items-center gap-controls" aria-label="Страницы блока «Пора связаться»">
+            <nav
+              className="flex items-center gap-controls"
+              aria-label="Страницы блока «Пора связаться»"
+            >
               <Button
                 type="button"
                 variant="outline"
@@ -145,8 +169,14 @@ export function RemindersBlock({ rows, hasCadence }: { rows: ReminderRow[]; hasC
             variant="ghost"
             size="sm"
             aria-expanded={view.expanded}
-            className={view.expanded ? "ml-auto text-teal-deep hover:text-ink max-[560px]:ml-0" : "text-teal-deep hover:text-ink"}
-            onClick={() => setState(view.expanded ? { expanded: false, page: 1 } : { expanded: true, page: 1 })}
+            className={
+              view.expanded
+                ? "ml-auto text-teal-deep hover:text-ink max-[560px]:ml-0"
+                : "text-teal-deep hover:text-ink"
+            }
+            onClick={() =>
+              setState(view.expanded ? { expanded: false, page: 1 } : { expanded: true, page: 1 })
+            }
           >
             {view.expanded ? "Свернуть" : `Показать все (${rows.length})`}
             {view.expanded ? <ChevronUp /> : <ChevronDown />}

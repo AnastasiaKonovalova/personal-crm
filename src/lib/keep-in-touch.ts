@@ -55,7 +55,9 @@ export function toDateString(moment: Date, timeZone: string = APP_TIME_ZONE): st
 export function daysBetween(from: string, to: string): number {
   const a = parseDate(from);
   const b = parseDate(to);
-  return Math.round((Date.UTC(b.year, b.month - 1, b.day) - Date.UTC(a.year, a.month - 1, a.day)) / DAY_MS);
+  return Math.round(
+    (Date.UTC(b.year, b.month - 1, b.day) - Date.UTC(a.year, a.month - 1, a.day)) / DAY_MS,
+  );
 }
 
 // Adds a period; a month that is too short for the day gives the last day of that month
@@ -76,7 +78,11 @@ export function addPeriod(date: string, period: Period): string {
 }
 
 // Null when no cadence is set. `lastContact` is the latest note, or the contact's creation moment
-export function dueDate(cadence: Cadence | null, lastContact: Date, contactOn: string | null): string | null {
+export function dueDate(
+  cadence: Cadence | null,
+  lastContact: Date,
+  contactOn: string | null,
+): string | null {
   if (cadence === null) return null;
   if (cadence === "date") return contactOn;
   return addPeriod(toDateString(lastContact), cadence);
@@ -96,7 +102,8 @@ export function sortForReminders<T extends { name: string; status: Status }>(ite
     .filter((item) => item.status.kind !== "ok")
     .sort((a, b) => {
       if (a.status.kind !== b.status.kind) return a.status.kind === "overdue" ? -1 : 1;
-      const byDays = a.status.kind === "overdue" ? b.status.days - a.status.days : a.status.days - b.status.days;
+      const byDays =
+        a.status.kind === "overdue" ? b.status.days - a.status.days : a.status.days - b.status.days;
       return byDays || a.name.localeCompare(b.name, "ru");
     });
 }
@@ -110,7 +117,11 @@ export const CADENCE_LABELS: Record<Cadence, string> = {
   date: "Конкретная дата",
 };
 
-const dueDateFormat = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", timeZone: "UTC" });
+const dueDateFormat = new Intl.DateTimeFormat("ru-RU", {
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
 const dueDateYearFormat = new Intl.DateTimeFormat("ru-RU", {
   day: "numeric",
   month: "long",

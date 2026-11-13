@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Форма: группы — эскиз</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/tokens.css">
+  <link rel="stylesheet" href="vendor/styles.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="ak-root">
+  <header class="ak-header">
+    <div class="ak-wrap ak-bar">
+      <a class="ak-brand" href="contacts-groups.html">Личная CRM<b>.</b></a>
+    </div>
+  </header>
+
+  <main class="ak-wrap ak-main ak-stack-y ak-narrow">
+      <a class="ak-back" href="contacts-groups.html"><svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Все контакты</a>
+
+      <h1 class="ak-page-title">Новый контакт</h1>
+
+      <form class="ak-card ak-stack-y" novalidate>
+        <div class="ak-field">
+          <label class="ak-field-label" for="name">Имя<span class="ak-req">*</span></label>
+          <input class="ak-input" id="name" value="Анна Смирнова">
+        </div>
+        <div class="ak-field">
+          <label class="ak-field-label" for="about">Кто это</label>
+          <input class="ak-input" id="about" value="Дизайнер, соседка по даче">
+        </div>
+        <fieldset class="ak-field" style="border:0;margin:0;padding:0;min-width:0">
+          <legend class="ak-field-label" style="padding:0;margin-bottom:8px">Группы</legend>
+          <div class="ak-gpick"><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Аналитики">Аналитики</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Бывшие коллеги">Бывшие коллеги</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Врачи">Врачи</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Выпускники курса интерьерного дизайна, поток 2019.">Выпускники курса интерьерного дизайна, поток 2019.</span></label><label><input type="checkbox" name="groupIds" checked><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Дача">Дача</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Друзья">Друзья</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Йога">Йога</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Книжный клуб">Книжный клуб</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Курсы дизайна">Курсы дизайна</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Мастера по ремонту">Мастера по ремонту</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Родители класса">Родители класса</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Семья">Семья</span></label><label><input type="checkbox" name="groupIds" checked><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Соседи">Соседи</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Теннис">Теннис</span></label><label><input type="checkbox" name="groupIds"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Цигун">Цигун</span></label></div>
+        </fieldset>
+        <div class="ak-field">
+          <label class="ak-field-label" for="newGroup">Новая группа</label>
+          <input class="ak-input" id="newGroup" name="newGroup" value="Выпускники курса интерьерного дизайна, поток 2019. Москва" aria-invalid="true" aria-describedby="newGroup-error">
+          <p class="ak-field-error" id="newGroup-error"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>Не длиннее 50 символов</p>
+          <p class="ak-field-hint">Если такая группа уже есть, контакт попадёт в неё.</p>
+        </div>
+        <div class="ak-btn-row">
+          <button class="ak-btn ak-btn-primary" type="submit">Сохранить</button>
+          <a class="ak-btn ak-btn-ghost" href="contacts-groups.html">Отмена</a>
+        </div>
+      </form>
+    </main>
+</div>
+</body>
+</html>

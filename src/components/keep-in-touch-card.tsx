@@ -31,7 +31,9 @@ export function KeepInTouchCard({
                   <DueDot kind="overdue" />
                   Пора связаться
                 </p>
-                <p className="text-meta font-semibold text-danger">просрочено на {pluralDays(status.days)}</p>
+                <p className="text-meta font-semibold text-danger">
+                  просрочено на {pluralDays(status.days)}
+                </p>
               </>
             ) : (
               <p className="flex items-center gap-2.5 font-display text-status font-semibold text-ink">

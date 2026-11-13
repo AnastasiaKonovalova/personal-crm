@@ -10,7 +10,8 @@ const optionalText = (max: number) =>
 
 function isRealDate(value: string) {
   return (
-    /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value
   );
 }
 
@@ -25,6 +26,40 @@ const cadenceShape = {
     .trim()
     .default("")
     .refine((value) => value === "" || isRealDate(value), "Некорректная дата"),
+};
+
+// "ё" and "е" are interchangeable: in search and in group names
+export function foldYo(value: string) {
+  return value.replace(/ё/g, "е").replace(/Ё/g, "Е");
+}
+
+// Same rule as the unique index groups_name_normalized_idx: case and "ё/е" do not differ
+export function normalizeGroupName(name: string) {
+  return foldYo(name.trim()).toLowerCase();
+}
+
+export const GROUP_NAME_MAX = 50;
+
+const groupName = z
+  .string()
+  .trim()
+  .min(1, "Укажи название")
+  .max(GROUP_NAME_MAX, `Не длиннее ${GROUP_NAME_MAX} символов`);
+
+export const groupNameSchema = z.object({ name: groupName });
+
+// Groups ticked in the contact form plus an optional new group; unknown ids are dropped by the server
+const contactGroupsShape = {
+  groupIds: z
+    .array(z.uuid("Некорректная группа"))
+    .default([])
+    .transform((ids) => [...new Set(ids)]),
+  newGroup: z
+    .string()
+    .trim()
+    .max(GROUP_NAME_MAX, `Не длиннее ${GROUP_NAME_MAX} символов`)
+    .default("")
+    .transform(emptyToNull),
 };
 
 type CadenceFields = { cadence: Cadence | null; contactOn: string };
@@ -71,6 +106,7 @@ export function contactSchemaFor(savedContactOn: string | null, today?: string) 
         .refine((value) => value === "" || z.email().safeParse(value).success, "Некорректная почта")
         .transform(emptyToNull),
       ...cadenceShape,
+      ...contactGroupsShape,
     })
     .superRefine(checkCadence(savedContactOn, today))
     .transform(dropStrayDate);
@@ -78,14 +114,21 @@ export function contactSchemaFor(savedContactOn: string | null, today?: string) 
 
 // Frequency alone, for the form in the contact card
 export function cadenceSchemaFor(savedContactOn: string | null, today?: string) {
-  return z.object(cadenceShape).superRefine(checkCadence(savedContactOn, today)).transform(dropStrayDate);
+  return z
+    .object(cadenceShape)
+    .superRefine(checkCadence(savedContactOn, today))
+    .transform(dropStrayDate);
 }
 
 // For creating a contact: there is no saved date yet
 export const contactSchema = contactSchemaFor(null);
 
 export type ContactInput = z.output<typeof contactSchema>;
-export type ContactField = keyof z.input<typeof contactSchema>;
+// Text fields of the form; groups are sent as several values and handled separately
+export type ContactField = Exclude<
+  keyof z.input<typeof contactSchema>,
+  keyof typeof contactGroupsShape
+>;
 
 export const noteSchema = z.object({
   body: z.string().trim().min(1, "Заметка пустая").max(5000, "Не длиннее 5000 символов"),
