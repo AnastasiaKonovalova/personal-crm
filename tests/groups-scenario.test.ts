@@ -6,6 +6,7 @@ import {
   DUPLICATE_GROUP_ERROR,
   createGroup,
   deleteGroup,
+  findGroup,
   findOrCreateGroup,
   listGroups,
   renameGroup,
@@ -173,5 +174,25 @@ describe("findOrCreateGroup", () => {
     const id = await created(`Ёжики ${marker}`);
     expect(await findOrCreateGroup(`ежики ${marker}`)).toBe(id);
     expect((await listGroups()).filter((group) => group.id === id)).toHaveLength(1);
+  });
+});
+
+// The new contact form ticks the group from ?group=, the group page shows its name or a 404
+describe("findGroup", () => {
+  it("finds an existing group with its name", async () => {
+    const id = await created(`Найденная ${marker}`);
+    expect(await findGroup(id)).toEqual({ id, name: `Найденная ${marker}` });
+  });
+
+  it("returns null for a deleted group (scenario «Группа не найдена»)", async () => {
+    const id = await created(`Временная ${marker}`);
+    await deleteGroup(id);
+    expect(await findGroup(id)).toBeNull();
+  });
+
+  it("returns null for a malformed or missing id", async () => {
+    expect(await findGroup("not-a-uuid")).toBeNull();
+    expect(await findGroup("")).toBeNull();
+    expect(await findGroup(undefined)).toBeNull();
   });
 });
