@@ -6,7 +6,7 @@ import { newContactReturnHref } from "@/lib/contact-form-return";
 import { findGroup, listGroups } from "@/server/groups";
 
 export const metadata: Metadata = {
-  title: "Новый контакт — Личная CRM",
+  title: "Новый контакт — Свои люди",
 };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;

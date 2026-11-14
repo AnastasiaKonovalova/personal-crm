@@ -17,7 +17,7 @@ const manrope = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Личная CRM",
+  title: "Свои люди — личная CRM",
   description: "Контакты людей, которых знаю лично",
 };
 
@@ -44,9 +44,37 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body className="min-h-screen antialiased">
         <header className="sticky top-0 z-10 border-b border-line bg-header-glass backdrop-blur-[10px]">
           <div className="mx-auto flex h-header-height max-w-content items-center px-gutter-fluid">
-            <Link href="/" className="font-display text-brand font-semibold whitespace-nowrap">
-              Личная CRM<span className="text-accent">.</span>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2.5 font-display text-brand font-semibold whitespace-nowrap"
+            >
+              {/* Landing mark: gold circle and teal-deep ring; the same shape as app/icon.svg */}
+              <svg
+                viewBox="0 0 38 28"
+                width="33"
+                height="24"
+                aria-hidden="true"
+                className="flex-none"
+              >
+                <circle cx="14" cy="14" r="12" className="fill-accent" />
+                <circle
+                  cx="24"
+                  cy="14"
+                  r="11"
+                  fill="none"
+                  strokeWidth="2.4"
+                  className="stroke-teal-deep"
+                />
+              </svg>
+              {/* name and dot in one element, so the gap does not push the dot away */}
+              <span>
+                Свои люди<span className="text-accent">.</span>
+              </span>
             </Link>
+            {/* footnote, desktop only: on a phone it stays in the tab title */}
+            <span className="ml-3.5 border-l border-line pl-3.5 text-caption whitespace-nowrap text-muted-foreground max-[680px]:hidden">
+              личная CRM
+            </span>
           </div>
         </header>
         {children}
