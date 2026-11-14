@@ -8,6 +8,13 @@ import { cn } from "@/lib/utils";
 // surface card, line border, radius-contact, on a header-glass backdrop with blur.
 // Action is left out: a submit button inside a form keeps the dialog open while it sends.
 
+// Shared with the server-rendered dialog that works without JavaScript (confirm-dialog.tsx)
+const alertDialogOverlayClasses = "fixed inset-0 z-50 bg-header-glass backdrop-blur-[10px]";
+const alertDialogContentClasses =
+  "fixed top-1/2 left-1/2 z-50 grid w-[calc(100%-2*var(--gutter-fluid))] max-w-[440px] -translate-x-1/2 -translate-y-1/2 gap-cta rounded-contact border border-line bg-surface p-[clamp(24px,3.4vw,36px)] text-ink outline-none";
+const alertDialogTitleClasses = "pr-hit-carousel font-display text-notes-title font-semibold";
+const alertDialogDescriptionClasses = "text-muted-foreground";
+
 function AlertDialog(props: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
 }
@@ -28,14 +35,11 @@ function AlertDialogContent({
     <AlertDialogPrimitive.Portal>
       <AlertDialogPrimitive.Overlay
         data-slot="alert-dialog-overlay"
-        className="fixed inset-0 z-50 bg-header-glass backdrop-blur-[10px]"
+        className={alertDialogOverlayClasses}
       />
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
-        className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-[calc(100%-2*var(--gutter-fluid))] max-w-[440px] -translate-x-1/2 -translate-y-1/2 gap-cta rounded-contact border border-line bg-surface p-[clamp(24px,3.4vw,36px)] text-ink outline-none",
-          className,
-        )}
+        className={cn(alertDialogContentClasses, className)}
         {...props}
       />
     </AlertDialogPrimitive.Portal>
@@ -50,7 +54,7 @@ function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn("pr-hit-carousel font-display text-notes-title font-semibold", className)}
+      className={cn(alertDialogTitleClasses, className)}
       {...props}
     />
   );
@@ -63,7 +67,7 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-muted-foreground", className)}
+      className={cn(alertDialogDescriptionClasses, className)}
       {...props}
     />
   );
@@ -76,4 +80,8 @@ export {
   AlertDialogDescription,
   AlertDialogTitle,
   AlertDialogTrigger,
+  alertDialogContentClasses,
+  alertDialogDescriptionClasses,
+  alertDialogOverlayClasses,
+  alertDialogTitleClasses,
 };

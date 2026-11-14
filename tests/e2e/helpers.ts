@@ -42,11 +42,20 @@ export async function getPage(path: string) {
 // Submits a POST form of the page the way a browser without JavaScript does: the hidden inputs
 // (including the server action id) plus `fields`. A page may hold several forms: `formIncludes`
 // picks the one whose markup contains that text (e.g. `name="contactId" value="…"`), by default the first.
-export async function submitForm(path: string, fields: Record<string, string>, formIncludes?: string) {
+export async function submitForm(
+  path: string,
+  fields: Record<string, string>,
+  formIncludes?: string,
+) {
   const html = await getPage(path);
   const forms = [...html.matchAll(/<form[^>]*method="POST"[^>]*>([\s\S]*?)<\/form>/g)];
-  const form = formIncludes ? forms.find((candidate) => candidate[1].includes(formIncludes)) : forms[0];
-  expect(form, `POST form on ${path}${formIncludes ? ` containing ${formIncludes}` : ""}`).toBeDefined();
+  const form = formIncludes
+    ? forms.find((candidate) => candidate[1].includes(formIncludes))
+    : forms[0];
+  expect(
+    form,
+    `POST form on ${path}${formIncludes ? ` containing ${formIncludes}` : ""}`,
+  ).toBeDefined();
 
   const body = new FormData();
   for (const [, key, value = ""] of form![1].matchAll(

@@ -5,7 +5,10 @@ import { cn } from "@/lib/utils";
 export function FieldError({ className, children, ...props }: React.ComponentProps<"p">) {
   return (
     <p
-      className={cn("flex items-center gap-1.5 text-caption font-semibold text-destructive", className)}
+      className={cn(
+        "flex items-center gap-1.5 text-caption font-semibold text-destructive",
+        className,
+      )}
       {...props}
     >
       <CircleAlert aria-hidden="true" className="size-4 shrink-0" />

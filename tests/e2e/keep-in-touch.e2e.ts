@@ -9,6 +9,8 @@ const marker = randomUUID().slice(0, 8);
 const prefix = `Проверка Связь ${marker}`;
 const contactName = `${prefix} основной`;
 const BULK_COUNT = 7;
+// Must match PAGE_SIZE in src/server/contacts.ts
+const pageSize = 50;
 let contactId: string | undefined;
 
 function countOf(html: string, text: string) {
@@ -22,7 +24,10 @@ function blockRow(html: string, id: string) {
 
 async function noteBodies(id: string) {
   const { rows } = await withPool((pool) =>
-    pool.query<{ body: string }>("select body from notes where contact_id = $1 order by created_at", [id]),
+    pool.query<{ body: string }>(
+      "select body from notes where contact_id = $1 order by created_at",
+      [id],
+    ),
   );
   return rows.map((row) => row.body);
 }
@@ -58,7 +63,9 @@ describe("keep in touch over HTTP", () => {
   it("a contact created 20 days ago is 13 days overdue and shown in the block", async () => {
     expect(contactId).toBeDefined();
     await withPool((pool) =>
-      pool.query("update contacts set created_at = now() - interval '20 days' where id = $1", [contactId]),
+      pool.query("update contacts set created_at = now() - interval '20 days' where id = $1", [
+        contactId,
+      ]),
     );
 
     const html = await getPage("/");
@@ -95,7 +102,11 @@ describe("keep in touch over HTTP", () => {
 
   it("changes the frequency in the card without JavaScript", async () => {
     expect(contactId).toBeDefined();
-    const response = await submitForm(`/contacts/${contactId}`, { cadence: "month", contactOn: "" }, 'name="cadence"');
+    const response = await submitForm(
+      `/contacts/${contactId}`,
+      { cadence: "month", contactOn: "" },
+      'name="cadence"',
+    );
     expect(response.status, "frequency form").toBe(200);
 
     const card = await getPage(`/contacts/${contactId}`);
@@ -156,6 +167,15 @@ describe("keep in touch over HTTP", () => {
     });
 
     it("the block is not shown in search or on the second page", async () => {
+      // A second page must exist even on an empty database (CI): a missing page is shown as
+      // page 1, which has the block. Without a cadence these contacts stay out of the block
+      await withPool((pool) =>
+        pool.query(
+          "insert into contacts (name) select $1 || ' страница ' || n from generate_series(1, $2::int) n",
+          [prefix, pageSize],
+        ),
+      );
+
       expect(await getPage(`/?q=${marker}`)).not.toContain('id="reminders-title"');
       expect(await getPage("/?page=2")).not.toContain('id="reminders-title"');
       expect(await getPage("/")).toContain('id="reminders-title"');

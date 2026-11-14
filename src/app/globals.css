@@ -85,15 +85,27 @@
 }
 
 @keyframes due-pulse-soon {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--teal) 60%, transparent); }
-  70% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--teal) 0%, transparent); }
-  100% { box-shadow: 0 0 0 0 transparent; }
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--teal) 60%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--teal) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
 
 @keyframes due-pulse-overdue {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--overdue) 60%, transparent); }
-  70% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--overdue) 0%, transparent); }
-  100% { box-shadow: 0 0 0 0 transparent; }
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--overdue) 60%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--overdue) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
 
 /* Progressive enhancement. layout.tsx sets data-js on <html> before the first paint, so these
@@ -114,13 +126,41 @@ html[data-js] [data-cadence-date][data-visible="false"] {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(50% 35% at 65% 22%, color-mix(in srgb, var(--accent) 60%, transparent), transparent 70%),
-    radial-gradient(55% 30% at 38% 35%, color-mix(in srgb, var(--aurora-gold) 48%, transparent), transparent 72%),
-    radial-gradient(40% 25% at 88% 18%, color-mix(in srgb, var(--accent-soft) 55%, transparent), transparent 70%),
-    radial-gradient(35% 22% at 72% 48%, color-mix(in srgb, var(--brown) 24%, transparent), transparent 70%),
-    radial-gradient(50% 32% at 60% 74%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 70%),
-    radial-gradient(55% 28% at 36% 82%, color-mix(in srgb, var(--accent-soft) 42%, transparent), transparent 72%),
-    radial-gradient(40% 24% at 84% 86%, color-mix(in srgb, var(--brown) 14%, transparent), transparent 70%);
+    radial-gradient(
+      50% 35% at 65% 22%,
+      color-mix(in srgb, var(--accent) 60%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 30% at 38% 35%,
+      color-mix(in srgb, var(--aurora-gold) 48%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      40% 25% at 88% 18%,
+      color-mix(in srgb, var(--accent-soft) 55%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      35% 22% at 72% 48%,
+      color-mix(in srgb, var(--brown) 24%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 32% at 60% 74%,
+      color-mix(in srgb, var(--accent) 28%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 28% at 36% 82%,
+      color-mix(in srgb, var(--accent-soft) 42%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      40% 24% at 84% 86%,
+      color-mix(in srgb, var(--brown) 14%, transparent),
+      transparent 70%
+    );
   filter: blur(54px);
   opacity: 0.88;
   mask-image: linear-gradient(to bottom, black 52%, transparent 76%);
@@ -137,9 +177,15 @@ html[data-js] [data-cadence-date][data-visible="false"] {
 }
 
 @keyframes aurora-drift {
-  0% { transform: translate(0, 0) scale(1) rotate(0deg); }
-  50% { transform: translate(-4%, 3%) scale(1.12) rotate(6deg); }
-  100% { transform: translate(3%, -3%) scale(1.05) rotate(-4deg); }
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translate(-4%, 3%) scale(1.12) rotate(6deg);
+  }
+  100% {
+    transform: translate(3%, -3%) scale(1.05) rotate(-4deg);
+  }
 }
 
 @layer base {

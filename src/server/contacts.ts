@@ -1,6 +1,6 @@
-import { and, count, desc, eq, ilike, isNotNull, sql } from "drizzle-orm";
+import { type SQL, and, count, desc, eq, ilike, isNotNull, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { contacts, notes } from "@/db/schema";
+import { contactGroups, contacts, notes } from "@/db/schema";
 import {
   type Cadence,
   dueDate,
@@ -8,42 +8,16 @@ import {
   status as statusOn,
   toDateString,
 } from "@/lib/keep-in-touch";
-import type { ContactInput } from "@/lib/validation";
+import { type ContactInput, foldYo } from "@/lib/validation";
+import { UUID_PATTERN, safeWrite } from "@/server/db-errors";
+import { type Executor, existingGroupIds, findGroup, findOrCreateGroupIn } from "@/server/groups";
 
 // Data access for contacts. Imported only by server components, server actions and scripts.
 
 export const PAGE_SIZE = 50;
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 function escapeLike(value: string) {
   return value.replace(/[\\%_]/g, (char) => `\\${char}`);
-}
-
-// "ё" and "е" are interchangeable in search: both the name and the query are folded to "е"
-function foldYo(value: string) {
-  return value.replace(/ё/g, "е").replace(/Ё/g, "Е");
-}
-
-function postgresCode(error: unknown): string | undefined {
-  for (let current = error; current instanceof Error; current = current.cause) {
-    if ("code" in current && typeof current.code === "string") {
-      return current.code;
-    }
-  }
-  return undefined;
-}
-
-// Database errors carry the query parameters (contact fields, note text) in their message and
-// detail. Log only the operation and the Postgres error code, and rethrow without the cause,
-// so personal data never reaches the logs.
-async function safeWrite<T>(operation: string, run: () => Promise<T>): Promise<T> {
-  try {
-    return await run();
-  } catch (error) {
-    console.error(`Database write failed: ${operation}`, { code: postgresCode(error) });
-    throw new Error(`Failed to ${operation}`);
-  }
 }
 
 // Last contact is the latest note, or the contact's creation if it has none. Raw names on purpose:
@@ -53,6 +27,21 @@ const lastContactAtSql = sql<Date>`coalesce(
   (select max(n.created_at) from notes n where n.contact_id = contacts.id),
   contacts.created_at
 )`.mapWith(contacts.createdAt);
+
+export type GroupChip = { id: string; name: string };
+
+// Groups of the contact by name ("ё" as "е", case ignored). Raw names, as in lastContactAtSql
+const groupsOfContactSql = sql<GroupChip[]>`coalesce(
+  (select json_agg(json_build_object('id', g.id, 'name', g.name)
+                   order by lower(translate(g.name, 'Ёё', 'Ее')), g.id)
+   from contact_groups cg join groups g on g.id = cg.group_id
+   where cg.contact_id = contacts.id),
+  '[]'::json
+)`;
+
+function inGroupSql(groupId: string) {
+  return sql`exists (select 1 from contact_groups cg where cg.contact_id = contacts.id and cg.group_id = ${groupId})`;
+}
 
 type KeepInTouchRow = { cadence: Cadence | null; contactOn: string | null; lastContactAt: Date };
 
@@ -64,12 +53,25 @@ function keepInTouchOf({ cadence, contactOn, lastContactAt }: KeepInTouchRow, to
   return { dueOn, status: statusOn(dueOn, today, cadence) };
 }
 
-export async function listContacts({ query, page }: { query?: string; page: number }) {
+// A malformed id or a deleted group is ignored: the list is shown without the filter
+export async function listContacts({
+  query,
+  page,
+  groupId,
+}: {
+  query?: string;
+  page: number;
+  groupId?: string;
+}) {
   const db = getDb();
   const term = query?.trim();
-  const where = term
-    ? ilike(sql`translate(${contacts.name}, 'Ёё', 'Ее')`, `%${escapeLike(foldYo(term))}%`)
-    : undefined;
+  const group = await findGroup(groupId);
+  const where = and(
+    term
+      ? ilike(sql`translate(${contacts.name}, 'Ёё', 'Ее')`, `%${escapeLike(foldYo(term))}%`)
+      : undefined,
+    group ? inGroupSql(group.id) : undefined,
+  );
 
   const [{ total }] = await db.select({ total: count() }).from(contacts).where(where);
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -84,6 +86,7 @@ export async function listContacts({ query, page }: { query?: string; page: numb
       cadence: contacts.cadence,
       contactOn: contacts.contactOn,
       lastContactAt: lastContactAtSql,
+      groups: groupsOfContactSql,
     })
     .from(contacts)
     .where(where)
@@ -97,13 +100,16 @@ export async function listContacts({ query, page }: { query?: string; page: numb
     ...keepInTouchOf({ cadence: row.cadence, contactOn, lastContactAt }, today),
   }));
 
-  return { items, total, page: currentPage, pageCount };
+  return { items, total, page: currentPage, pageCount, group };
 }
 
 // The "Пора связаться" block: every overdue or soon contact in display order, plus the counts the
 // empty states need. Contacts with a cadence are few, so statuses are computed here, not in SQL.
-export async function listReminders() {
+// With a group, both the block and its empty-state counts cover only that group
+export async function listReminders({ groupId }: { groupId?: string } = {}) {
   const db = getDb();
+  const group = await findGroup(groupId);
+  const inGroup: SQL | undefined = group ? inGroupSql(group.id) : undefined;
   const rows = await db
     .select({
       id: contacts.id,
@@ -113,12 +119,15 @@ export async function listReminders() {
       lastContactAt: lastContactAtSql,
     })
     .from(contacts)
-    .where(isNotNull(contacts.cadence));
-  const [{ total }] = await db.select({ total: count() }).from(contacts);
+    .where(and(isNotNull(contacts.cadence), inGroup));
+  const [{ total }] = await db.select({ total: count() }).from(contacts).where(inGroup);
 
   const today = toDateString(new Date());
   const withStatus = rows.flatMap(({ contactOn, lastContactAt, ...row }) => {
-    const { dueOn, status } = keepInTouchOf({ cadence: row.cadence, contactOn, lastContactAt }, today);
+    const { dueOn, status } = keepInTouchOf(
+      { cadence: row.cadence, contactOn, lastContactAt },
+      today,
+    );
     return dueOn && status && row.cadence ? [{ ...row, cadence: row.cadence, dueOn, status }] : [];
   });
 
@@ -145,6 +154,10 @@ export async function getContactWithNotes(id: string) {
     .from(notes)
     .where(eq(notes.contactId, id))
     .orderBy(desc(notes.createdAt), desc(notes.id));
+  const [{ groups: contactGroupChips }] = await db
+    .select({ groups: groupsOfContactSql })
+    .from(contacts)
+    .where(eq(contacts.id, id));
 
   // Notes come newest first, so the first one is the last contact
   const lastContactAt = contactNotes[0]?.createdAt ?? contact.createdAt;
@@ -152,26 +165,99 @@ export async function getContactWithNotes(id: string) {
     { cadence: contact.cadence, contactOn: contact.contactOn, lastContactAt },
     toDateString(new Date()),
   );
-  return { contact, notes: contactNotes, keepInTouch };
+  return { contact, notes: contactNotes, keepInTouch, groups: contactGroupChips };
 }
 
-export async function createContact(input: ContactInput) {
+// Replaces the contact's groups with the ticked ones plus the new group (found or created)
+async function saveContactGroups(
+  tx: Executor,
+  contactId: string,
+  groupIds: string[],
+  newGroup: string | null,
+) {
+  const ids = await existingGroupIds(tx, groupIds);
+  if (newGroup) {
+    ids.push(await findOrCreateGroupIn(tx, newGroup));
+  }
+  await tx.delete(contactGroups).where(eq(contactGroups.contactId, contactId));
+  if (ids.length > 0) {
+    await tx
+      .insert(contactGroups)
+      .values(ids.map((groupId) => ({ contactId, groupId })))
+      .onConflictDoNothing();
+  }
+}
+
+// One transaction: the contact, the new group and the memberships are saved together or not at all
+export async function createContact({ groupIds, newGroup, ...fields }: ContactInput) {
   const db = getDb();
-  const [created] = await safeWrite("create contact", () =>
-    db.insert(contacts).values(input).returning({ id: contacts.id }),
+  return safeWrite("create contact", () =>
+    db.transaction(async (tx) => {
+      const [created] = await tx.insert(contacts).values(fields).returning({ id: contacts.id });
+      await saveContactGroups(tx, created.id, groupIds, newGroup);
+      return created.id;
+    }),
   );
-  return created.id;
 }
 
-export async function updateContact(id: string, input: ContactInput) {
+export async function updateContact(id: string, { groupIds, newGroup, ...fields }: ContactInput) {
   if (!UUID_PATTERN.test(id)) {
     return null;
   }
   const db = getDb();
-  const [updated] = await safeWrite("update contact", () =>
-    db.update(contacts).set(input).where(eq(contacts.id, id)).returning({ id: contacts.id }),
+  return safeWrite("update contact", () =>
+    db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(contacts)
+        .set(fields)
+        .where(eq(contacts.id, id))
+        .returning({ id: contacts.id });
+      if (!updated) {
+        return null;
+      }
+      await saveContactGroups(tx, id, groupIds, newGroup);
+      return updated.id;
+    }),
   );
-  return updated?.id ?? null;
+}
+
+// The card field "Группа: выбрать или новая": an existing name adds to that group, a new name
+// creates it. Only the membership changes. Returns the group id, or null for a missing contact.
+// `name` comes in validated with groupNameSchema.
+export async function addContactToGroup(contactId: string, name: string) {
+  if (!UUID_PATTERN.test(contactId)) {
+    return null;
+  }
+  const db = getDb();
+  return safeWrite("add contact to group", () =>
+    db.transaction(async (tx) => {
+      const [contact] = await tx
+        .select({ id: contacts.id })
+        .from(contacts)
+        .where(eq(contacts.id, contactId));
+      if (!contact) {
+        return null;
+      }
+      const groupId = await findOrCreateGroupIn(tx, name);
+      await tx.insert(contactGroups).values({ contactId, groupId }).onConflictDoNothing();
+      return groupId;
+    }),
+  );
+}
+
+// The group itself stays; true when the contact was in it
+export async function removeContactFromGroup(contactId: string, groupId: string) {
+  if (!UUID_PATTERN.test(contactId) || !UUID_PATTERN.test(groupId)) {
+    return false;
+  }
+  const db = getDb();
+  const removed = await safeWrite("remove contact from group", () =>
+    db
+      .delete(contactGroups)
+      .where(and(eq(contactGroups.contactId, contactId), eq(contactGroups.groupId, groupId)))
+      .returning({ contactId: contactGroups.contactId }),
+  );
+  return removed.length > 0;
 }
 
 // Changes only the frequency (the form in the contact card); the input is validated with the saved date
@@ -227,7 +313,10 @@ export async function addNote(contactId: string, body: string) {
       if (contact.cadence === "date" && contact.contactOn) {
         const { kind } = statusOn(contact.contactOn, toDateString(note.createdAt), "date");
         if (kind !== "ok") {
-          await tx.update(contacts).set({ cadence: null, contactOn: null }).where(eq(contacts.id, contactId));
+          await tx
+            .update(contacts)
+            .set({ cadence: null, contactOn: null })
+            .where(eq(contacts.id, contactId));
         }
       }
       return note;

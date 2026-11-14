@@ -36,12 +36,14 @@ export function CadenceFields({
       <Label
         htmlFor={cadenceId}
         // same label style as the card's data labels (design decision 9)
-        className={cn(cardLabel && "font-display text-badge font-normal text-muted-foreground uppercase")}
+        className={cn(
+          cardLabel && "font-display text-badge font-normal text-muted-foreground uppercase",
+        )}
       >
         Как часто связываться
       </Label>
       <div className="flex flex-wrap items-center gap-cta">
-        <span className="relative min-w-0 max-w-80 flex-[1_1_220px]">
+        <span className="relative max-w-80 min-w-0 flex-[1_1_220px]">
           <select
             id={cadenceId}
             name="cadence"

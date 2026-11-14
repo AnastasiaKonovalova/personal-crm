@@ -1,0 +1,9 @@
+# Prettier formats code and configs; docs, mockups and generated files keep their own layout
+# (it also skips everything in .gitignore)
+pnpm-lock.yaml
+drizzle/
+*.md
+design/
+openspec/
+specs/
+.claude/

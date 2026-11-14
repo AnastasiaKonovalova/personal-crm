@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { BackLink } from "@/components/back-link";
+import { ContactGroupsCard } from "@/components/contact-groups-card";
 import { DeleteContactButton } from "@/components/delete-contact-button";
 import { KeepInTouchCard } from "@/components/keep-in-touch-card";
 import { NoteForm } from "@/components/note-form";
@@ -9,6 +10,7 @@ import { NoteItem } from "@/components/note-item";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { getContactWithNotes } from "@/server/contacts";
+import { listGroups } from "@/server/groups";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "long", timeStyle: "short" });
 
@@ -25,13 +27,21 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-export default async function ContactPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const data = await getContactWithNotes(id);
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function ContactPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: SearchParams;
+}) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
+  const [data, allGroups] = await Promise.all([getContactWithNotes(id), listGroups()]);
   if (!data) {
     notFound();
   }
-  const { contact, notes, keepInTouch } = data;
+  const { contact, notes, keepInTouch, groups } = data;
 
   return (
     <PageShell width="narrow" className="grid gap-heading">
@@ -57,6 +67,14 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
         contactOn={contact.contactOn}
         dueOn={keepInTouch.dueOn}
         status={keepInTouch.status}
+      />
+
+      <ContactGroupsCard
+        className={cardClasses}
+        contact={{ id: contact.id, name: contact.name }}
+        groups={groups.map(({ id: groupId, name }) => ({ id: groupId, name }))}
+        allGroups={allGroups.map(({ id: groupId, name }) => ({ id: groupId, name }))}
+        removeGroupId={typeof query.removeGroup === "string" ? query.removeGroup : undefined}
       />
 
       <section className={cardClasses} aria-label="Данные контакта">

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Поиск на странице группы — эскиз</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/tokens.css">
+  <link rel="stylesheet" href="vendor/styles.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="ak-root">
+  <header class="ak-header">
+    <div class="ak-wrap ak-bar">
+      <a class="ak-brand" href="contacts-groups.html">Личная CRM<b>.</b></a>
+    </div>
+  </header>
+
+  <div class="ak-aurora-zone">
+    <div class="ak-aurora" aria-hidden="true"></div>
+    <main class="ak-wrap ak-main ak-stack-y">
+      <nav class="ak-backs" aria-label="Назад">
+        <a class="ak-back" href="groups.html"><svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Все группы</a>
+        <a class="ak-back" href="contacts-groups.html"><svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Все контакты</a>
+      </nav>
+
+      <div class="ak-page-head">
+        <div>
+          <div class="ak-label">Найдено: 1</div>
+          <h1 class="ak-page-title">Контакты<span class="ak-page-sub">в группе <b>Теннис</b></span></h1>
+        </div>
+        <a class="ak-btn ak-btn-primary" href="contact-new-groups.html"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Добавить контакт</a>
+      </div>
+
+      <!-- no «Пора связаться» block while searching, as on the general list -->
+      <form class="ak-search" role="search">
+        <label class="ak-search-box">
+          <span class="ak-sr-only">Поиск по имени в группе «Теннис»</span>
+          <svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input class="ak-input" type="search" name="q" placeholder="Поиск по имени" value="Иван">
+        </label>
+        <!-- «Сбросить» clears the search and stays on the group page -->
+        <span class="ak-search-actions"><button class="ak-btn ak-btn-ghost" type="submit">Найти</button><a class="ak-btn ak-btn-text" href="group.html" aria-label="Сбросить поиск">Сбросить</a></span>
+      </form>
+
+      <div class="ak-list ak-list-due ak-list-groups">
+        <div class="ak-list-head" aria-hidden="true">
+          <span>Имя</span><span>Кто это</span><span>Откуда знакомы</span><span>Группы</span><span></span>
+        </div>
+        <div class="ak-row ak-row-linked">
+          <span class="ak-row-name"><span class="ak-due" aria-hidden="true"></span><a class="ak-row-link" href="contact-groups-a.html">Иван Петров</a></span>
+          <span class="ak-row-meta">Инженер, играем по субботам</span>
+          <span class="ak-row-meta ak-row-meta-extra">Корты в парке</span>
+          <span class="ak-row-groups"><span class="ak-gchip" title="Теннис">Теннис</span></span>
+          <span class="ak-row-go"><svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</body>
+</html>

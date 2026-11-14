@@ -98,7 +98,11 @@ describe("sortForReminders", () => {
   const today = "2026-10-30";
   const item = (name: string, cadence: "week" | "month", lastContact: string) => ({
     name,
-    status: status(dueDate(cadence, new Date(`${lastContact}T09:00:00Z`), null) as string, today, cadence),
+    status: status(
+      dueDate(cadence, new Date(`${lastContact}T09:00:00Z`), null) as string,
+      today,
+      cadence,
+    ),
   });
 
   it("puts the contact longer overdue higher", () => {
@@ -149,7 +153,9 @@ describe("dueText", () => {
   const today = "2026-10-30";
 
   it("says how long overdue", () => {
-    expect(dueText({ kind: "overdue", days: 13 }, "2026-10-17", today)).toBe("просрочено на 13 дней");
+    expect(dueText({ kind: "overdue", days: 13 }, "2026-10-17", today)).toBe(
+      "просрочено на 13 дней",
+    );
     expect(dueText({ kind: "overdue", days: 1 }, "2026-10-29", today)).toBe("просрочено на 1 день");
   });
 

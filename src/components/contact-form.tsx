@@ -9,12 +9,19 @@ import {
 } from "@/app/contacts/actions";
 import { CadenceFields } from "@/components/cadence-fields";
 import { FieldError } from "@/components/field-error";
+import { GroupFields } from "@/components/group-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ContactField } from "@/lib/validation";
 
-const fields: { name: ContactField; label: string; type?: string; placeholder?: string; required?: boolean }[] = [
+const fields: {
+  name: ContactField;
+  label: string;
+  type?: string;
+  placeholder?: string;
+  required?: boolean;
+}[] = [
   { name: "name", label: "Имя", placeholder: "Анна Смирнова", required: true },
   { name: "about", label: "Кто это", placeholder: "Дизайнер, соседка по даче" },
   { name: "howWeMet", label: "Откуда знакомы", placeholder: "Учились вместе на курсах" },
@@ -24,8 +31,18 @@ const fields: { name: ContactField; label: string; type?: string; placeholder?: 
 
 type EditedContact = { id: string } & Record<ContactField, string | null>;
 
+type ContactFormProps = {
+  contact?: EditedContact;
+  // All groups for the ticks, by name
+  groups: { id: string; name: string }[];
+  // Ticked on open: the edited contact's groups, or the group from /contacts/new?group=<id>
+  groupIds: string[];
+  // Where «Отмена» leads: the page the form was opened from
+  cancelHref: string;
+};
+
 // Without a contact the form creates a new one, with a contact it edits that contact
-export function ContactForm({ contact }: { contact?: EditedContact }) {
+export function ContactForm({ contact, groups, groupIds, cancelHref }: ContactFormProps) {
   const [state, formAction, pending] = useActionState<ContactFormState, FormData>(
     contact ? updateContactAction : createContactAction,
     {},
@@ -65,9 +82,19 @@ export function ContactForm({ contact }: { contact?: EditedContact }) {
       <CadenceFields
         // remounted when the defaults change: React reads a select's defaultValue only on mount,
         // and the form reset after a failed submit would otherwise bring back the first value
-        key={`${state.values?.cadence ?? contact?.cadence ?? ""}|${state.values?.contactOn ?? contact?.contactOn ?? ""}`}
+        // prefixed: sibling keys must differ, and both blocks give "|" on an empty form
+        key={`cadence:${state.values?.cadence ?? contact?.cadence ?? ""}|${state.values?.contactOn ?? contact?.contactOn ?? ""}`}
         defaultCadence={state.values?.cadence ?? contact?.cadence ?? ""}
         defaultContactOn={state.values?.contactOn ?? contact?.contactOn ?? ""}
+        errors={state.errors}
+      />
+      <GroupFields
+        // remounted with the returned values, like CadenceFields: a form reset after a failed submit
+        // must bring back what was ticked and typed, not the values the form opened with
+        key={`groups:${(state.values?.groupIds ?? groupIds).join(",")}|${state.values?.newGroup ?? ""}`}
+        groups={groups}
+        defaultGroupIds={state.values?.groupIds ?? groupIds}
+        defaultNewGroup={state.values?.newGroup ?? ""}
         errors={state.errors}
       />
       <div className="flex flex-wrap gap-cta">
@@ -75,7 +102,7 @@ export function ContactForm({ contact }: { contact?: EditedContact }) {
           {pending ? "Сохраняю…" : "Сохранить"}
         </Button>
         <Button asChild variant="outline">
-          <Link href={contact ? `/contacts/${contact.id}` : "/"}>Отмена</Link>
+          <Link href={cancelHref}>Отмена</Link>
         </Button>
       </div>
     </form>
