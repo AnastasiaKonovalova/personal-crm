@@ -7,7 +7,7 @@ import { getContactWithNotes } from "@/server/contacts";
 import { listGroups } from "@/server/groups";
 
 export const metadata: Metadata = {
-  title: "Редактирование контакта — Личная CRM",
+  title: "Редактирование контакта — Свои люди",
 };
 
 export default async function EditContactPage({ params }: { params: Promise<{ id: string }> }) {
