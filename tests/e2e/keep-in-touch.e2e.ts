@@ -9,6 +9,8 @@ const marker = randomUUID().slice(0, 8);
 const prefix = `Проверка Связь ${marker}`;
 const contactName = `${prefix} основной`;
 const BULK_COUNT = 7;
+// Must match PAGE_SIZE in src/server/contacts.ts
+const pageSize = 50;
 let contactId: string | undefined;
 
 function countOf(html: string, text: string) {
@@ -165,6 +167,15 @@ describe("keep in touch over HTTP", () => {
     });
 
     it("the block is not shown in search or on the second page", async () => {
+      // A second page must exist even on an empty database (CI): a missing page is shown as
+      // page 1, which has the block. Without a cadence these contacts stay out of the block
+      await withPool((pool) =>
+        pool.query(
+          "insert into contacts (name) select $1 || ' страница ' || n from generate_series(1, $2::int) n",
+          [prefix, pageSize],
+        ),
+      );
+
       expect(await getPage(`/?q=${marker}`)).not.toContain('id="reminders-title"');
       expect(await getPage("/?page=2")).not.toContain('id="reminders-title"');
       expect(await getPage("/")).toContain('id="reminders-title"');
