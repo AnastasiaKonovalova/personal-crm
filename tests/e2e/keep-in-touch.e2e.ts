@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
+import { addPeriod, formatDueDate, toDateString } from "../../src/lib/keep-in-touch";
 import { getPage, submitForm, visibleText, withPool } from "./helpers";
 
 // "Keep in touch" over HTTP against a running app, forms sent the way a browser without
@@ -32,9 +33,18 @@ async function noteBodies(id: string) {
   return rows.map((row) => row.body);
 }
 
+// The card text for a term counted from a contact made today
+function nextTimeText(cadence: "week" | "month") {
+  const today = toDateString(new Date());
+  return `Следующий раз — до ${formatDueDate(addPeriod(today, cadence), today)}`;
+}
+
 afterAll(async () => {
-  // Notes go with the contacts: notes.contact_id is ON DELETE CASCADE
-  await withPool((pool) => pool.query("delete from contacts where name like $1", [`${prefix} %`]));
+  // Notes and group memberships go with the contacts and groups: ON DELETE CASCADE
+  await withPool(async (pool) => {
+    await pool.query("delete from contacts where name like $1", [`${prefix} %`]);
+    await pool.query("delete from groups where name like $1", [`${prefix} %`]);
+  });
 });
 
 describe("keep in touch over HTTP", () => {
@@ -74,7 +84,9 @@ describe("keep in touch over HTTP", () => {
     expect(row).toContain("просрочено на 13 дней");
     expect(row).toContain("раз в неделю");
 
-    expect(visibleText(await getPage(`/contacts/${contactId}`))).toContain("просрочено на 13 дней");
+    const card = visibleText(await getPage(`/contacts/${contactId}`));
+    expect(card).toContain("Пора связаться");
+    expect(card).toContain("просрочено на 13 дней");
   });
 
   it("«Связались» in the block without JavaScript: the contact leaves the block, the note appears", async () => {
@@ -88,7 +100,7 @@ describe("keep in touch over HTTP", () => {
 
     const card = await getPage(`/contacts/${contactId}`);
     expect(visibleText(card.split('data-testid="notes"')[1] ?? "")).toContain("Связались");
-    expect(visibleText(card)).toContain("Следующий раз — до");
+    expect(visibleText(card)).toContain(nextTimeText("week"));
   });
 
   it("«Связались» in the card redirects back to the card", async () => {
@@ -111,6 +123,8 @@ describe("keep in touch over HTTP", () => {
 
     const card = await getPage(`/contacts/${contactId}`);
     expect(card).toMatch(/<option value="month"[^>]*selected/);
+    // The term is recounted from the last contact: today's «Связались» above
+    expect(visibleText(card)).toContain(nextTimeText("month"));
     const { rows } = await withPool((pool) =>
       pool.query<{ cadence: string }>("select cadence from contacts where id = $1", [contactId]),
     );
@@ -195,5 +209,25 @@ describe("keep in touch over HTTP", () => {
     expect(row).toMatch(/До \d+ \p{L}+/u);
     expect(row).toContain("раз в неделю");
     expect(row).not.toContain("просрочено");
+  });
+
+  it("the block is not shown in search within a group, on the main page or on the group page", async () => {
+    const { rows } = await withPool((pool) =>
+      pool.query<{ group_id: string }>(
+        `with g as (insert into groups (name) values ($1) returning id),
+              c as (insert into contacts (name, cadence, created_at)
+                    values ($2, 'week', now() - interval '30 days') returning id)
+         insert into contact_groups (contact_id, group_id)
+         select c.id, g.id from c, g returning group_id`,
+        [`${prefix} группа`, `${prefix} в группе`],
+      ),
+    );
+    const groupId = rows[0].group_id;
+    const q = encodeURIComponent("в группе");
+
+    expect(await getPage(`/?group=${groupId}`)).toContain('id="reminders-title"');
+    expect(await getPage(`/?group=${groupId}&q=${q}`)).not.toContain('id="reminders-title"');
+    expect(await getPage(`/groups/${groupId}`)).toContain('id="reminders-title"');
+    expect(await getPage(`/groups/${groupId}?q=${q}`)).not.toContain('id="reminders-title"');
   });
 });
