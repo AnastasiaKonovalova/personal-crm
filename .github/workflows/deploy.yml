@@ -101,12 +101,13 @@ jobs:
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
+      # The whole deploy/ folder: a new script goes to the server by itself
       - name: Copy deploy scripts
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         run: |
           scp -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            deploy/compose.yml deploy/deploy.sh deploy/rollback.sh \
+            deploy/* \
             "crm-deploy@${DEPLOY_HOST}:/opt/personal-crm/"
 
       # The short-lived job token goes over stdin: the server only uses it to pull this image

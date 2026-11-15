@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploys one app image on the server: pull -> migrations -> new app -> smoke /health -> keep two images.
+# Deploys one app image on the server: pull -> database backup -> migrations -> new app -> smoke /health -> keep two images.
 # Called by .github/workflows/deploy.yml over SSH: deploy.sh <image> <registry user>, GHCR token on stdin.
 # No automatic rollback: a failed step stops the deploy, rollback is manual (rollback.sh).
 set -euo pipefail
@@ -24,6 +24,27 @@ docker pull "$image"
 
 echo "==> Database"
 compose up -d --wait postgres
+
+# The backup is named after the version that ran before this deploy; only the latest one is kept
+echo "==> Backup"
+running=$(sed -n 's/^APP_IMAGE=//p' image.env)
+version=${running##*:}
+version=${version:-initial}
+install -d -m 700 backups
+backup="backups/$(date -u +%Y%m%dT%H%M%SZ)-${version}.dump"
+partial="$backup.partial"
+install -m 600 /dev/null "$partial"
+# Credentials come from the postgres container's own environment
+if ! compose exec -T postgres sh -c 'pg_dump -Fc -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > "$partial" ||
+  [[ ! -s $partial ]] ||
+  ! compose exec -T postgres pg_restore --list < "$partial" > /dev/null; then
+  rm -f "$partial"
+  echo "Backup failed: migrations are not applied" >&2
+  exit 1
+fi
+mv "$partial" "$backup"
+find backups -maxdepth 1 -type f -name '*.dump' ! -name '*-pre-restore.dump' ! -path "$backup" -delete
+echo "Saved $backup ($(du -h "$backup" | cut -f1))"
 
 echo "==> Migrations"
 compose run --rm migrate
