@@ -105,6 +105,12 @@ async function sendSignInLink({
   await db.delete(loginEmails).where(lt(loginEmails.sentAt, sql`now() - interval '1 day'`));
 }
 
+// Better Auth's own per-IP limit (on by default only in production) stays as Better Auth sets it. Only e2e
+// against a production build turns it off: all their requests come from one address (design.md, decision 2а)
+function ipRateLimit() {
+  return process.env.E2E_AUTH_IP_LIMIT === "off" ? { enabled: false } : undefined;
+}
+
 function createAuth() {
   return betterAuth({
     database: drizzleAdapter(getDb(), {
@@ -117,6 +123,7 @@ function createAuth() {
     // No cookie cache: signing out and expiry take effect at once
     session: { expiresIn: SESSION_DAYS * DAY_SECONDS, updateAge: DAY_SECONDS },
     hooks: { before: beforeSignInRequest },
+    rateLimit: ipRateLimit(),
     plugins: [
       magicLink({
         expiresIn: LOGIN_LINK_MINUTES * 60,

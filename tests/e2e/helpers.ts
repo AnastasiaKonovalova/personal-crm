@@ -1,77 +1,61 @@
-import { Pool } from "pg";
 import { expect } from "vitest";
+import { baseUrl, formBody, signIn } from "./auth";
 
 // Shared by the e2e tests: HTTP against a running app, forms sent the way a browser without
 // JavaScript does it, and a direct database connection for counts, setup and cleanup.
 
-export const baseUrl = process.env.E2E_BASE_URL ?? "http://localhost:3000";
-
-const htmlEntities: Record<string, string> = {
-  "&quot;": '"',
-  "&amp;": "&",
-  "&#x27;": "'",
-  "&#39;": "'",
-  "&lt;": "<",
-  "&gt;": ">",
-};
-
-export function decodeHtml(value: string) {
-  return value.replace(/&(?:quot|amp|#x27|#39|lt|gt);/g, (entity) => htmlEntities[entity]);
-}
+export { baseUrl, decodeHtml, withPool } from "./auth";
 
 export function visibleText(html: string) {
   return html.replace(/<[^>]+>/g, "");
 }
 
-export async function withPool<T>(run: (pool: Pool) => Promise<T>) {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  try {
-    return await run(pool);
-  } finally {
-    await pool.end();
-  }
-}
+type RequestOptions = {
+  // The Cookie header of a session (`signIn()`); without it the request is from someone not signed in
+  cookie?: string;
+};
 
-// Every request is a fresh client without cookies or cache, like opening the page in another browser
-export async function getPage(path: string) {
-  const response = await fetch(new URL(path, baseUrl), { redirect: "manual" });
+// Every request is a fresh client without cache, like opening the page in another browser
+export async function getPage(path: string, { cookie }: RequestOptions = {}) {
+  const response = await fetch(new URL(path, baseUrl), {
+    redirect: "manual",
+    headers: cookie ? { cookie } : {},
+  });
   expect(response.status, `GET ${path}`).toBe(200);
   return response.text();
 }
 
 // Submits a POST form of the page the way a browser without JavaScript does: the hidden inputs
 // (including the server action id) plus `fields`. A page may hold several forms: `formIncludes`
-// picks the one whose markup contains that text (e.g. `name="contactId" value="…"`), by default the first.
+// picks the one whose markup contains that text (e.g. `name="contactId" value="…"`), by default the first
+// form of the page itself, not «Выйти» in the header (see formBody in ./auth).
 export async function submitForm(
   path: string,
   fields: Record<string, string>,
-  formIncludes?: string,
+  { formIncludes, cookie }: RequestOptions & { formIncludes?: string } = {},
 ) {
-  const html = await getPage(path);
-  const forms = [...html.matchAll(/<form[^>]*method="POST"[^>]*>([\s\S]*?)<\/form>/g)];
-  const form = formIncludes
-    ? forms.find((candidate) => candidate[1].includes(formIncludes))
-    : forms[0];
+  const body = formBody(await getPage(path, { cookie }), fields, formIncludes);
   expect(
-    form,
+    body,
     `POST form on ${path}${formIncludes ? ` containing ${formIncludes}` : ""}`,
   ).toBeDefined();
-
-  const body = new FormData();
-  for (const [, key, value = ""] of form![1].matchAll(
-    /<input type="hidden" name="([^"]+)"(?: value="([^"]*)")?\/?>/g,
-  )) {
-    body.append(key, decodeHtml(value));
-  }
-  for (const [key, value] of Object.entries(fields)) {
-    body.append(key, value);
-  }
 
   return fetch(new URL(path, baseUrl), {
     method: "POST",
     body,
     redirect: "manual",
-    headers: { Origin: new URL(baseUrl).origin },
+    headers: { Origin: new URL(baseUrl).origin, ...(cookie ? { cookie } : {}) },
     signal: AbortSignal.timeout(10_000),
   });
+}
+
+// A new signed-in user with `getPage` and `submitForm` bound to the session
+export async function signInClient(label?: string) {
+  const user = await signIn(label);
+  return {
+    ...user,
+    getPage: (path: string) => getPage(path, { cookie: user.cookie }),
+    submitForm: (path: string, fields: Record<string, string>, formIncludes?: string) =>
+      submitForm(path, fields, { formIncludes, cookie: user.cookie }),
+  };
 }

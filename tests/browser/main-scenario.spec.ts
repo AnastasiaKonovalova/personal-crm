@@ -1,39 +1,34 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { Pool } from "pg";
+import { removeUser, uniqueEmail, withPool } from "../e2e/auth";
+import { signInInBrowser } from "./sign-in";
 
-// Main scenario and success criteria from specs/01-продуктовая-идея.md, in a real browser:
-// opened → list of all contacts; added a contact → found it by name → added a note → saved
-// on the card; opened the same address in another browser → the same data.
+// Main scenario and success criteria from specs/01-продуктовая-идея.md, in a real browser, signed in
+// by a link from Mailpit as a user of this test: opened → list of own contacts; added a contact →
+// found it by name → added a note → saved on the card; signed in on another browser → the same data.
 
 const marker = randomUUID().slice(0, 8);
 const contactName = `Проверка Браузерная ${marker}`;
 const noteText = `Обсудили поход в горы, договорились созвониться ${marker}`;
+const email = uniqueEmail("main");
 let contactId: string | undefined;
 
-async function withPool<T>(run: (pool: Pool) => Promise<T>) {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  try {
-    return await run(pool);
-  } finally {
-    await pool.end();
-  }
-}
-
 test.afterAll(async () => {
-  if (contactId) {
-    // Remove only the contact this test created; its notes go away via ON DELETE CASCADE
-    await withPool((pool) => pool.query("delete from contacts where id = $1", [contactId]));
-  }
+  // The user goes with the contact, its note, the sign-in rows and emails
+  await removeUser(email);
 });
 
 test("main scenario: open → add contact → find by name → add note → saved for another browser", async ({
   page,
   browser,
 }) => {
-  await test.step("opened → the list shows the total of all contacts", async () => {
+  await test.step("signed in → the list shows the total of the user's contacts", async () => {
+    const userId = await signInInBrowser(page, email);
     const { rows } = await withPool((pool) =>
-      pool.query<{ total: number }>("select count(*)::int as total from contacts"),
+      pool.query<{ total: number }>(
+        "select count(*)::int as total from contacts where user_id = $1",
+        [userId],
+      ),
     );
     await page.goto("/");
     await expect(page.getByText(`Всего: ${rows[0].total}`)).toBeVisible();
@@ -70,10 +65,11 @@ test("main scenario: open → add contact → find by name → add note → save
     await expect(page.getByText(noteText)).toBeVisible();
   });
 
-  await test.step("another browser sees the same contact and note", async () => {
+  await test.step("signed in on another browser → sees the same contact and note", async () => {
     const other = await browser.newContext();
     try {
       const otherPage = await other.newPage();
+      await signInInBrowser(otherPage, email);
       await otherPage.goto(`/?q=${encodeURIComponent(contactName)}`);
       await expect(otherPage.getByRole("link", { name: contactName })).toBeVisible();
 

@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { addPeriod, formatDueDate, toDateString } from "../../src/lib/keep-in-touch";
-import { getPage, submitForm, visibleText, withPool } from "./helpers";
+import { signInClient, visibleText, withPool } from "./helpers";
 
-// "Keep in touch" over HTTP against a running app, forms sent the way a browser without
-// JavaScript does it. Run: `pnpm build && pnpm start`, then `pnpm test:e2e`.
+// "Keep in touch" over HTTP against a running app, signed in as a user of this test, forms sent the way
+// a browser without JavaScript does it. Run: `pnpm build && pnpm start`, then `pnpm test:e2e`.
 
 const marker = randomUUID().slice(0, 8);
 const prefix = `Проверка Связь ${marker}`;
@@ -13,6 +13,7 @@ const BULK_COUNT = 7;
 // Must match PAGE_SIZE in src/server/contacts.ts
 const pageSize = 50;
 let contactId: string | undefined;
+let user: Awaited<ReturnType<typeof signInClient>>;
 
 function countOf(html: string, text: string) {
   return html.split(text).length - 1;
@@ -39,17 +40,19 @@ function nextTimeText(cadence: "week" | "month") {
   return `Следующий раз — до ${formatDueDate(addPeriod(today, cadence), today)}`;
 }
 
+// Signing in sends an email: the first one of a run opens the SMTP connection
+beforeAll(async () => {
+  user = await signInClient("keep-in-touch");
+}, 30_000);
+
 afterAll(async () => {
-  // Notes and group memberships go with the contacts and groups: ON DELETE CASCADE
-  await withPool(async (pool) => {
-    await pool.query("delete from contacts where name like $1", [`${prefix} %`]);
-    await pool.query("delete from groups where name like $1", [`${prefix} %`]);
-  });
+  // The user goes with the contacts and groups; notes and memberships follow by cascade
+  await user?.remove();
 });
 
 describe("keep in touch over HTTP", () => {
   it("creates a contact with the weekly frequency", async () => {
-    const response = await submitForm("/contacts/new", {
+    const response = await user.submitForm("/contacts/new", {
       name: contactName,
       about: "",
       howWeMet: "",
@@ -67,7 +70,7 @@ describe("keep in touch over HTTP", () => {
       pool.query<{ cadence: string }>("select cadence from contacts where id = $1", [contactId]),
     );
     expect(rows[0].cadence).toBe("week");
-    expect(visibleText(await getPage(`/contacts/${contactId}`))).toContain("Раз в неделю");
+    expect(visibleText(await user.getPage(`/contacts/${contactId}`))).toContain("Раз в неделю");
   });
 
   it("a contact created 20 days ago is 13 days overdue and shown in the block", async () => {
@@ -78,34 +81,34 @@ describe("keep in touch over HTTP", () => {
       ]),
     );
 
-    const html = await getPage("/");
+    const html = await user.getPage("/");
     expect(html).toContain(`aria-label="Связались: ${contactName}"`);
     const row = blockRow(html, contactId!);
     expect(row).toContain("просрочено на 13 дней");
     expect(row).toContain("раз в неделю");
 
-    const card = visibleText(await getPage(`/contacts/${contactId}`));
+    const card = visibleText(await user.getPage(`/contacts/${contactId}`));
     expect(card).toContain("Пора связаться");
     expect(card).toContain("просрочено на 13 дней");
   });
 
   it("«Связались» in the block without JavaScript: the contact leaves the block, the note appears", async () => {
     expect(contactId).toBeDefined();
-    const response = await submitForm("/", {}, `name="contactId" value="${contactId}"`);
+    const response = await user.submitForm("/", {}, `name="contactId" value="${contactId}"`);
     // A redirect (not the page in the POST answer), so refreshing the page cannot send the form again
     expect(response.headers.get("location") ?? "", `got ${response.status}`).toMatch(/\/$/);
 
-    expect(await getPage("/")).not.toContain(`aria-label="Связались: ${contactName}"`);
+    expect(await user.getPage("/")).not.toContain(`aria-label="Связались: ${contactName}"`);
     expect(await noteBodies(contactId!)).toEqual(["Связались"]);
 
-    const card = await getPage(`/contacts/${contactId}`);
+    const card = await user.getPage(`/contacts/${contactId}`);
     expect(visibleText(card.split('data-testid="notes"')[1] ?? "")).toContain("Связались");
     expect(visibleText(card)).toContain(nextTimeText("week"));
   });
 
   it("«Связались» in the card redirects back to the card", async () => {
     expect(contactId).toBeDefined();
-    const response = await submitForm(`/contacts/${contactId}`, {}, 'name="returnTo"');
+    const response = await user.submitForm(`/contacts/${contactId}`, {}, 'name="returnTo"');
     expect(response.headers.get("location") ?? "", `got ${response.status}`).toMatch(
       new RegExp(`/contacts/${contactId}$`),
     );
@@ -114,14 +117,14 @@ describe("keep in touch over HTTP", () => {
 
   it("changes the frequency in the card without JavaScript", async () => {
     expect(contactId).toBeDefined();
-    const response = await submitForm(
+    const response = await user.submitForm(
       `/contacts/${contactId}`,
       { cadence: "month", contactOn: "" },
       'name="cadence"',
     );
     expect(response.status, "frequency form").toBe(200);
 
-    const card = await getPage(`/contacts/${contactId}`);
+    const card = await user.getPage(`/contacts/${contactId}`);
     expect(card).toMatch(/<option value="month"[^>]*selected/);
     // The term is recounted from the last contact: today's «Связались» above
     expect(visibleText(card)).toContain(nextTimeText("month"));
@@ -133,7 +136,7 @@ describe("keep in touch over HTTP", () => {
 
   it("a specific date in the past is refused, nothing is saved", async () => {
     expect(contactId).toBeDefined();
-    const response = await submitForm(
+    const response = await user.submitForm(
       `/contacts/${contactId}`,
       { cadence: "date", contactOn: "2020-01-01" },
       'name="cadence"',
@@ -153,12 +156,12 @@ describe("keep in touch over HTTP", () => {
     it("without JavaScript the page holds every row; only JavaScript trims it to 5", async () => {
       await withPool((pool) =>
         pool.query(
-          "insert into contacts (name, cadence, created_at) select $1 || ' ' || n, 'week', now() - interval '30 days' from generate_series(1, $2::int) n",
-          [prefix, BULK_COUNT],
+          "insert into contacts (user_id, name, cadence, created_at) select $3, $1 || ' ' || n, 'week', now() - interval '30 days' from generate_series(1, $2::int) n",
+          [prefix, BULK_COUNT, user.id],
         ),
       );
 
-      const html = await getPage("/");
+      const html = await user.getPage("/");
       const rows = countOf(html, 'aria-label="Связались: ');
       expect(rows).toBeGreaterThanOrEqual(BULK_COUNT);
       for (let n = 1; n <= BULK_COUNT; n += 1) {
@@ -172,7 +175,7 @@ describe("keep in touch over HTTP", () => {
     });
 
     it("the list in search shows a dot for each overdue contact and none for the others", async () => {
-      const html = await getPage(`/?q=${marker}`);
+      const html = await user.getPage(`/?q=${marker}`);
       expect(html).toContain(`Найдено: ${BULK_COUNT + 1}`);
       // Counted in real HTML attributes and tags: the page also carries a serialized copy of the
       // markup for React (self.__next_f), where the same strings appear again
@@ -181,18 +184,18 @@ describe("keep in touch over HTTP", () => {
     });
 
     it("the block is not shown in search or on the second page", async () => {
-      // A second page must exist even on an empty database (CI): a missing page is shown as
-      // page 1, which has the block. Without a cadence these contacts stay out of the block
+      // A second page must exist: the user has fewer contacts than a page so far, and a missing page
+      // is shown as page 1, which has the block. Without a cadence these contacts stay out of the block
       await withPool((pool) =>
         pool.query(
-          "insert into contacts (name) select $1 || ' страница ' || n from generate_series(1, $2::int) n",
-          [prefix, pageSize],
+          "insert into contacts (user_id, name) select $3, $1 || ' страница ' || n from generate_series(1, $2::int) n",
+          [prefix, pageSize, user.id],
         ),
       );
 
-      expect(await getPage(`/?q=${marker}`)).not.toContain('id="reminders-title"');
-      expect(await getPage("/?page=2")).not.toContain('id="reminders-title"');
-      expect(await getPage("/")).toContain('id="reminders-title"');
+      expect(await user.getPage(`/?q=${marker}`)).not.toContain('id="reminders-title"');
+      expect(await user.getPage("/?page=2")).not.toContain('id="reminders-title"');
+      expect(await user.getPage("/")).toContain('id="reminders-title"');
     });
   });
 
@@ -200,12 +203,12 @@ describe("keep in touch over HTTP", () => {
   it("a contact whose term is tomorrow is shown in the block as «До <date>», not as overdue", async () => {
     const { rows } = await withPool((pool) =>
       pool.query<{ id: string }>(
-        "insert into contacts (name, cadence, created_at) values ($1, 'week', now() - interval '6 days') returning id",
-        [`${prefix} скоро`],
+        "insert into contacts (user_id, name, cadence, created_at) values ($2, $1, 'week', now() - interval '6 days') returning id",
+        [`${prefix} скоро`, user.id],
       ),
     );
 
-    const row = blockRow(await getPage("/"), rows[0].id);
+    const row = blockRow(await user.getPage("/"), rows[0].id);
     expect(row).toMatch(/До \d+ \p{L}+/u);
     expect(row).toContain("раз в неделю");
     expect(row).not.toContain("просрочено");
@@ -214,20 +217,20 @@ describe("keep in touch over HTTP", () => {
   it("the block is not shown in search within a group, on the main page or on the group page", async () => {
     const { rows } = await withPool((pool) =>
       pool.query<{ group_id: string }>(
-        `with g as (insert into groups (name) values ($1) returning id),
-              c as (insert into contacts (name, cadence, created_at)
-                    values ($2, 'week', now() - interval '30 days') returning id)
+        `with g as (insert into groups (user_id, name) values ($3, $1) returning id),
+              c as (insert into contacts (user_id, name, cadence, created_at)
+                    values ($3, $2, 'week', now() - interval '30 days') returning id)
          insert into contact_groups (contact_id, group_id)
          select c.id, g.id from c, g returning group_id`,
-        [`${prefix} группа`, `${prefix} в группе`],
+        [`${prefix} группа`, `${prefix} в группе`, user.id],
       ),
     );
     const groupId = rows[0].group_id;
     const q = encodeURIComponent("в группе");
 
-    expect(await getPage(`/?group=${groupId}`)).toContain('id="reminders-title"');
-    expect(await getPage(`/?group=${groupId}&q=${q}`)).not.toContain('id="reminders-title"');
-    expect(await getPage(`/groups/${groupId}`)).toContain('id="reminders-title"');
-    expect(await getPage(`/groups/${groupId}?q=${q}`)).not.toContain('id="reminders-title"');
+    expect(await user.getPage(`/?group=${groupId}`)).toContain('id="reminders-title"');
+    expect(await user.getPage(`/?group=${groupId}&q=${q}`)).not.toContain('id="reminders-title"');
+    expect(await user.getPage(`/groups/${groupId}`)).toContain('id="reminders-title"');
+    expect(await user.getPage(`/groups/${groupId}?q=${q}`)).not.toContain('id="reminders-title"');
   });
 });
