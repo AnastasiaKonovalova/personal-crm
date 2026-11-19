@@ -1,12 +1,26 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { type TestUser, createTestUser } from "./helpers/test-user";
 
 // Server actions against the real database from .env. Only the Next.js request helpers are
 // replaced: they need a running Next server. redirect() throws, as it does in Next.
+// The test user owns all the data created here and is removed with it in afterAll.
+// The session is replaced too: requireUser() returns the test user, or, with an empty userId, sends
+// to /login as the real one does without a session.
 
 const nextState = vi.hoisted(() => ({ calledFromJs: false }));
+const session = vi.hoisted(() => ({ userId: "" }));
 
+vi.mock("@/server/session", () => ({
+  requireUser: async () => {
+    if (!session.userId) {
+      const { redirect } = await import("next/navigation");
+      redirect("/login");
+    }
+    return { id: session.userId };
+  },
+}));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
   redirect: (url: string) => {
@@ -26,6 +40,11 @@ class RedirectSignal extends Error {
 const {
   createContactAction,
   updateContactAction,
+  deleteContactAction,
+  addNoteAction,
+  updateNoteAction,
+  setCadenceAction,
+  markContactedAction,
   addContactToGroupAction,
   removeContactFromGroupAction,
 } = await import("@/app/contacts/actions");
@@ -37,6 +56,7 @@ const { createGroup, listGroups } = await import("@/server/groups");
 const { contactSchema } = await import("@/lib/validation");
 
 const marker = randomUUID().slice(0, 8);
+let user: TestUser;
 
 async function withSeparateConnection<T>(run: (pool: Pool) => Promise<T>) {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -47,15 +67,17 @@ async function withSeparateConnection<T>(run: (pool: Pool) => Promise<T>) {
   }
 }
 
+beforeAll(async () => {
+  user = await createTestUser();
+});
+
 beforeEach(() => {
   nextState.calledFromJs = false;
+  session.userId = user.id;
 });
 
 afterAll(async () => {
-  await withSeparateConnection(async (pool) => {
-    await pool.query("delete from contacts where name like $1", [`%${marker}%`]);
-    await pool.query("delete from groups where name like $1", [`%${marker}%`]);
-  });
+  await user.remove();
   await closeDb();
 });
 
@@ -88,18 +110,22 @@ async function redirectOf(run: () => Promise<unknown>) {
 }
 
 async function group(name: string) {
-  const result = await createGroup(`${name} ${marker}`);
+  const result = await createGroup(user.id, `${name} ${marker}`);
   if (!("id" in result)) throw new Error(result.error);
   return result.id;
 }
 
 async function contact(name: string) {
-  return createContact(contactSchema.parse({ ...emptyContactFields, name: `${name} ${marker}` }));
+  return createContact(
+    user.id,
+    contactSchema.parse({ ...emptyContactFields, name: `${name} ${marker}` }),
+  );
 }
 
-const groupNamed = async (name: string) => (await listGroups()).find((item) => item.name === name);
+const groupNamed = async (name: string) =>
+  (await listGroups(user.id)).find((item) => item.name === name);
 const groupNamesOf = async (contactId: string) =>
-  (await getContactWithNotes(contactId))!.groups.map((item) => item.name);
+  (await getContactWithNotes(user.id, contactId))!.groups.map((item) => item.name);
 
 describe("contact form with groups", () => {
   it("keeps the ticks and the new group text on an error and creates nothing (scenario «Ошибка формы не теряет группы»)", async () => {
@@ -304,5 +330,56 @@ describe("the «Группы» page", () => {
     const id = await group("Аналитики-2");
     expect(await redirectOf(() => deleteGroupAction(formData({ groupId: id })))).toBe("/groups");
     expect(await groupNamed(`Аналитики-2 ${marker}`)).toBeUndefined();
+  });
+});
+
+describe("without a session", () => {
+  it("sends every action to the sign-in page and changes nothing (scenario «Отправка формы без входа»)", async () => {
+    const id = await contact("Без входа");
+    const groupId = await group("Группа без входа");
+    const state = async () => ({
+      card: await getContactWithNotes(user.id, id),
+      groups: await listGroups(user.id),
+      contactCount: (
+        await withSeparateConnection((pool) =>
+          pool.query<{ n: number }>("select count(*)::int as n from contacts where user_id = $1", [
+            user.id,
+          ]),
+        )
+      ).rows[0].n,
+    });
+    const before = await state();
+
+    session.userId = "";
+    const ids = { contactId: id, groupId, noteId: randomUUID() };
+    const attempts = [
+      () =>
+        createContactAction(
+          {},
+          formData({ ...emptyContactFields, name: `Новый без входа ${marker}` }),
+        ),
+      () =>
+        updateContactAction(
+          {},
+          formData({ ...emptyContactFields, ...ids, name: `Правка без входа ${marker}` }),
+        ),
+      () => deleteContactAction(formData(ids)),
+      () => addNoteAction({}, formData({ ...ids, body: "Заметка без входа" })),
+      () => updateNoteAction({}, formData({ ...ids, body: "Правка без входа" })),
+      () => setCadenceAction({}, formData({ ...ids, cadence: "week", contactOn: "" })),
+      () => markContactedAction({}, formData({ ...ids, returnTo: "/" })),
+      () =>
+        addContactToGroupAction({}, formData({ ...ids, groupName: `Новая без входа ${marker}` })),
+      () => removeContactFromGroupAction(formData(ids)),
+      () => createGroupAction({}, formData({ name: `Группа без входа 2 ${marker}` })),
+      () => renameGroupAction({}, formData({ ...ids, name: `Переименована без входа ${marker}` })),
+      () => deleteGroupAction(formData(ids)),
+    ];
+    const urls: (string | null)[] = [];
+    for (const attempt of attempts) urls.push(await redirectOf(attempt));
+
+    expect(urls).toEqual(attempts.map(() => "/login"));
+    session.userId = user.id;
+    expect(await state()).toEqual(before);
   });
 });

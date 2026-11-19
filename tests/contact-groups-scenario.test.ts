@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { closeDb } from "@/db";
 import { contactSchema } from "@/lib/validation";
 import {
@@ -15,11 +15,13 @@ import {
   updateContact,
 } from "@/server/contacts";
 import { createGroup, listGroups } from "@/server/groups";
+import { type TestUser, createTestUser } from "./helpers/test-user";
 
 // Integration tests against the real database from .env. Every contact and group name carries
-// a random marker, and only rows with that marker are removed afterwards.
+// a random marker. The test user owns all the data created here and is removed with it in afterAll.
 
 const marker = randomUUID().slice(0, 8);
+let user: TestUser;
 
 async function withSeparateConnection<T>(run: (pool: Pool) => Promise<T>) {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -30,17 +32,18 @@ async function withSeparateConnection<T>(run: (pool: Pool) => Promise<T>) {
   }
 }
 
+beforeAll(async () => {
+  user = await createTestUser();
+});
+
 afterAll(async () => {
-  await withSeparateConnection(async (pool) => {
-    // Memberships go away via ON DELETE CASCADE from either side
-    await pool.query("delete from contacts where name like $1", [`%${marker}%`]);
-    await pool.query("delete from groups where name like $1", [`%${marker}%`]);
-  });
+  // Memberships go away via ON DELETE CASCADE from either side
+  await user.remove();
   await closeDb();
 });
 
 async function group(name: string) {
-  const result = await createGroup(`${name} ${marker}`);
+  const result = await createGroup(user.id, `${name} ${marker}`);
   if (!("id" in result)) throw new Error(result.error);
   return result.id;
 }
@@ -57,24 +60,24 @@ function form(fields: { name: string; groupIds?: string[]; newGroup?: string; ab
 }
 
 async function contact(name: string, groupIds: string[] = []) {
-  return createContact(form({ name, groupIds }));
+  return createContact(user.id, form({ name, groupIds }));
 }
 
 async function groupNamesOf(contactId: string) {
-  return (await getContactWithNotes(contactId))!.groups.map((item) => item.name);
+  return (await getContactWithNotes(user.id, contactId))!.groups.map((item) => item.name);
 }
 
 async function idsInGroup(groupId: string) {
-  return (await listContacts({ page: 1, groupId })).items.map((item) => item.id);
+  return (await listContacts(user.id, { page: 1, groupId })).items.map((item) => item.id);
 }
 
 // Inserted directly: past creation dates make contacts overdue without waiting
 async function insertWithCadence(name: string, cadence: "week" | "month", createdDaysAgo: number) {
   const { rows } = await withSeparateConnection((pool) =>
     pool.query<{ id: string }>(
-      `insert into contacts (name, cadence, created_at)
-       values ($1, $2::contact_cadence, now() - $3 * interval '1 day') returning id`,
-      [`${name} ${marker}`, cadence, createdDaysAgo],
+      `insert into contacts (user_id, name, cadence, created_at)
+       values ($1, $2, $3::contact_cadence, now() - $4 * interval '1 day') returning id`,
+      [user.id, `${name} ${marker}`, cadence, createdDaysAgo],
     ),
   );
   return rows[0].id;
@@ -102,20 +105,24 @@ describe("groups in the contact form", () => {
   it("creates the new group and puts the contact in it (scenario «Новая группа в форме»)", async () => {
     const id = await contact("Новая группа");
     expect(
-      await updateContact(id, form({ name: "Новая группа", newGroup: `Аналитики ${marker}` })),
+      await updateContact(
+        user.id,
+        id,
+        form({ name: "Новая группа", newGroup: `Аналитики ${marker}` }),
+      ),
     ).toBe(id);
 
-    const created = (await listGroups()).find((item) => item.name === `Аналитики ${marker}`);
+    const created = (await listGroups(user.id)).find((item) => item.name === `Аналитики ${marker}`);
     expect(created?.contactCount).toBe(1);
     expect(await groupNamesOf(id)).toEqual([`Аналитики ${marker}`]);
   });
 
   it("uses the existing group for its name in another case (scenario «В „Новая группа“ имя существующей»)", async () => {
     const neighbours = await group("Соседи");
-    const id = await createContact(form({ name: "Сосед", newGroup: `соседи ${marker}` }));
+    const id = await createContact(user.id, form({ name: "Сосед", newGroup: `соседи ${marker}` }));
 
     expect(await idsInGroup(neighbours)).toEqual([id]);
-    const matching = (await listGroups()).filter(
+    const matching = (await listGroups(user.id)).filter(
       (item) => item.name.toLowerCase() === `соседи ${marker}`,
     );
     expect(matching).toHaveLength(1);
@@ -126,7 +133,7 @@ describe("groups in the contact form", () => {
     const tennis = await group("Теннис-2");
     const id = await contact("Снять группу", [friends, tennis]);
 
-    await updateContact(id, form({ name: "Снять группу", groupIds: [friends] }));
+    await updateContact(user.id, id, form({ name: "Снять группу", groupIds: [friends] }));
     expect(await groupNamesOf(id)).toEqual([`Друзья-2 ${marker}`]);
   });
 
@@ -139,7 +146,7 @@ describe("groups in the contact form", () => {
   it("does not touch groups when the contact is missing", async () => {
     const family = await group("Семья-2");
     expect(
-      await updateContact(randomUUID(), form({ name: "Никто", groupIds: [family] })),
+      await updateContact(user.id, randomUUID(), form({ name: "Никто", groupIds: [family] })),
     ).toBeNull();
     expect(await idsInGroup(family)).toEqual([]);
   });
@@ -147,8 +154,8 @@ describe("groups in the contact form", () => {
   it("removes the memberships of a deleted contact", async () => {
     const family = await group("Семья-3");
     const id = await contact("Удаляемый", [family]);
-    await deleteContact(id);
-    expect((await listGroups()).find((item) => item.id === family)?.contactCount).toBe(0);
+    await deleteContact(user.id, id);
+    expect((await listGroups(user.id)).find((item) => item.id === family)?.contactCount).toBe(0);
   });
 });
 
@@ -160,11 +167,11 @@ describe("groups in the contact card", () => {
 
   it("adds the contact to an existing group and keeps its other fields (scenario «Добавить в группу из карточки»)", async () => {
     const family = await group("Семья-4");
-    const id = await createContact(form({ name: "Добавить", about: "Дизайнер" }));
-    const before = (await getContactWithNotes(id))!.contact;
+    const id = await createContact(user.id, form({ name: "Добавить", about: "Дизайнер" }));
+    const before = (await getContactWithNotes(user.id, id))!.contact;
 
-    expect(await addContactToGroup(id, `Семья-4 ${marker}`)).toBe(family);
-    const card = (await getContactWithNotes(id))!;
+    expect(await addContactToGroup(user.id, id, `Семья-4 ${marker}`)).toBe(family);
+    const card = (await getContactWithNotes(user.id, id))!;
     expect(card.groups.map((item) => item.name)).toEqual([`Семья-4 ${marker}`]);
     expect(card.contact).toEqual(before);
   });
@@ -174,16 +181,16 @@ describe("groups in the contact card", () => {
     const tennis = await group("Теннис-4");
     const id = await contact("Убрать", [friends, tennis]);
 
-    expect(await removeContactFromGroup(id, tennis)).toBe(true);
+    expect(await removeContactFromGroup(user.id, id, tennis)).toBe(true);
     expect(await groupNamesOf(id)).toEqual([`Друзья-4 ${marker}`]);
-    expect((await listGroups()).some((item) => item.id === tennis)).toBe(true);
+    expect((await listGroups(user.id)).some((item) => item.id === tennis)).toBe(true);
   });
 
   it("creates a new group from the card with one contact (scenario «Новая группа из карточки»)", async () => {
     const id = await contact("Новая из карточки");
-    const groupId = await addContactToGroup(id, `Соседи-2 ${marker}`);
+    const groupId = await addContactToGroup(user.id, id, `Соседи-2 ${marker}`);
 
-    expect((await listGroups()).find((item) => item.id === groupId)).toMatchObject({
+    expect((await listGroups(user.id)).find((item) => item.id === groupId)).toMatchObject({
       name: `Соседи-2 ${marker}`,
       contactCount: 1,
     });
@@ -193,25 +200,27 @@ describe("groups in the contact card", () => {
     const friends = await group("Друзья-5");
     const id = await contact("Существующая");
 
-    expect(await addContactToGroup(id, `друзья-5 ${marker}`)).toBe(friends);
+    expect(await addContactToGroup(user.id, id, `друзья-5 ${marker}`)).toBe(friends);
     expect(
-      (await listGroups()).filter((item) => item.name.toLowerCase() === `друзья-5 ${marker}`),
+      (await listGroups(user.id)).filter(
+        (item) => item.name.toLowerCase() === `друзья-5 ${marker}`,
+      ),
     ).toHaveLength(1);
   });
 
   it("adding twice keeps one membership", async () => {
     const family = await group("Семья-5");
     const id = await contact("Дважды", [family]);
-    expect(await addContactToGroup(id, `Семья-5 ${marker}`)).toBe(family);
+    expect(await addContactToGroup(user.id, id, `Семья-5 ${marker}`)).toBe(family);
     expect(await groupNamesOf(id)).toEqual([`Семья-5 ${marker}`]);
   });
 
   it("does nothing for a missing contact or group", async () => {
     const family = await group("Семья-6");
-    expect(await addContactToGroup(randomUUID(), `Семья-6 ${marker}`)).toBeNull();
-    expect(await addContactToGroup("not-a-uuid", `Семья-6 ${marker}`)).toBeNull();
-    expect(await removeContactFromGroup(randomUUID(), family)).toBe(false);
-    expect(await removeContactFromGroup("not-a-uuid", "not-a-uuid")).toBe(false);
+    expect(await addContactToGroup(user.id, randomUUID(), `Семья-6 ${marker}`)).toBeNull();
+    expect(await addContactToGroup(user.id, "not-a-uuid", `Семья-6 ${marker}`)).toBeNull();
+    expect(await removeContactFromGroup(user.id, randomUUID(), family)).toBe(false);
+    expect(await removeContactFromGroup(user.id, "not-a-uuid", "not-a-uuid")).toBe(false);
   });
 });
 
@@ -222,7 +231,7 @@ describe("groups in the contact list", () => {
       await group("Ёж-группа"),
       await group("А-группа"),
     ]);
-    const row = (await listContacts({ page: 1, query: `Строка ${marker}` })).items.find(
+    const row = (await listContacts(user.id, { page: 1, query: `Строка ${marker}` })).items.find(
       (item) => item.id === id,
     );
     expect(row?.groups.map((item) => item.name)).toEqual([
@@ -238,7 +247,7 @@ describe("groups in the contact list", () => {
     await contact("Борис Теннисный", [tennis]);
     await contact("Анна Без группы");
 
-    const result = await listContacts({ page: 1, query: "Анна", groupId: tennis });
+    const result = await listContacts(user.id, { page: 1, query: "Анна", groupId: tennis });
     expect(result.items.map((item) => item.id)).toEqual([anna]);
     expect(result.total).toBe(1);
     expect(result.group).toEqual({ id: tennis, name: `Теннис-5 ${marker}` });
@@ -248,8 +257,8 @@ describe("groups in the contact list", () => {
     const big = await group("Большая");
     const { rows } = await withSeparateConnection((pool) =>
       pool.query<{ id: string }>(
-        "insert into contacts (name) select 'Участник ' || lpad(n::text, 2, '0') || ' ' || $1 from generate_series(1, 60) n returning id",
-        [marker],
+        "insert into contacts (user_id, name) select $1::text, 'Участник ' || lpad(n::text, 2, '0') || ' ' || $2::text from generate_series(1, 60) n returning id",
+        [user.id, marker],
       ),
     );
     await addMembers(
@@ -257,8 +266,8 @@ describe("groups in the contact list", () => {
       rows.map((row) => row.id),
     );
 
-    const first = await listContacts({ page: 1, groupId: big });
-    const second = await listContacts({ page: 2, groupId: big });
+    const first = await listContacts(user.id, { page: 1, groupId: big });
+    const second = await listContacts(user.id, { page: 2, groupId: big });
     expect(first.total).toBe(60);
     expect(first.pageCount).toBe(2);
     expect(first.items).toHaveLength(PAGE_SIZE);
@@ -269,20 +278,20 @@ describe("groups in the contact list", () => {
 
   it("shows nothing for an empty group (scenario «Пустая группа»)", async () => {
     const empty = await group("Пустая");
-    const result = await listContacts({ page: 1, groupId: empty });
+    const result = await listContacts(user.id, { page: 1, groupId: empty });
     expect(result).toMatchObject({ items: [], total: 0, group: { id: empty } });
-    expect((await listReminders({ groupId: empty })).totalCount).toBe(0);
+    expect((await listReminders(user.id, { groupId: empty })).totalCount).toBe(0);
   });
 
   it("ignores a deleted or malformed group (scenario «Группа удалена, а ссылка с фильтром осталась»)", async () => {
-    const all = await listContacts({ page: 1 });
+    const all = await listContacts(user.id, { page: 1 });
     for (const groupId of [randomUUID(), "not-a-uuid"]) {
-      const result = await listContacts({ page: 1, groupId });
+      const result = await listContacts(user.id, { page: 1, groupId });
       expect(result.group).toBeNull();
       expect(result.total).toBe(all.total);
     }
-    expect((await listReminders({ groupId: randomUUID() })).totalCount).toBe(
-      (await listReminders()).totalCount,
+    expect((await listReminders(user.id, { groupId: randomUUID() })).totalCount).toBe(
+      (await listReminders(user.id)).totalCount,
     );
   });
 });
@@ -295,7 +304,7 @@ describe("«Пора связаться» in a group", () => {
     const outside = await insertWithCadence("Просрочен вне группы", "week", 30);
     await addMembers(tennis, [first, second]);
 
-    const reminders = await listReminders({ groupId: tennis });
+    const reminders = await listReminders(user.id, { groupId: tennis });
     expect(reminders.items.map((item) => item.id)).toEqual([first, second]);
     expect(reminders.items.some((item) => item.id === outside)).toBe(false);
     expect(reminders).toMatchObject({ withCadenceCount: 2, totalCount: 2 });
@@ -307,7 +316,7 @@ describe("«Пора связаться» in a group", () => {
     await insertWithCadence("Просрочен где-то ещё", "week", 30);
     await addMembers(calm, [fine]);
 
-    const reminders = await listReminders({ groupId: calm });
+    const reminders = await listReminders(user.id, { groupId: calm });
     expect(reminders).toEqual({ items: [], withCadenceCount: 1, totalCount: 1 });
   });
 });

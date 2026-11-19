@@ -5,10 +5,12 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { firstErrors, groupNameSchema } from "@/lib/validation";
 import { createGroup, deleteGroup, renameGroup } from "@/server/groups";
+import { requireUser } from "@/server/session";
 
 // Actions of the «Группы» page. Ids come from hidden fields rather than .bind(): a bound action
 // never answers a form submitted without JavaScript (Next.js 16.4). Group names appear in cards,
 // rows and the filter, so every change revalidates all pages.
+// Every action starts with requireUser(): without a session nothing below runs.
 
 export type GroupFormState = {
   name?: string;
@@ -31,13 +33,14 @@ export async function createGroupAction(
   _previous: GroupFormState,
   formData: FormData,
 ): Promise<GroupFormState> {
+  const user = await requireUser();
   const name = readString(formData, "name");
   const valid = validName(name);
   if ("error" in valid) {
     return { name, error: valid.error };
   }
 
-  const result = await createGroup(valid.name);
+  const result = await createGroup(user.id, valid.name);
   if ("error" in result) {
     return { name, error: result.error };
   }
@@ -54,6 +57,7 @@ export async function renameGroupAction(
   _previous: GroupFormState,
   formData: FormData,
 ): Promise<GroupFormState> {
+  const user = await requireUser();
   const groupId = readString(formData, "groupId");
   const name = readString(formData, "name");
   const valid = validName(name);
@@ -61,7 +65,7 @@ export async function renameGroupAction(
     return { name, error: valid.error };
   }
 
-  const result = await renameGroup(groupId, valid.name);
+  const result = await renameGroup(user.id, groupId, valid.name);
   if (!result) {
     return { name, error: "Группа не найдена" };
   }
@@ -76,7 +80,8 @@ export async function renameGroupAction(
 // "Удалить" in the confirmation dialog (/groups?delete=<id>). The redirect closes the dialog,
 // with and without JavaScript; a group already deleted elsewhere is not an error
 export async function deleteGroupAction(formData: FormData) {
-  await deleteGroup(readString(formData, "groupId"));
+  const user = await requireUser();
+  await deleteGroup(user.id, readString(formData, "groupId"));
 
   revalidatePath("/", "layout");
   redirect("/groups");

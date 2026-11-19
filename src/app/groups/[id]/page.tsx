@@ -13,6 +13,7 @@ import { groupPageHref, listCaption } from "@/lib/contact-list";
 import { CADENCE_LABELS, dueText, toDateString } from "@/lib/keep-in-touch";
 import { listContacts, listReminders } from "@/server/contacts";
 import { findGroup } from "@/server/groups";
+import { requireUser } from "@/server/session";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -24,17 +25,18 @@ export default async function GroupPage({
   params: Promise<{ id: string }>;
   searchParams: SearchParams;
 }) {
+  const user = await requireUser();
   const [{ id }, search] = await Promise.all([params, searchParams]);
   const query = typeof search.q === "string" ? search.q.trim() : "";
   const requestedPage = typeof search.page === "string" ? Number(search.page) : 1;
 
-  // A deleted group or a malformed id: "Не найдено", as for a deleted contact
-  const group = await findGroup(id);
+  // A deleted group, a malformed id or a group of another user: "Не найдено", as for a deleted contact
+  const group = await findGroup(user.id, id);
   if (!group) {
     notFound();
   }
 
-  const { items, total, page, pageCount } = await listContacts({
+  const { items, total, page, pageCount } = await listContacts(user.id, {
     query,
     page: requestedPage,
     groupId: group.id,
@@ -42,7 +44,7 @@ export default async function GroupPage({
 
   // The same rules as on the main page: first page, no search, the group has contacts
   const reminders =
-    !query && page === 1 && total > 0 ? await listReminders({ groupId: group.id }) : null;
+    !query && page === 1 && total > 0 ? await listReminders(user.id, { groupId: group.id }) : null;
   const today = toDateString(new Date());
   const reminderRows = (reminders?.items ?? []).map((item) => ({
     id: item.id,

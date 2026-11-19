@@ -13,10 +13,12 @@ import { contactsHref, listCaption } from "@/lib/contact-list";
 import { CADENCE_LABELS, dueText, toDateString } from "@/lib/keep-in-touch";
 import { listContacts, listReminders } from "@/server/contacts";
 import { listGroups } from "@/server/groups";
+import { requireUser } from "@/server/session";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 export default async function ContactsPage({ searchParams }: { searchParams: SearchParams }) {
+  const user = await requireUser();
   const params = await searchParams;
   const query = typeof params.q === "string" ? params.q.trim() : "";
   const requestedPage = typeof params.page === "string" ? Number(params.page) : 1;
@@ -24,14 +26,15 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
 
   // A malformed or deleted group comes back as null: the list is shown without the filter
   const [{ items, total, page, pageCount, group }, groups] = await Promise.all([
-    listContacts({ query, page: requestedPage, groupId: requestedGroup }),
-    listGroups(),
+    listContacts(user.id, { query, page: requestedPage, groupId: requestedGroup }),
+    listGroups(user.id),
   ]);
   const groupId = group?.id;
 
   // The "Пора связаться" block is for the first page of the list: not in search, not on page 2+,
   // and not when there are no contacts at all (in the filtered group, with a filter)
-  const reminders = !query && page === 1 && total > 0 ? await listReminders({ groupId }) : null;
+  const reminders =
+    !query && page === 1 && total > 0 ? await listReminders(user.id, { groupId }) : null;
   const today = toDateString(new Date());
   const reminderRows = (reminders?.items ?? []).map((item) => ({
     id: item.id,

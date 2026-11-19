@@ -4,6 +4,7 @@ import { ContactForm } from "@/components/contact-form";
 import { PageShell } from "@/components/page-shell";
 import { newContactReturnHref } from "@/lib/contact-form-return";
 import { findGroup, listGroups } from "@/server/groups";
+import { requireUser } from "@/server/session";
 
 export const metadata: Metadata = {
   title: "Новый контакт — Свои люди",
@@ -14,10 +15,11 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 // «Добавить контакт» on a group page opens /contacts/new?group=<id>: that group is ticked.
 // A malformed id or a deleted group is ignored, the form opens with nothing ticked
 export default async function NewContactPage({ searchParams }: { searchParams: SearchParams }) {
+  const user = await requireUser();
   const params = await searchParams;
   const [groups, preselected] = await Promise.all([
-    listGroups(),
-    findGroup(typeof params.group === "string" ? params.group : undefined),
+    listGroups(user.id),
+    findGroup(user.id, typeof params.group === "string" ? params.group : undefined),
   ]);
 
   const returnHref = newContactReturnHref(preselected);

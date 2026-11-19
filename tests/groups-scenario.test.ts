@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { closeDb } from "@/db";
 import {
   DUPLICATE_GROUP_ERROR,
@@ -11,13 +11,13 @@ import {
   listGroups,
   renameGroup,
 } from "@/server/groups";
+import { type TestUser, createTestUser } from "./helpers/test-user";
 
-// Integration tests against the real database from .env. Every name carries a marker,
-// and only the rows created here are removed afterwards.
+// Integration tests against the real database from .env. Every name carries a marker. The test user
+// owns all the data created here and is removed with it in afterAll.
 
 const marker = randomUUID().slice(0, 8);
-const groupIds: string[] = [];
-const contactIds: string[] = [];
+let user: TestUser;
 
 async function withSeparateConnection<T>(run: (pool: Pool) => Promise<T>) {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -29,19 +29,17 @@ async function withSeparateConnection<T>(run: (pool: Pool) => Promise<T>) {
 }
 
 async function created(name: string) {
-  const result = await createGroup(name);
+  const result = await createGroup(user.id, name);
   if (!("id" in result)) throw new Error(`Group «${name}» was not created: ${result.error}`);
-  groupIds.push(result.id);
   return result.id;
 }
 
 async function insertContact(name: string) {
   return withSeparateConnection(async (pool) => {
     const { rows } = await pool.query<{ id: string }>(
-      "insert into contacts (name) values ($1) returning id",
-      [`${name} ${marker}`],
+      "insert into contacts (user_id, name) values ($1, $2) returning id",
+      [user.id, `${name} ${marker}`],
     );
-    contactIds.push(rows[0].id);
     await pool.query("insert into notes (contact_id, body) values ($1, $2)", [
       rows[0].id,
       `Заметка ${marker}`,
@@ -60,15 +58,16 @@ async function addMember(contactId: string, groupId: string) {
 }
 
 async function groupOf(id: string) {
-  return (await listGroups()).find((group) => group.id === id);
+  return (await listGroups(user.id)).find((group) => group.id === id);
 }
 
+beforeAll(async () => {
+  user = await createTestUser();
+});
+
 afterAll(async () => {
-  await withSeparateConnection(async (pool) => {
-    // Memberships go away via ON DELETE CASCADE
-    await pool.query("delete from groups where id = any($1)", [groupIds]);
-    await pool.query("delete from contacts where id = any($1)", [contactIds]);
-  });
+  // Memberships go away via ON DELETE CASCADE
+  await user.remove();
   await closeDb();
 });
 
@@ -80,8 +79,10 @@ describe("creating groups", () => {
 
   it("rejects the same name in another case (scenario «Такое имя уже есть»)", async () => {
     await created(`Друзья ${marker}`);
-    expect(await createGroup(`друзья ${marker}`)).toEqual({ error: DUPLICATE_GROUP_ERROR });
-    const matching = (await listGroups()).filter(
+    expect(await createGroup(user.id, `друзья ${marker}`)).toEqual({
+      error: DUPLICATE_GROUP_ERROR,
+    });
+    const matching = (await listGroups(user.id)).filter(
       (group) => group.name.toLowerCase() === `друзья ${marker}`,
     );
     expect(matching).toHaveLength(1);
@@ -89,7 +90,7 @@ describe("creating groups", () => {
 
   it("does not tell «ё» from «е» (scenario «„Ё“ и „е“ не различаются»)", async () => {
     await created(`Ёлка ${marker}`);
-    expect(await createGroup(`Елка ${marker}`)).toEqual({ error: DUPLICATE_GROUP_ERROR });
+    expect(await createGroup(user.id, `Елка ${marker}`)).toEqual({ error: DUPLICATE_GROUP_ERROR });
     expect(DUPLICATE_GROUP_ERROR).toBe("Такая группа уже есть");
   });
 });
@@ -103,7 +104,7 @@ describe("listing groups", () => {
       `я-${marker} Есенин`,
     ];
     for (const name of names) await created(name);
-    const ours = (await listGroups())
+    const ours = (await listGroups(user.id))
       .filter((group) => group.name.startsWith(`я-${marker}`))
       .map((g) => g.name);
     // "ёж" is sorted as "еж": "ж" comes before "с"
@@ -130,7 +131,9 @@ describe("renaming groups", () => {
     const contactId = await insertContact("Теннисист");
     await addMember(contactId, groupId);
 
-    expect(await renameGroup(groupId, `Теннис по субботам ${marker}`)).toEqual({ id: groupId });
+    expect(await renameGroup(user.id, groupId, `Теннис по субботам ${marker}`)).toEqual({
+      id: groupId,
+    });
     expect(await groupOf(groupId)).toEqual({
       id: groupId,
       name: `Теннис по субботам ${marker}`,
@@ -140,22 +143,22 @@ describe("renaming groups", () => {
 
   it("allows changing only the case (scenario «Смена регистра»)", async () => {
     const groupId = await created(`теннис-3 ${marker}`);
-    expect(await renameGroup(groupId, `Теннис-3 ${marker}`)).toEqual({ id: groupId });
+    expect(await renameGroup(user.id, groupId, `Теннис-3 ${marker}`)).toEqual({ id: groupId });
     expect((await groupOf(groupId))!.name).toBe(`Теннис-3 ${marker}`);
   });
 
   it("rejects the name of another group", async () => {
     await created(`Соседи ${marker}`);
     const groupId = await created(`Коллеги ${marker}`);
-    expect(await renameGroup(groupId, `СОСЕДИ ${marker}`)).toEqual({
+    expect(await renameGroup(user.id, groupId, `СОСЕДИ ${marker}`)).toEqual({
       error: DUPLICATE_GROUP_ERROR,
     });
     expect((await groupOf(groupId))!.name).toBe(`Коллеги ${marker}`);
   });
 
   it("returns null for a missing or malformed id", async () => {
-    expect(await renameGroup(randomUUID(), `Никакая ${marker}`)).toBeNull();
-    expect(await renameGroup("not-a-uuid", `Никакая ${marker}`)).toBeNull();
+    expect(await renameGroup(user.id, randomUUID(), `Никакая ${marker}`)).toBeNull();
+    expect(await renameGroup(user.id, "not-a-uuid", `Никакая ${marker}`)).toBeNull();
   });
 });
 
@@ -171,7 +174,7 @@ describe("deleting groups", () => {
     for (const contactId of members) await addMember(contactId, analysts);
     await addMember(members[0], other);
 
-    expect(await deleteGroup(analysts)).toBe(true);
+    expect(await deleteGroup(user.id, analysts)).toBe(true);
 
     expect(await groupOf(analysts)).toBeUndefined();
     const { rows } = await withSeparateConnection((pool) =>
@@ -188,22 +191,21 @@ describe("deleting groups", () => {
   });
 
   it("returns false for a missing or malformed id", async () => {
-    expect(await deleteGroup(randomUUID())).toBe(false);
-    expect(await deleteGroup("not-a-uuid")).toBe(false);
+    expect(await deleteGroup(user.id, randomUUID())).toBe(false);
+    expect(await deleteGroup(user.id, "not-a-uuid")).toBe(false);
   });
 });
 
 describe("findOrCreateGroup", () => {
   it("creates a new group", async () => {
-    const id = await findOrCreateGroup(`Аналитики-2 ${marker}`);
-    groupIds.push(id);
+    const id = await findOrCreateGroup(user.id, `Аналитики-2 ${marker}`);
     expect((await groupOf(id))!.name).toBe(`Аналитики-2 ${marker}`);
   });
 
   it("returns the existing group for the same name in another case and with «ё»", async () => {
     const id = await created(`Ёжики ${marker}`);
-    expect(await findOrCreateGroup(`ежики ${marker}`)).toBe(id);
-    expect((await listGroups()).filter((group) => group.id === id)).toHaveLength(1);
+    expect(await findOrCreateGroup(user.id, `ежики ${marker}`)).toBe(id);
+    expect((await listGroups(user.id)).filter((group) => group.id === id)).toHaveLength(1);
   });
 });
 
@@ -211,18 +213,18 @@ describe("findOrCreateGroup", () => {
 describe("findGroup", () => {
   it("finds an existing group with its name", async () => {
     const id = await created(`Найденная ${marker}`);
-    expect(await findGroup(id)).toEqual({ id, name: `Найденная ${marker}` });
+    expect(await findGroup(user.id, id)).toEqual({ id, name: `Найденная ${marker}` });
   });
 
   it("returns null for a deleted group (scenario «Группа не найдена»)", async () => {
     const id = await created(`Временная ${marker}`);
-    await deleteGroup(id);
-    expect(await findGroup(id)).toBeNull();
+    await deleteGroup(user.id, id);
+    expect(await findGroup(user.id, id)).toBeNull();
   });
 
   it("returns null for a malformed or missing id", async () => {
-    expect(await findGroup("not-a-uuid")).toBeNull();
-    expect(await findGroup("")).toBeNull();
-    expect(await findGroup(undefined)).toBeNull();
+    expect(await findGroup(user.id, "not-a-uuid")).toBeNull();
+    expect(await findGroup(user.id, "")).toBeNull();
+    expect(await findGroup(user.id, undefined)).toBeNull();
   });
 });

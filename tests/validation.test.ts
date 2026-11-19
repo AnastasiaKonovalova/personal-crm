@@ -4,6 +4,7 @@ import {
   contactSchema,
   contactSchemaFor,
   groupNameSchema,
+  loginEmailSchema,
   noteSchema,
   normalizeGroupName,
 } from "@/lib/validation";
@@ -246,5 +247,50 @@ describe("contact groups in the contact form", () => {
       newGroup: "Аналитики",
     });
     expect(result.error?.issues.map((issue) => issue.path[0])).toEqual(["name"]);
+  });
+});
+
+// The email of a sign-in request: one rule for the form and for the server hook
+describe("loginEmailSchema", () => {
+  const emailOf = (email: unknown) => loginEmailSchema.parse({ email }).email;
+  const errorsOf = (input: unknown) =>
+    loginEmailSchema.safeParse(input).error?.issues.map((issue) => [issue.path[0], issue.message]);
+
+  it("trims the spaces and lowers the case (scenario «Почта с пробелами и большими буквами»)", () => {
+    expect(emailOf(" Anna@Example.COM ")).toBe("anna@example.com");
+    expect(emailOf("\tBoris@Example.com\n")).toBe("boris@example.com");
+  });
+
+  it("keeps a normal address as it is", () => {
+    expect(emailOf("anna.smirnova+crm@mail.example.org")).toBe(
+      "anna.smirnova+crm@mail.example.org",
+    );
+  });
+
+  it("rejects an address that is not complete (scenario «Неверный адрес в форме»)", () => {
+    expect(errorsOf({ email: "anna@" })).toEqual([["email", "Проверь адрес почты"]]);
+    expect(errorsOf({ email: "anna@example" })).toEqual([["email", "Проверь адрес почты"]]);
+    expect(errorsOf({ email: "@example.com" })).toEqual([["email", "Проверь адрес почты"]]);
+  });
+
+  it("rejects an empty email and spaces only (scenario «Пустая почта»)", () => {
+    expect(errorsOf({ email: "" })).toEqual([["email", "Проверь адрес почты"]]);
+    expect(errorsOf({ email: "   " })).toEqual([["email", "Проверь адрес почты"]]);
+  });
+
+  it("rejects what a request outside the form may send (scenario «Неверный адрес в запросе мимо формы»)", () => {
+    expect(errorsOf({ email: "not-an-email" })).toEqual([["email", "Проверь адрес почты"]]);
+    expect(errorsOf({ email: "anna@example.com, boris@example.com" })).toEqual([
+      ["email", "Проверь адрес почты"],
+    ]);
+    // A missing or non-text email gets the same message, not a technical one
+    expect(errorsOf({})).toEqual([["email", "Проверь адрес почты"]]);
+    expect(errorsOf({ email: 42 })).toEqual([["email", "Проверь адрес почты"]]);
+    expect(errorsOf({ email: null })).toEqual([["email", "Проверь адрес почты"]]);
+  });
+
+  it("rejects an address longer than 254 characters", () => {
+    const long = `${"a".repeat(250)}@example.com`;
+    expect(errorsOf({ email: long })).toEqual([["email", "Проверь адрес почты"]]);
   });
 });
