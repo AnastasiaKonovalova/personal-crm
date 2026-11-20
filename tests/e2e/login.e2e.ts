@@ -68,6 +68,15 @@ async function loginEmailRows(email: string) {
 
 const verificationValue = (email: string) => JSON.stringify({ type: "magic-link", email });
 
+// A sign-in link request straight to Better Auth, outside the form (and outside its own normalization)
+function requestLinkDirectly(email: string) {
+  return fetch(new URL("/api/auth/sign-in/magic-link", baseUrl), {
+    method: "POST",
+    headers: { "content-type": "application/json", Origin: new URL(baseUrl).origin },
+    body: JSON.stringify({ email, callbackURL: "/" }),
+  });
+}
+
 // Signing in sends emails: the first one of a run opens the SMTP connection
 const SLOW = { timeout: 30_000 };
 
@@ -197,6 +206,30 @@ describe("requesting a link", SLOW, () => {
     );
     expect(rows[0].total).toBe(1);
   });
+
+  it("«Почта с пробелами и большими буквами» outside the form: the same user, the limit counts the normalized address", async () => {
+    const email = newEmail("anna-direct");
+    await signInAs(email);
+    const emailsBefore = await loginEmailRows(email);
+
+    // Better Auth itself lowers the case but refuses spaces: without our hook the first request would pass
+    // and count toward another address, the second one would be refused
+    for (const [n, typed] of [email.toUpperCase(), ` ${email.toUpperCase()} `].entries()) {
+      expect((await requestLinkDirectly(typed)).status, typed).toBe(200);
+      expect(await loginEmailRows(email), typed).toBe(emailsBefore + n + 1);
+    }
+    const [link] = await loginLinks(email, emailsBefore + 2);
+
+    const { cookie } = await openLoginLink(link);
+    expect(await getPage("/", { cookie })).toContain(`title="${email}"`);
+    const { rows } = await withPool((pool) =>
+      pool.query<{ total: number }>(
+        "select count(*)::int as total from users where lower(trim(email)) = $1",
+        [email],
+      ),
+    );
+    expect(rows[0].total).toBe(1);
+  });
 });
 
 describe("checking the address", () => {
@@ -219,11 +252,7 @@ describe("checking the address", () => {
 
   it("«Неверный адрес в запросе мимо формы»: refused, no email", async () => {
     const before = await mailpitTotal();
-    const response = await fetch(new URL("/api/auth/sign-in/magic-link", baseUrl), {
-      method: "POST",
-      headers: { "content-type": "application/json", Origin: new URL(baseUrl).origin },
-      body: JSON.stringify({ email: "not-an-email", callbackURL: "/" }),
-    });
+    const response = await requestLinkDirectly("not-an-email");
     expect(response.status).toBe(400);
     expect(await loginEmailRows("not-an-email")).toBe(0);
     expect(await mailpitTotal()).toBe(before);

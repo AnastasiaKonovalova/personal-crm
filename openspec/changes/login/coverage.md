@@ -20,7 +20,7 @@
 | Ссылка для новой почты | login.e2e «Ссылка для новой почты» |
 | Ссылка для известной почты | login.e2e «Ссылка для известной почты» |
 | Первый вход создаёт пользователя | login.e2e «Первый вход создаёт пользователя» |
-| Почта с пробелами и большими буквами | login.e2e «Почта с пробелами и большими буквами»; validation «trims the spaces and lowers the case» |
+| Почта с пробелами и большими буквами | login.e2e «Почта с пробелами и большими буквами» (через форму) и «Почта с пробелами и большими буквами» outside the form (прямой запрос в Better Auth: тот же пользователь, лимит считает нормализованный адрес); validation «trims the spaces and lowers the case» |
 | Неверный адрес в форме | login.e2e «Неверный адрес в форме»; validation «rejects an address that is not complete» |
 | Пустая почта | login.e2e «Пустая почта»; validation «rejects an empty email and spaces only» |
 | Неверный адрес в запросе мимо формы | login.e2e «Неверный адрес в запросе мимо формы»; validation «rejects what a request outside the form may send» |
