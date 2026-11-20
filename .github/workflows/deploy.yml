@@ -31,9 +31,28 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # Mail stub of this CI run: sign-in emails stay here and never leave the runner.
+      # Keep the services and env the same as the unit job in ci.yml: pnpm test needs both
+      mailpit:
+        image: axllent/mailpit:v1.34.0
+        ports:
+          - 1025:1025
+          - 8025:8025
+        options: >-
+          --health-cmd "/mailpit readyz"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       # Throwaway database of this CI run
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      # Throwaway values, not secrets: the database and the app live for this run only
+      BETTER_AUTH_SECRET: ci-only-throwaway-value-for-this-run-0000
+      BETTER_AUTH_URL: http://localhost:3000
+      SMTP_HOST: localhost
+      SMTP_PORT: 1025
+      SMTP_SECURE: false
+      MAIL_FROM: '"Свои люди - Личная CRM" <noreply@example.test>'
     steps:
       - uses: actions/checkout@v7
 
