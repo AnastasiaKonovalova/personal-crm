@@ -1,4 +1,5 @@
-# Push to main -> tests -> app image tagged with the commit SHA in GHCR -> deploy/deploy.sh on the server.
+# Push to main -> the same checks as on a PR (ci.yml) -> app image tagged with the commit SHA in GHCR
+# -> deploy/deploy.sh on the server.
 # The workflow only calls the scripts from deploy/; what happens on the server is described there.
 name: Deploy
 
@@ -15,63 +16,12 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:18.6-alpine
-        env:
-          POSTGRES_USER: ci
-          POSTGRES_PASSWORD: ci
-          POSTGRES_DB: ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U ci -d ci"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      # Mail stub of this CI run: sign-in emails stay here and never leave the runner.
-      # Keep the services and env the same as the unit job in ci.yml: pnpm test needs both
-      mailpit:
-        image: axllent/mailpit:v1.34.0
-        ports:
-          - 1025:1025
-          - 8025:8025
-        options: >-
-          --health-cmd "/mailpit readyz"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      # Throwaway database of this CI run
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
-      # Throwaway values, not secrets: the database and the app live for this run only
-      BETTER_AUTH_SECRET: ci-only-throwaway-value-for-this-run-0000
-      BETTER_AUTH_URL: http://localhost:3000
-      SMTP_HOST: localhost
-      SMTP_PORT: 1025
-      SMTP_SECURE: false
-      MAIL_FROM: '"Свои люди - Личная CRM" <noreply@example.test>'
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v6
-        with:
-          version: 12.11.2
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm db:migrate
-      - run: pnpm typecheck
-      - run: pnpm test
+  # The whole ci.yml: lint, format, types, Vitest, e2e, image build. One copy of the checks for PR and deploy
+  checks:
+    uses: ./.github/workflows/ci.yml
 
   build:
-    needs: test
+    needs: checks
     runs-on: ubuntu-latest
     permissions:
       contents: read

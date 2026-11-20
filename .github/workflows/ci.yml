@@ -1,13 +1,17 @@
 # Checks on every PR to main: lint, format, types, Vitest, e2e on a real database, image build.
-# Deploy stays in deploy.yml (push to main).
+# deploy.yml calls this same workflow before publishing the image, so a deploy runs exactly these checks.
 name: CI
 
 on:
   pull_request:
     branches: [main]
+  workflow_call:
 
+# Called from deploy.yml, the github context is the caller's push: there is no PR number,
+# so each deploy run gets its own group and never cancels the checks of another deploy.
+# Must not equal the caller's group ("deploy"), or GitHub cancels the caller.
 concurrency:
-  group: ci-${{ github.event.pull_request.number }}
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true
 
 permissions:
