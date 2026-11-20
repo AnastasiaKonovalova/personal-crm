@@ -16,7 +16,7 @@ import {
 } from "./auth";
 import { baseUrl, getPage, submitForm, visibleText, withPool } from "./helpers";
 
-// Sign-in scenarios of openspec/changes/login/specs (user-auth, data-ownership) over HTTP against a running
+// Sign-in scenarios of openspec/specs (user-auth, data-ownership) over HTTP against a running
 // app with Mailpit. Every address is fictional and unique to this run; terms (link, session, limit) are
 // shifted in the database only on this test's own rows. Run: `pnpm build && pnpm start`, then `pnpm test:e2e`.
 
