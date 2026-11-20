@@ -23,6 +23,9 @@ import {
   updateContact,
   updateNote,
 } from "@/server/contacts";
+import { requireUser } from "@/server/session";
+
+// Every action starts with requireUser(): without a session nothing below runs. Data access gets the user's id.
 
 // The text fields plus the group ticks and the "Новая группа" text, returned as typed on an error
 export type ContactFormValues = Record<ContactField, string> & {
@@ -95,13 +98,14 @@ export async function createContactAction(
   _previous: ContactFormState,
   formData: FormData,
 ): Promise<ContactFormState> {
+  const user = await requireUser();
   const values = readContactValues(formData);
   const parsed = contactSchema.safeParse(values);
   if (!parsed.success) {
     return { values, errors: firstErrors(parsed.error) };
   }
 
-  const id = await createContact(parsed.data);
+  const id = await createContact(user.id, parsed.data);
   // A new group may have appeared: the groups page and the filter change too
   revalidatePath("/", "layout");
   redirect(`/contacts/${id}`);
@@ -113,11 +117,12 @@ export async function updateContactAction(
   _previous: ContactFormState,
   formData: FormData,
 ): Promise<ContactFormState> {
+  const user = await requireUser();
   const contactId = readString(formData, "contactId");
   const values = readContactValues(formData);
 
   // The saved date may stay even if it has passed, so validation needs to know it
-  const saved = await getContact(contactId);
+  const saved = await getContact(user.id, contactId);
   if (!saved) {
     return { values, formError: "Контакт не найден" };
   }
@@ -126,7 +131,7 @@ export async function updateContactAction(
     return { values, errors: firstErrors(parsed.error) };
   }
 
-  const id = await updateContact(contactId, parsed.data);
+  const id = await updateContact(user.id, contactId, parsed.data);
   if (!id) {
     return { values, formError: "Контакт не найден" };
   }
@@ -137,8 +142,9 @@ export async function updateContactAction(
 
 // A contact already deleted elsewhere is not an error: the list is the same either way
 export async function deleteContactAction(formData: FormData) {
+  const user = await requireUser();
   const contactId = readString(formData, "contactId");
-  await deleteContact(contactId);
+  await deleteContact(user.id, contactId);
 
   // Group counts on the groups page change too
   revalidatePath("/", "layout");
@@ -149,6 +155,7 @@ export async function addNoteAction(
   _previous: NoteFormState,
   formData: FormData,
 ): Promise<NoteFormState> {
+  const user = await requireUser();
   const contactId = readString(formData, "contactId");
   const body = readString(formData, "body");
   const parsed = noteSchema.safeParse({ body });
@@ -156,7 +163,7 @@ export async function addNoteAction(
     return { body, error: firstErrors(parsed.error).body };
   }
 
-  const note = await addNote(contactId, parsed.data.body);
+  const note = await addNote(user.id, contactId, parsed.data.body);
   if (!note) {
     return { body, error: "Контакт не найден" };
   }
@@ -172,13 +179,14 @@ export async function setCadenceAction(
   _previous: CadenceFormState,
   formData: FormData,
 ): Promise<CadenceFormState> {
+  const user = await requireUser();
   const contactId = readString(formData, "contactId");
   const values = {
     cadence: readString(formData, "cadence"),
     contactOn: readString(formData, "contactOn"),
   };
 
-  const saved = await getContact(contactId);
+  const saved = await getContact(user.id, contactId);
   if (!saved) {
     return { values, formError: "Контакт не найден" };
   }
@@ -187,7 +195,7 @@ export async function setCadenceAction(
     return { values, errors: firstErrors(parsed.error) };
   }
 
-  const id = await setCadence(contactId, parsed.data);
+  const id = await setCadence(user.id, contactId, parsed.data);
   if (!id) {
     return { values, formError: "Контакт не найден" };
   }
@@ -205,10 +213,11 @@ export async function markContactedAction(
   _previous: MarkContactedState,
   formData: FormData,
 ): Promise<MarkContactedState> {
+  const user = await requireUser();
   const contactId = readString(formData, "contactId");
   const returnTo = readString(formData, "returnTo");
 
-  const note = await addNote(contactId, CONTACTED_NOTE);
+  const note = await addNote(user.id, contactId, CONTACTED_NOTE);
   if (!note) {
     return { error: "Контакт не найден" };
   }
@@ -226,6 +235,7 @@ export async function updateNoteAction(
   _previous: NoteFormState,
   formData: FormData,
 ): Promise<NoteFormState> {
+  const user = await requireUser();
   const contactId = readString(formData, "contactId");
   const noteId = readString(formData, "noteId");
   const body = readString(formData, "body");
@@ -234,7 +244,7 @@ export async function updateNoteAction(
     return { body, error: firstErrors(parsed.error).body };
   }
 
-  const note = await updateNote(contactId, noteId, parsed.data.body);
+  const note = await updateNote(user.id, contactId, noteId, parsed.data.body);
   if (!note) {
     return { body, error: "Заметка не найдена" };
   }
@@ -249,6 +259,7 @@ export async function addContactToGroupAction(
   _previous: GroupFieldState,
   formData: FormData,
 ): Promise<GroupFieldState> {
+  const user = await requireUser();
   const contactId = readString(formData, "contactId");
   const groupName = readString(formData, "groupName");
   const parsed = groupNameSchema.safeParse({ name: groupName });
@@ -256,7 +267,7 @@ export async function addContactToGroupAction(
     return { groupName, error: firstErrors(parsed.error).name };
   }
 
-  const groupId = await addContactToGroup(contactId, parsed.data.name);
+  const groupId = await addContactToGroup(user.id, contactId, parsed.data.name);
   if (!groupId) {
     return { groupName, error: "Контакт не найден" };
   }
@@ -271,9 +282,10 @@ export async function addContactToGroupAction(
 // "Убрать" in the confirmation dialog. The redirect drops ?removeGroup= and closes the dialog,
 // with and without JavaScript; a membership already removed elsewhere is not an error
 export async function removeContactFromGroupAction(formData: FormData) {
+  const user = await requireUser();
   const contactId = readString(formData, "contactId");
   const groupId = readString(formData, "groupId");
-  await removeContactFromGroup(contactId, groupId);
+  await removeContactFromGroup(user.id, contactId, groupId);
 
   revalidatePath("/", "layout");
   redirect(`/contacts/${contactId}`);

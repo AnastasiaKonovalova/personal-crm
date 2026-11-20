@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Вход: ссылка отправлена — эскиз</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/tokens.css">
+  <link rel="stylesheet" href="vendor/styles.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="ak-root">
+  <header class="ak-header">
+    <div class="ak-wrap ak-bar">
+      <div class="ak-brand-group">
+        <a class="ak-brand ak-brand-logo" href="login.html">
+          <svg class="ak-logo" viewBox="0 0 38 28" width="33" height="24" aria-hidden="true"><circle class="ak-logo-fill" cx="14" cy="14" r="12"/><circle class="ak-logo-ring" cx="24" cy="14" r="11"/></svg>
+          <span>Свои люди<b>.</b></span>
+        </a>
+        <span class="ak-brand-note">личная CRM</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="ak-wrap ak-main ak-stack-y ak-login">
+    <h1 class="ak-page-title">Вход</h1>
+
+    <!-- the same text for a new and a known address; the sentence is one text node (e2e reads raw HTML) -->
+    <section class="ak-card ak-login-sent" role="status">
+      <span class="ak-glyph" aria-hidden="true">
+        <svg class="ak-ico" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      </span>
+      <h2 class="ak-login-title">Ссылка для входа отправлена на anna@example.com</h2>
+      <p>Открой письмо и нажми «Войти». Ссылка работает 15 минут.</p>
+      <a class="ak-btn ak-btn-ghost" href="login.html">Ввести другую почту</a>
+    </section>
+  </main>
+</div>
+</body>
+</html>

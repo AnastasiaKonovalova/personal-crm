@@ -19,10 +19,10 @@
 - Next.js (App Router), TypeScript. Документация установленной версии лежит в `node_modules/next/dist/docs/`: в API, в которых не уверен, смотри её, а не память
 - React, Tailwind CSS, shadcn/ui; цвета, шрифты и отступы - только через дизайн-токены
 - PostgreSQL, Drizzle: схема и миграции в коде
-- Better Auth, вход по MagicLink (запланировано, ещё не сделано; задача - в `specs/backlog.md`)
+- Better Auth, вход по MagicLink
 - Vitest, Playwright
 - pnpm, `pnpm-lock.yaml` в git
-- Docker: локально только Postgres и почтовая заглушка Mailpit (Mailpit запланирован, ещё не сделан; задача - в `specs/backlog.md`), образ приложения собирает CI
+- Docker: локально только Postgres и почтовая заглушка Mailpit, образ приложения собирает CI
 - GitHub Flow, GitHub Actions, образы в GHCR
 - VPS, docker compose, nginx, certbot
 - Версии GitHub Actions и библиотек - последние стабильные: проверяй актуальные, не бери по памяти

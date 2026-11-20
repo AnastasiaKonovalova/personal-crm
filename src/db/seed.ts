@@ -1,10 +1,12 @@
+import { randomUUID } from "node:crypto";
 import { fakerRU as faker } from "@faker-js/faker";
-import { count, sql } from "drizzle-orm";
+import { count, eq, sql } from "drizzle-orm";
 import { closeDb, getDb } from "./index";
-import { type contactCadence, contactGroups, contacts, groups, notes } from "./schema";
+import { type contactCadence, contactGroups, contacts, groups, notes, users } from "./schema";
 
-// Fills an empty database with fictional contacts and groups. Each part is skipped
-// if its table already has rows.
+// Fills the database with fictional contacts and groups of the user with the email from OWNER_EMAIL
+// (the user is created if there is none). Each part is skipped if that user already has rows of it.
+// Ids are random, not from faker: the same demo data can be created for another owner email too.
 
 const CONTACT_COUNT = 1000;
 const BATCH_SIZE = 500;
@@ -239,7 +241,7 @@ function buildContact() {
 
   return {
     row: {
-      id: faker.string.uuid(),
+      id: randomUUID(),
       name: `${firstName} ${lastName}`,
       about:
         faker.helpers.maybe(() => faker.helpers.arrayElement(ROLES), { probability: 0.9 }) ?? null,
@@ -328,10 +330,13 @@ function pickGroupCount() {
 }
 
 // Runs separately from contacts, so a database seeded before groups existed gets groups too
-async function seedGroups(db: Db) {
-  const [{ total }] = await db.select({ total: count() }).from(groups);
+async function seedGroups(db: Db, ownerId: string) {
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(groups)
+    .where(eq(groups.userId, ownerId));
   if (total > 0) {
-    console.log(`Groups skipped: the groups table already has ${total} rows`);
+    console.log(`Groups skipped: the owner already has ${total} groups`);
     return;
   }
 
@@ -340,10 +345,11 @@ async function seedGroups(db: Db) {
     await db
       .select({ id: contacts.id })
       .from(contacts)
+      .where(eq(contacts.userId, ownerId))
       .orderBy(sql`lower(${contacts.name})`, contacts.id)
   ).map((row) => row.id);
 
-  const groupRows = GROUP_NAMES.map((name) => ({ id: faker.string.uuid(), name }));
+  const groupRows = GROUP_NAMES.map((name) => ({ id: randomUUID(), name }));
   const longGroupId = groupRows.find((group) => group.name === LONG_GROUP_NAME)!.id;
   const otherGroupIds = groupRows
     .filter((group) => group.id !== longGroupId)
@@ -364,7 +370,7 @@ async function seedGroups(db: Db) {
   });
 
   await db.transaction(async (tx) => {
-    await tx.insert(groups).values(groupRows);
+    await tx.insert(groups).values(groupRows.map((group) => ({ ...group, userId: ownerId })));
     for (let start = 0; start < memberships.length; start += BATCH_SIZE) {
       await tx.insert(contactGroups).values(memberships.slice(start, start + BATCH_SIZE));
     }
@@ -373,18 +379,38 @@ async function seedGroups(db: Db) {
   console.log(`Seeded ${groupRows.length} groups and ${memberships.length} memberships`);
 }
 
-async function main() {
-  const db = getDb();
-  const [{ total }] = await db.select({ total: count() }).from(contacts);
-  if (total > 0) {
-    console.log(`Contacts skipped: the contacts table already has ${total} rows`);
-  } else {
-    await seedContacts(db);
+// The owner of the demo data: the user with OWNER_EMAIL, created if missing
+async function findOrCreateOwner(db: Db) {
+  const email = process.env.OWNER_EMAIL?.trim().toLowerCase();
+  if (!email) {
+    throw new Error(
+      "OWNER_EMAIL is not set: the seed creates the demo data for this user. Add OWNER_EMAIL=<your email> to .env",
+    );
   }
-  await seedGroups(db);
+  await db
+    .insert(users)
+    .values({ id: randomUUID(), name: "", email, emailVerified: true })
+    .onConflictDoNothing();
+  const [owner] = await db.select({ id: users.id }).from(users).where(eq(users.email, email));
+  return owner.id;
 }
 
-async function seedContacts(db: Db) {
+async function main() {
+  const db = getDb();
+  const ownerId = await findOrCreateOwner(db);
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(contacts)
+    .where(eq(contacts.userId, ownerId));
+  if (total > 0) {
+    console.log(`Contacts skipped: the owner already has ${total} contacts`);
+  } else {
+    await seedContacts(db, ownerId);
+  }
+  await seedGroups(db, ownerId);
+}
+
+async function seedContacts(db: Db, ownerId: string) {
   faker.seed(20261014);
   const seedContacts = Array.from({ length: CONTACT_COUNT }, buildContact);
 
@@ -393,7 +419,9 @@ async function seedContacts(db: Db) {
     let insertedNotes = 0;
     for (let start = 0; start < seedContacts.length; start += BATCH_SIZE) {
       const batch = seedContacts.slice(start, start + BATCH_SIZE);
-      await tx.insert(contacts).values(batch.map((contact) => contact.row));
+      await tx
+        .insert(contacts)
+        .values(batch.map((contact) => ({ ...contact.row, userId: ownerId })));
       const noteRows = batch.flatMap(buildNotes);
       if (noteRows.length > 0) {
         await tx.insert(notes).values(noteRows);

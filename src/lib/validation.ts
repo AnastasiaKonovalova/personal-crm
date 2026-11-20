@@ -130,6 +130,21 @@ export type ContactField = Exclude<
   keyof typeof contactGroupsShape
 >;
 
+// The email of a sign-in request: trimmed, lower case, a real address of at most 254 characters.
+// One message for everything wrong with it (empty, incomplete, not text): the form shows it under the
+// field and the server hook of the sign-in endpoint answers with it, so a request that bypasses the form
+// is checked by the same rule
+export const EMAIL_ERROR = "Проверь адрес почты";
+
+export const loginEmailSchema = z.object({
+  email: z
+    .string(EMAIL_ERROR)
+    .trim()
+    .toLowerCase()
+    .max(254, EMAIL_ERROR)
+    .pipe(z.email(EMAIL_ERROR)),
+});
+
 export const noteSchema = z.object({
   body: z.string().trim().min(1, "Заметка пустая").max(5000, "Не длиннее 5000 символов"),
 });

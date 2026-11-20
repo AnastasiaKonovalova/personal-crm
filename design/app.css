@@ -317,3 +317,45 @@
 .ak-gpick .ak-ico { display: none; width: 16px; height: 16px; }
 .ak-gpick label:has(input:checked) .ak-ico { display: block; }
 .ak-field-hint { margin: 0; font-size: 13px; color: var(--muted); }
+
+/* login ---------------------------------------------------------------------- */
+/* header as in the app (landing mark, name, «личная CRM» note); with a session the account block sits at the right */
+.ak-brand-group { display: flex; align-items: center; flex: none; }
+.ak-brand-logo { display: inline-flex; align-items: center; gap: 10px; }
+.ak-logo { flex: none; }
+.ak-logo-fill { fill: var(--accent); }
+.ak-logo-ring { fill: none; stroke: var(--teal-deep); stroke-width: 2.4; }
+.ak-brand-note { margin-left: 14px; padding-left: 14px; border-left: 1px solid var(--line); font-size: 13px; color: var(--muted); white-space: nowrap; }
+@media (max-width: 680px) { .ak-brand-note { display: none; } }
+
+/* account block: email (cut with an ellipsis, full address in title) + «Выйти» as a form button, 44px hit area */
+.ak-account { display: flex; align-items: center; gap: var(--space-cta); min-width: 0; }
+.ak-account-email { min-width: 0; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--muted); }
+.ak-account form { flex: none; margin: 0; }
+.ak-account-out { min-height: var(--hit-carousel); padding: 0 4px; font-size: 14px; }
+.ak-account-out .ak-ico { width: 18px; height: 18px; }
+/* narrow: «Выйти» becomes a 44px icon button (the name stays in aria-label) and the gaps get tighter,
+   so a short address fits whole (boris@example.com) */
+@media (max-width: 560px) {
+  .ak-bar { gap: 12px; }
+  .ak-account { gap: 4px; }
+  .ak-account-email { font-size: 13px; }
+  .ak-account-out { width: var(--hit-carousel); padding: 0; justify-content: center; gap: 0; }
+  .ak-account-out .ak-ico { width: 20px; height: 20px; }
+  .ak-account-out-label { display: none; }
+}
+
+/* login page: one narrow column, centered like the forms */
+.ak-login { max-width: calc(520px + 2 * clamp(20px, 5vw, 52px)); }
+/* everything centered (owner 2026-11-17), as the «Ссылка устарела» card; the label and the error stay at the field edge */
+.ak-login { text-align: center; }
+.ak-login .ak-lede { margin-inline: auto; }
+.ak-login .ak-field { text-align: left; }
+.ak-login .ak-btn-row { justify-content: center; }
+.ak-login .ak-lede, .ak-login .ak-empty-title { text-wrap: balance; } /* no lone word on the last line */
+.ak-login-title { font-family: var(--font-display); font-weight: 600; font-size: clamp(22px, 2.6vw, 28px); line-height: 1.15; letter-spacing: -.02em; margin: 0; overflow-wrap: anywhere; }
+.ak-login-sent { display: grid; gap: var(--space-controls); justify-items: center; }
+.ak-login-sent p { margin: 0; color: var(--muted); }
+/* no groups yet: a link in place of the group filter (decision 31) */
+.ak-root .ak-groups-link { justify-self: start; color: var(--teal-deep); } /* .ak-root a sets color: inherit, so match its specificity */
+.ak-root .ak-groups-link:hover { color: var(--ink); }

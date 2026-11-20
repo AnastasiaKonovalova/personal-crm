@@ -49,9 +49,27 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # Mail stub of this CI run: sign-in emails stay here and never leave the runner
+      mailpit:
+        image: axllent/mailpit:v1.34.0
+        ports:
+          - 1025:1025
+          - 8025:8025
+        options: >-
+          --health-cmd "/mailpit readyz"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       # Throwaway database of this CI run
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      # Throwaway values, not secrets: the database and the app live for this run only
+      BETTER_AUTH_SECRET: ci-only-throwaway-value-for-this-run-0000
+      BETTER_AUTH_URL: http://localhost:3000
+      SMTP_HOST: localhost
+      SMTP_PORT: 1025
+      SMTP_SECURE: false
+      MAIL_FROM: '"Свои люди - Личная CRM" <noreply@example.test>'
     steps:
       - uses: actions/checkout@v7
 
@@ -84,9 +102,30 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # Mail stub of this CI run: sign-in emails stay here and never leave the runner
+      mailpit:
+        image: axllent/mailpit:v1.34.0
+        ports:
+          - 1025:1025
+          - 8025:8025
+        options: >-
+          --health-cmd "/mailpit readyz"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       # Throwaway database of this CI run
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      # Throwaway values, not secrets: the database and the app live for this run only
+      BETTER_AUTH_SECRET: ci-only-throwaway-value-for-this-run-0000
+      BETTER_AUTH_URL: http://localhost:3000
+      SMTP_HOST: localhost
+      SMTP_PORT: 1025
+      SMTP_SECURE: false
+      MAIL_FROM: '"Свои люди - Личная CRM" <noreply@example.test>'
+      # All e2e requests come from one address: Better Auth's per-IP limit is off for this run only
+      # (design.md of the login change, decision 2а). Quoted: unquoted off is a YAML boolean
+      E2E_AUTH_IP_LIMIT: "off"
     steps:
       - uses: actions/checkout@v7
 

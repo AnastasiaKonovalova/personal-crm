@@ -8,6 +8,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { pluralContacts } from "@/lib/plural";
 import { deleteGroupAction } from "@/app/groups/actions";
 import { listGroups } from "@/server/groups";
+import { requireUser } from "@/server/session";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -26,11 +27,12 @@ function deleteDescription(contactCount: number) {
 }
 
 export default async function GroupsPage({ searchParams }: { searchParams: SearchParams }) {
+  const user = await requireUser();
   const params = await searchParams;
   const editId = typeof params.edit === "string" ? params.edit : undefined;
   const deleteId = typeof params.delete === "string" ? params.delete : undefined;
 
-  const groups = await listGroups();
+  const groups = await listGroups(user.id);
 
   return (
     <PageShell aurora className="grid gap-heading">

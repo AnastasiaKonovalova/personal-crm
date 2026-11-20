@@ -5,14 +5,16 @@ import { ContactForm } from "@/components/contact-form";
 import { PageShell } from "@/components/page-shell";
 import { getContactWithNotes } from "@/server/contacts";
 import { listGroups } from "@/server/groups";
+import { requireUser } from "@/server/session";
 
 export const metadata: Metadata = {
   title: "Редактирование контакта — Свои люди",
 };
 
 export default async function EditContactPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requireUser();
   const { id } = await params;
-  const [data, groups] = await Promise.all([getContactWithNotes(id), listGroups()]);
+  const [data, groups] = await Promise.all([getContactWithNotes(user.id, id), listGroups(user.id)]);
   if (!data) {
     notFound();
   }

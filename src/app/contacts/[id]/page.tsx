@@ -11,6 +11,7 @@ import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
 import { getContactWithNotes } from "@/server/contacts";
 import { listGroups } from "@/server/groups";
+import { requireUser } from "@/server/session";
 
 const dateFormat = new Intl.DateTimeFormat("ru-RU", { dateStyle: "long", timeStyle: "short" });
 
@@ -36,8 +37,12 @@ export default async function ContactPage({
   params: Promise<{ id: string }>;
   searchParams: SearchParams;
 }) {
+  const user = await requireUser();
   const [{ id }, query] = await Promise.all([params, searchParams]);
-  const [data, allGroups] = await Promise.all([getContactWithNotes(id), listGroups()]);
+  const [data, allGroups] = await Promise.all([
+    getContactWithNotes(user.id, id),
+    listGroups(user.id),
+  ]);
   if (!data) {
     notFound();
   }

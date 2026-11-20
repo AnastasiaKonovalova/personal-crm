@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Link from "next/link";
+import { HeaderAccount } from "@/components/header-account";
+import { getCurrentUser } from "@/server/session";
 import "./globals.css";
 
 // Brand fonts; globals.css maps them to font-display / font-sans.
@@ -21,7 +23,9 @@ export const metadata: Metadata = {
   description: "Контакты людей, которых знаю лично",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Only for the header: access is checked by requireUser() in every page and action, not here
+  const user = await getCurrentUser();
   return (
     // suppressHydrationWarning: the script below adds data-js to <html> before React sees it
     <html
@@ -75,6 +79,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <span className="ml-3.5 border-l border-line pl-3.5 text-caption whitespace-nowrap text-muted-foreground max-[680px]:hidden">
               личная CRM
             </span>
+            {/* signed in: email + «Выйти»; without a session (/login) only the brand, decision 32 */}
+            {user && <HeaderAccount email={user.email} />}
           </div>
         </header>
         {children}

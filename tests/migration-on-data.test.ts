@@ -39,8 +39,13 @@ function urlFor(database: string | null) {
   return url.toString();
 }
 
-async function withPool<T>(database: string | null, run: (pool: Pool) => Promise<T>) {
-  const pool = new Pool({ connectionString: urlFor(database), max: 1 });
+// `options` are Postgres startup options for the connection (`-c name=value`)
+async function withPool<T>(
+  database: string | null,
+  run: (pool: Pool) => Promise<T>,
+  options?: string,
+) {
+  const pool = new Pool({ connectionString: urlFor(database), max: 1, options });
   try {
     return await run(pool);
   } finally {
@@ -49,6 +54,11 @@ async function withPool<T>(database: string | null, run: (pool: Pool) => Promise
 }
 
 const quote = (name: string) => `"${name.replace(/"/g, '""')}"`;
+
+// The `app.owner_email` setting migration 0003 reads: a startup option, where a backslash and whitespace need
+// escaping. Same as in src/db/migrate.ts, which the production image runs as a single file
+const ownerOptions = (email: string | undefined) =>
+  email === undefined ? undefined : `-c app.owner_email=${email.replace(/[\\\s]/g, "\\$&")}`;
 
 // A migrations folder with the given entries; `extra` holds SQL of entries that are not in ./drizzle
 async function migrationsFolder(
@@ -99,6 +109,10 @@ type Check = {
   fill: (pool: Pool) => Promise<void>;
   // Extra queries on the migrated database, e.g. what the new columns hold
   inspect?: (pool: Pool) => Promise<unknown>;
+  // Value of `app.owner_email` on the connection that runs the migration; not set when omitted
+  ownerEmail?: string;
+  // The migration is expected to fail: its error goes to the report and the checks run on what is left
+  expectError?: boolean;
 };
 
 type MigrationReport = {
@@ -107,6 +121,8 @@ type MigrationReport = {
   newTables: string[];
   newColumns: Record<string, string[]>;
   inspected: unknown;
+  // Error of the migration when `expectError` is set and it failed; otherwise null
+  error: string | null;
 };
 
 const EXTRA_TAG = "9999_extra";
@@ -114,7 +130,7 @@ const EXTRA_TAG = "9999_extra";
 // `target` is a tag from the journal, or SQL appended as an extra latest migration (the self-check)
 async function checkMigration(
   target: { tag: string } | { sql: string },
-  { fill, inspect }: Check,
+  { fill, inspect, ownerEmail, expectError }: Check,
 ): Promise<MigrationReport> {
   const journal = await readJournal();
   const extra: Record<string, string> = {};
@@ -131,8 +147,12 @@ async function checkMigration(
   const database = `crm_migration_check_${randomUUID().slice(0, 8)}`;
   const beforeFolder = await migrationsFolder(journal, entries.slice(0, index), extra);
   const afterFolder = await migrationsFolder(journal, entries.slice(0, index + 1), extra);
-  const apply = (folder: string) =>
-    withPool(database, (pool) => migrate(drizzle({ client: pool }), { migrationsFolder: folder }));
+  const apply = (folder: string, options?: string) =>
+    withPool(
+      database,
+      (pool) => migrate(drizzle({ client: pool }), { migrationsFolder: folder }),
+      options,
+    );
 
   await withPool(null, (pool) => pool.query(`create database ${quote(database)}`));
   try {
@@ -146,7 +166,15 @@ async function checkMigration(
       return { shape, rows };
     });
 
-    await apply(afterFolder);
+    let error: string | null = null;
+    try {
+      await apply(afterFolder, ownerOptions(ownerEmail));
+    } catch (caught) {
+      if (!expectError) throw caught;
+      // drizzle wraps the database error: the message of the original is in `cause`
+      const cause = caught instanceof Error ? caught.cause : undefined;
+      error = [caught, cause].map((item) => (item instanceof Error ? item.message : "")).join(" ");
+    }
     return await withPool(database, async (pool) => {
       const shape = await shapeOf(pool);
       const problems: string[] = [];
@@ -184,6 +212,7 @@ async function checkMigration(
           .sort(),
         newColumns,
         inspected: inspect ? await inspect(pool) : undefined,
+        error,
       };
     });
   } finally {
@@ -208,15 +237,27 @@ async function fillContactsWithoutCadence(pool: Pool) {
   await fillNotes(pool);
 }
 
-async function fillContactsWithCadence(pool: Pool) {
+// `owner` is the id of an existing user: from 0003 on every contact needs one, before it there is no user_id
+async function fillContactsWithCadence(pool: Pool, owner?: string) {
+  const [column, value] = owner ? ["user_id, ", `'${owner}', `] : ["", ""];
   await pool.query(`
-    insert into contacts (name, about, how_we_met, phone, email, cadence, contact_on, created_at) values
-      ('Анна Тестова', 'Дизайнер', 'Курсы', '+7 (000) 111-11-11', 'anna@example.com', 'week', null, now() - interval '30 days'),
-      ('Борис Пробный', null, null, null, null, null, null, now() - interval '400 days'),
-      ('Вера Ёлкина', 'Соседка', 'Соседи по дому', null, 'vera@example.org', 'date', current_date + 10, now() - interval '5 days'),
-      ('Глеб Выдуманный', 'Однокурсник', null, '+7 (000) 222-22-22', null, 'year', null, now() - interval '2 days')
+    insert into contacts (${column}name, about, how_we_met, phone, email, cadence, contact_on, created_at) values
+      (${value}'Анна Тестова', 'Дизайнер', 'Курсы', '+7 (000) 111-11-11', 'anna@example.com', 'week', null, now() - interval '30 days'),
+      (${value}'Борис Пробный', null, null, null, null, null, null, now() - interval '400 days'),
+      (${value}'Вера Ёлкина', 'Соседка', 'Соседи по дому', null, 'vera@example.org', 'date', current_date + 10, now() - interval '5 days'),
+      (${value}'Глеб Выдуманный', 'Однокурсник', null, '+7 (000) 222-22-22', null, 'year', null, now() - interval '2 days')
   `);
   await fillNotes(pool);
+}
+
+// The same contacts and notes for the schema after all real migrations (the self-checks append theirs after 0003)
+const CHECK_USER = "check-user";
+async function fillContactsOfUser(pool: Pool) {
+  await pool.query(
+    "insert into users (id, name, email, email_verified) values ($1, '', 'check@example.com', true)",
+    [CHECK_USER],
+  );
+  await fillContactsWithCadence(pool, CHECK_USER);
 }
 
 async function fillNotes(pool: Pool) {
@@ -228,8 +269,46 @@ async function fillNotes(pool: Pool) {
   `);
 }
 
+// Contacts, notes, groups and memberships as they are right before 0003: «Анна» is in two groups,
+// «Вера» in one, «Ёлка» is empty
+async function fillContactsGroupsNotes(pool: Pool) {
+  await fillContactsWithCadence(pool);
+  await pool.query(`
+    insert into groups (name, created_at) values
+      ('Друзья', now() - interval '20 days'),
+      ('Соседи', now() - interval '10 days'),
+      ('Ёлка', now())
+  `);
+  await pool.query(`
+    insert into contact_groups (contact_id, group_id)
+    select c.id, g.id from contacts c join groups g
+      on (c.name = 'Анна Тестова' and g.name in ('Друзья', 'Соседи'))
+      or (c.name = 'Вера Ёлкина' and g.name = 'Соседи')
+  `);
+}
+
+const OWNER = "owner@example.com";
+
+// How many rows of a table belong to the user with the owner's email, out of all rows
+async function ownership(pool: Pool, table: "contacts" | "groups") {
+  return {
+    total: await count(pool, `select count(*)::int as n from ${table}`),
+    ofOwner: await count(
+      pool,
+      `select count(*)::int as n from ${table} t join users u on u.id = t.user_id where u.email = '${OWNER}'`,
+    ),
+  };
+}
+
+// A statement's outcome: "ok" or the Postgres error code
+const outcome = (pool: Pool, sql: string, params: unknown[] = []) =>
+  pool.query(sql, params).then(
+    () => "ok",
+    (error: { code?: string }) => error.code ?? "error",
+  );
+
 // One test per migration from the journal; the first one runs on an empty database and has none
-const CHECKED_MIGRATIONS = ["0001_unique_rachel_grey", "0002_gorgeous_magdalene"];
+const CHECKED_MIGRATIONS = ["0001_unique_rachel_grey", "0002_gorgeous_magdalene", "0003_login"];
 
 describe("data checks per migration", () => {
   it("every migration has a data check", async () => {
@@ -274,6 +353,125 @@ describe("data checks per migration", () => {
     expect(report.newColumns).toEqual({});
     expect(report.inspected).toEqual({ groups: 0, memberships: 0 });
   });
+
+  it("0003 login: all contacts and groups go to one user with the normalized owner email, old data unchanged (scenario «Выкатка на базе с данными»)", async () => {
+    const report = await checkMigration(
+      { tag: "0003_login" },
+      {
+        fill: fillContactsGroupsNotes,
+        ownerEmail: " Owner@Example.COM ",
+        inspect: async (pool) => ({
+          users: (await pool.query<{ email: string }>("select email from users")).rows.map(
+            (row) => row.email,
+          ),
+          contacts: await ownership(pool, "contacts"),
+          groups: await ownership(pool, "groups"),
+        }),
+      },
+    );
+    // notes and contact_groups are compared row by row with the other old tables: their owner is the contact's
+    expect(report.rowsBefore).toMatchObject({
+      contacts: 4,
+      notes: 3,
+      groups: 3,
+      contact_groups: 3,
+    });
+    expect(report.error).toBeNull();
+    expect(report.problems).toEqual([]);
+    expect(report.newTables).toEqual([
+      "accounts",
+      "login_emails",
+      "sessions",
+      "users",
+      "verifications",
+    ]);
+    expect(report.newColumns).toEqual({ contacts: ["user_id"], groups: ["user_id"] });
+    expect(report.inspected).toEqual({
+      users: [OWNER],
+      contacts: { total: 4, ofOwner: 4 },
+      groups: { total: 3, ofOwner: 3 },
+    });
+  });
+
+  it.each([
+    ["is not set", undefined],
+    ["is empty", ""],
+    ["is only spaces", "   "],
+  ])(
+    "0003 login: owner email %s and data exists: the migration fails, nothing changes (scenario «Выкатка на базе с данными»)",
+    async (_label, ownerEmail) => {
+      const report = await checkMigration(
+        { tag: "0003_login" },
+        { fill: fillContactsGroupsNotes, ownerEmail, expectError: true },
+      );
+      expect(report.error).toMatch(/OWNER_EMAIL/);
+      // the whole migration is rolled back: no new tables or columns, old rows as they were
+      expect(report.rowsBefore).toMatchObject({
+        contacts: 4,
+        notes: 3,
+        groups: 3,
+        contact_groups: 3,
+      });
+      expect(report.problems).toEqual([]);
+      expect(report.newTables).toEqual([]);
+      expect(report.newColumns).toEqual({});
+    },
+  );
+
+  it("0003 login: an empty database migrates without an owner email (CI, a new install)", async () => {
+    const report = await checkMigration(
+      { tag: "0003_login" },
+      {
+        fill: async () => {},
+        inspect: (pool) => count(pool, "select count(*)::int as n from users"),
+      },
+    );
+    expect(report.error).toBeNull();
+    expect(report.problems).toEqual([]);
+    expect(report.inspected).toBe(0);
+  });
+
+  it("0003 login: a record without an owner cannot exist, a group name is unique per user (scenarios «Новый контакт», «Две группы „Друзья“»)", async () => {
+    const insertGroup = (pool: Pool, name: string, userId: string) =>
+      outcome(pool, "insert into groups (name, user_id) values ($1, $2)", [name, userId]);
+    const report = await checkMigration(
+      { tag: "0003_login" },
+      {
+        fill: async () => {},
+        inspect: async (pool) => {
+          await pool.query(`
+            insert into users (id, name, email, email_verified) values
+              ('user-a', '', 'a@example.com', true),
+              ('user-b', '', 'b@example.com', true)
+          `);
+          return {
+            groupOfA: await insertGroup(pool, "Друзья", "user-a"),
+            sameNameOfB: await insertGroup(pool, "Друзья", "user-b"),
+            sameNameOfA: await insertGroup(pool, "Друзья", "user-a"),
+            otherCaseOfA: await insertGroup(pool, "друзья", "user-a"),
+            contactWithoutOwner: await outcome(
+              pool,
+              "insert into contacts (name) values ('Без владельца')",
+            ),
+            contactOfUnknownUser: await outcome(
+              pool,
+              "insert into contacts (name, user_id) values ('Чужой', 'nobody')",
+            ),
+            groupWithoutOwner: await outcome(pool, "insert into groups (name) values ('Ничья')"),
+          };
+        },
+      },
+    );
+    expect(report.inspected).toEqual({
+      groupOfA: "ok",
+      sameNameOfB: "ok",
+      sameNameOfA: "23505", // unique violation
+      otherCaseOfA: "23505", // the same normalization as before: case does not matter
+      contactWithoutOwner: "23502", // not null violation
+      contactOfUnknownUser: "23503", // foreign key violation
+      groupWithoutOwner: "23502",
+    });
+  });
 });
 
 // The check itself, on extra migrations appended after the real ones
@@ -291,7 +489,7 @@ describe("the data check", () => {
     ],
     [
       "adds a row",
-      `INSERT INTO "contacts" ("name") VALUES ('Лишний');`,
+      `INSERT INTO "contacts" ("name", "user_id") VALUES ('Лишний', '${CHECK_USER}');`,
       ["contacts: rows changed"],
     ],
     [
@@ -316,8 +514,40 @@ describe("the data check", () => {
       ["contacts.phone: column is gone", "contacts: rows changed"],
     ],
   ])("catches a migration that %s", async (_label, sql, expected) => {
-    const report = await checkMigration({ sql }, { fill: fillContactsWithCadence });
+    const report = await checkMigration({ sql }, { fill: fillContactsOfUser });
     expect(report.problems).toEqual(expected);
+  });
+
+  it("reports the error of a failing migration when it is expected, and finds nothing damaged after a rollback", async () => {
+    const report = await checkMigration(
+      { sql: `DO $$ BEGIN RAISE EXCEPTION 'boom from the migration'; END $$;` },
+      { fill: fillContactsOfUser, expectError: true },
+    );
+    expect(report.error).toMatch(/boom from the migration/);
+    expect(report.problems).toEqual([]);
+  });
+
+  it("passes the owner email to the migration's connection", async () => {
+    const report = await checkMigration(
+      {
+        sql: `CREATE TABLE "probe" AS SELECT current_setting('app.owner_email', true) AS "value";`,
+      },
+      {
+        fill: fillContactsOfUser,
+        ownerEmail: " Some@Example.COM ",
+        inspect: async (pool) => (await pool.query("select value from probe")).rows[0].value,
+      },
+    );
+    expect(report.inspected).toBe(" Some@Example.COM ");
+  });
+
+  it("raises the error of a failing migration when it is not expected", async () => {
+    await expect(
+      checkMigration(
+        { sql: `DO $$ BEGIN RAISE EXCEPTION 'unexpected'; END $$;` },
+        { fill: fillContactsOfUser },
+      ),
+    ).rejects.toThrow();
   });
 
   it("does not raise a false alarm for a harmless new column and table", async () => {
@@ -325,7 +555,7 @@ describe("the data check", () => {
       {
         sql: `ALTER TABLE "contacts" ADD COLUMN "nickname" text; CREATE TABLE "tags" ("id" uuid PRIMARY KEY);`,
       },
-      { fill: fillContactsWithCadence },
+      { fill: fillContactsOfUser },
     );
     expect(report.problems).toEqual([]);
     expect(report.newColumns).toEqual({ contacts: ["nickname"] });
@@ -336,7 +566,7 @@ describe("the data check", () => {
     const report = await checkMigration(
       { sql: `ALTER TABLE "contacts" ADD COLUMN "archived" boolean NOT NULL DEFAULT false;` },
       {
-        fill: fillContactsWithCadence,
+        fill: fillContactsOfUser,
         inspect: (pool) =>
           count(pool, "select count(*)::int as n from contacts where archived = false"),
       },

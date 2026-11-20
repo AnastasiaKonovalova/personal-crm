@@ -49,6 +49,9 @@ services:
     command: ["node", "migrate.ts"]
     environment:
       DATABASE_URL: ${DATABASE_URL:?}
+      # Migration 0003 gives the existing contacts and groups to this user. Not required here on purpose:
+      # an empty value stops 0003 itself on a database with data, and later migrations do not need it
+      OWNER_EMAIL: ${OWNER_EMAIL:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,6 +66,17 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL:?}
       NODE_OPTIONS: --max-old-space-size=128
+      # Sign-in (Better Auth) and its emails (Resend SMTP). Required: without them nobody can sign in,
+      # so the deploy stops at its first step, before the backup and migrations.
+      # E2E_AUTH_IP_LIMIT is never passed here: Better Auth's per-IP limit stays on in production
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?}
+      SMTP_HOST: ${SMTP_HOST:?}
+      SMTP_PORT: ${SMTP_PORT:?}
+      SMTP_SECURE: ${SMTP_SECURE:?}
+      SMTP_USER: ${SMTP_USER:?}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?}
+      MAIL_FROM: ${MAIL_FROM:?}
     ports:
       - "127.0.0.1:3000:3000"
     depends_on:

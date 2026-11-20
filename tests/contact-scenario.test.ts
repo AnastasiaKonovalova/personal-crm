@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { closeDb } from "@/db";
 import { addPeriod, toDateString } from "@/lib/keep-in-touch";
 import {
@@ -22,14 +22,16 @@ import {
   updateContact,
   updateNote,
 } from "@/server/contacts";
+import { type TestUser, createTestUser } from "./helpers/test-user";
 
-// Integration tests against the real database from .env (the success criteria from the spec)
+// Integration tests against the real database from .env (the success criteria from the spec).
+// Every test user owns all the data a test creates and is removed with it in afterAll.
 
 const marker = randomUUID().slice(0, 8);
 const testName = `Тестовый Контакт ${marker}`;
 const noteText = `Созвонились, договорились о встрече ${marker}`;
 let createdId: string | undefined;
-const keepInTouchIds: string[] = [];
+let user: TestUser;
 
 async function withSeparateConnection<T>(run: (pool: Pool) => Promise<T>) {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -40,47 +42,69 @@ async function withSeparateConnection<T>(run: (pool: Pool) => Promise<T>) {
   }
 }
 
+beforeAll(async () => {
+  user = await createTestUser();
+});
+
 afterAll(async () => {
-  if (createdId) {
-    // Remove only the contact this test created; its notes go away via ON DELETE CASCADE
-    await withSeparateConnection((pool) =>
-      pool.query("delete from contacts where id = $1", [createdId]),
-    );
-  }
-  if (keepInTouchIds.length > 0) {
-    await withSeparateConnection((pool) =>
-      pool.query("delete from contacts where id = any($1)", [keepInTouchIds]),
-    );
-  }
+  await user.remove();
   await closeDb();
 });
 
 describe("contact list", () => {
-  it("pages through every contact in the database", async () => {
-    const first = await listContacts({ page: 1 });
+  // Its own user with enough contacts for several pages
+  let listUser: TestUser;
+  const withPercent = `Скидка 100% ${marker}`;
+
+  beforeAll(async () => {
+    listUser = await createTestUser();
+    await withSeparateConnection(async (pool) => {
+      await pool.query(
+        `insert into contacts (user_id, name)
+         select $1::text, 'Список ' || lpad(n::text, 3, '0') || ' ' || $2::text from generate_series(1, 120) n`,
+        [listUser.id, marker],
+      );
+      await pool.query("insert into contacts (user_id, name) values ($1, $2), ($1, $3)", [
+        listUser.id,
+        withPercent,
+        `Скидка 100 ${marker}`,
+      ]);
+    });
+  });
+
+  afterAll(() => listUser.remove());
+
+  it("pages through every contact of the user and of nobody else", async () => {
+    const first = await listContacts(listUser.id, { page: 1 });
+    expect(first.pageCount).toBeGreaterThan(1);
     const seen = new Set(first.items.map((contact) => contact.id));
     for (let page = 2; page <= first.pageCount; page += 1) {
-      const next = await listContacts({ page });
+      const next = await listContacts(listUser.id, { page });
       expect(next.items.length).toBeLessThanOrEqual(PAGE_SIZE);
       next.items.forEach((contact) => seen.add(contact.id));
     }
 
     const { rows } = await withSeparateConnection((pool) =>
-      pool.query<{ total: number }>("select count(*)::int as total from contacts"),
+      pool.query<{ total: number }>(
+        "select count(*)::int as total from contacts where user_id = $1",
+        [listUser.id],
+      ),
     );
+    expect(rows[0].total).toBe(122);
     expect(first.total).toBe(rows[0].total);
     expect(seen.size).toBe(rows[0].total);
   });
 
   it("treats LIKE wildcards in the search query literally", async () => {
-    const result = await listContacts({ query: "%", page: 1 });
-    expect(result.items.every((contact) => contact.name.includes("%"))).toBe(true);
+    const result = await listContacts(listUser.id, { query: "%", page: 1 });
+    expect(result.items.map((contact) => contact.name)).toEqual([withPercent]);
   });
 });
 
 describe("main scenario: add → find by name → add note → saved", () => {
   it("adds a contact and finds it by part of the name in a different case", async () => {
     createdId = await createContact(
+      user.id,
       contactSchema.parse({
         name: testName,
         about: "Проверка сценария",
@@ -90,13 +114,16 @@ describe("main scenario: add → find by name → add note → saved", () => {
       }),
     );
 
-    const found = await listContacts({ query: `КОНТАКТ ${marker}`.toUpperCase(), page: 1 });
+    const found = await listContacts(user.id, {
+      query: `КОНТАКТ ${marker}`.toUpperCase(),
+      page: 1,
+    });
     expect(found.items.map((contact) => contact.id)).toEqual([createdId]);
   });
 
   it("adds a note that is visible through a separate connection and on the card", async () => {
     expect(createdId).toBeDefined();
-    const note = await addNote(createdId!, noteText);
+    const note = await addNote(user.id, createdId!, noteText);
     expect(note?.body).toBe(noteText);
 
     // A separate connection stands in for "another browser": the data lives in the database
@@ -105,15 +132,15 @@ describe("main scenario: add → find by name → add note → saved", () => {
     );
     expect(rows.map((row) => row.body)).toEqual([noteText]);
 
-    const card = await getContactWithNotes(createdId!);
+    const card = await getContactWithNotes(user.id, createdId!);
     expect(card?.contact.name).toBe(testName);
     expect(card?.notes.map((item) => item.body)).toEqual([noteText]);
   });
 
   it("does not add a note to a missing contact", async () => {
-    expect(await addNote(randomUUID(), "Текст")).toBeNull();
-    expect(await addNote("not-a-uuid", "Текст")).toBeNull();
-    expect(await getContactWithNotes("not-a-uuid")).toBeNull();
+    expect(await addNote(user.id, randomUUID(), "Текст")).toBeNull();
+    expect(await addNote(user.id, "not-a-uuid", "Текст")).toBeNull();
+    expect(await getContactWithNotes(user.id, "not-a-uuid")).toBeNull();
   });
 });
 
@@ -121,13 +148,14 @@ describe("search treats «е» and «ё» as the same letter", () => {
   it("finds a name written with «е» by a query with «ё»", async () => {
     expect(createdId).toBeDefined();
     // testName is "Тестовый Контакт …" — written with «е»
-    const found = await listContacts({ query: `тёстовый контакт ${marker}`, page: 1 });
+    const found = await listContacts(user.id, { query: `тёстовый контакт ${marker}`, page: 1 });
     expect(found.items.map((contact) => contact.id)).toEqual([createdId]);
   });
 
   it("finds a name written with «ё» by a query with «е» and with «ё»", async () => {
     expect(createdId).toBeDefined();
     await updateContact(
+      user.id,
       createdId!,
       contactSchema.parse({
         name: `Фёдоров ${marker}`,
@@ -139,7 +167,7 @@ describe("search treats «е» and «ё» as the same letter", () => {
     );
 
     for (const query of [`Федоров ${marker}`, `федоров ${marker}`, `ФЁДОРОВ ${marker}`]) {
-      const found = await listContacts({ query, page: 1 });
+      const found = await listContacts(user.id, { query, page: 1 });
       expect(found.items.map((contact) => contact.id)).toEqual([createdId]);
     }
   });
@@ -155,9 +183,9 @@ describe("editing", () => {
       phone: "+7 (111) 111-11-11",
       email: "edited@example.com",
     });
-    expect(await updateContact(createdId!, input)).toBe(createdId);
+    expect(await updateContact(user.id, createdId!, input)).toBe(createdId);
 
-    const card = await getContactWithNotes(createdId!);
+    const card = await getContactWithNotes(user.id, createdId!);
     // Groups are not contact columns; they are covered by the group scenarios
     expect(card?.contact).toMatchObject({
       name: input.name,
@@ -179,22 +207,22 @@ describe("editing", () => {
       phone: "",
       email: "",
     });
-    expect(await updateContact(randomUUID(), input)).toBeNull();
-    expect(await updateContact("not-a-uuid", input)).toBeNull();
+    expect(await updateContact(user.id, randomUUID(), input)).toBeNull();
+    expect(await updateContact(user.id, "not-a-uuid", input)).toBeNull();
   });
 
   it("updates a note of the contact and only of that contact", async () => {
     expect(createdId).toBeDefined();
-    const card = await getContactWithNotes(createdId!);
+    const card = await getContactWithNotes(user.id, createdId!);
     const noteId = card!.notes[0].id;
     const editedText = `Перенесли встречу ${marker}`;
 
-    expect(await updateNote(randomUUID(), noteId, editedText)).toBeNull();
-    expect(await updateNote(createdId!, randomUUID(), editedText)).toBeNull();
+    expect(await updateNote(user.id, randomUUID(), noteId, editedText)).toBeNull();
+    expect(await updateNote(user.id, createdId!, randomUUID(), editedText)).toBeNull();
 
-    const note = await updateNote(createdId!, noteId, editedText);
+    const note = await updateNote(user.id, createdId!, noteId, editedText);
     expect(note?.body).toBe(editedText);
-    const after = await getContactWithNotes(createdId!);
+    const after = await getContactWithNotes(user.id, createdId!);
     expect(after?.notes.map((item) => item.body)).toEqual([editedText]);
   });
 });
@@ -214,19 +242,19 @@ describe("deleting", () => {
     expect(createdId).toBeDefined();
     expect(await countNotes(createdId!)).toBe(1);
 
-    expect(await deleteContact(createdId!)).toBe(createdId);
-    expect(await getContactWithNotes(createdId!)).toBeNull();
+    expect(await deleteContact(user.id, createdId!)).toBe(createdId);
+    expect(await getContactWithNotes(user.id, createdId!)).toBeNull();
     expect(await countNotes(createdId!)).toBe(0);
-    const found = await listContacts({ query: marker, page: 1 });
+    const found = await listContacts(user.id, { query: marker, page: 1 });
     expect(found.items).toEqual([]);
   });
 
   it("does not delete a missing contact", async () => {
     expect(createdId).toBeDefined();
     // Already deleted above, as if from another browser
-    expect(await deleteContact(createdId!)).toBeNull();
-    expect(await deleteContact(randomUUID())).toBeNull();
-    expect(await deleteContact("not-a-uuid")).toBeNull();
+    expect(await deleteContact(user.id, createdId!)).toBeNull();
+    expect(await deleteContact(user.id, randomUUID())).toBeNull();
+    expect(await deleteContact(user.id, "not-a-uuid")).toBeNull();
   });
 });
 
@@ -241,9 +269,10 @@ describe("keep in touch", () => {
   }) {
     const { rows } = await withSeparateConnection((pool) =>
       pool.query<{ id: string }>(
-        `insert into contacts (name, cadence, contact_on, created_at)
-         values ($1, $2::contact_cadence, $3, now() - $4 * interval '1 day') returning id`,
+        `insert into contacts (user_id, name, cadence, contact_on, created_at)
+         values ($1, $2, $3::contact_cadence, $4, now() - $5 * interval '1 day') returning id`,
         [
+          user.id,
           `${fields.name} ${marker}`,
           fields.cadence,
           fields.contactOn ?? null,
@@ -251,7 +280,6 @@ describe("keep in touch", () => {
         ],
       ),
     );
-    keepInTouchIds.push(rows[0].id);
     return rows[0].id;
   }
 
@@ -278,29 +306,29 @@ describe("keep in touch", () => {
       createdDaysAgo: 100,
     });
 
-    const reminders = await listReminders();
-    const ours = reminders.items.filter((item) => item.name.endsWith(marker));
+    // The user has only these five contacts (the one from the main scenario is deleted by now)
+    const reminders = await listReminders(user.id);
     // Weekly: 13 days overdue; monthly: 9-12 days overdue, whatever the month lengths
-    expect(ours.map((item) => item.id)).toEqual([weekly, monthly, soon]);
-    expect(ours[0].status).toEqual({ kind: "overdue", days: 13 });
-    expect(ours[2].status).toEqual({ kind: "soon", days: 1 });
+    expect(reminders.items.map((item) => item.id)).toEqual([weekly, monthly, soon]);
+    expect(reminders.items[0].status).toEqual({ kind: "overdue", days: 13 });
+    expect(reminders.items[2].status).toEqual({ kind: "soon", days: 1 });
     expect([fine, without].some((id) => reminders.items.some((item) => item.id === id))).toBe(
       false,
     );
 
-    expect(reminders.withCadenceCount).toBeGreaterThanOrEqual(4);
-    expect(reminders.totalCount).toBeGreaterThanOrEqual(5);
+    expect(reminders.withCadenceCount).toBe(4);
+    expect(reminders.totalCount).toBe(5);
   });
 
   it("counts a contact without notes from its creation and a contact with notes from the latest note", async () => {
     const id = await insertContact({ name: "Без заметок", cadence: "month", createdDaysAgo: 100 });
-    expect((await getContactWithNotes(id))?.keepInTouch.status?.kind).toBe("overdue");
+    expect((await getContactWithNotes(user.id, id))?.keepInTouch.status?.kind).toBe("overdue");
 
     await insertNote(id, 3);
-    const card = await getContactWithNotes(id);
+    const card = await getContactWithNotes(user.id, id);
     expect(card?.keepInTouch.status?.kind).toBe("ok");
     expect(card?.keepInTouch.dueOn).toBeDefined();
-    expect((await listReminders()).items.some((item) => item.id === id)).toBe(false);
+    expect((await listReminders(user.id)).items.some((item) => item.id === id)).toBe(false);
   });
 
   it("keeps the cadence after a new note and starts the term again", async () => {
@@ -309,10 +337,10 @@ describe("keep in touch", () => {
       cadence: "month",
       createdDaysAgo: 100,
     });
-    await addNote(id, "Созвонились");
+    await addNote(user.id, id, "Созвонились");
 
-    expect((await getContact(id))?.cadence).toBe("month");
-    const card = await getContactWithNotes(id);
+    expect((await getContact(user.id, id))?.cadence).toBe("month");
+    const card = await getContactWithNotes(user.id, id);
     expect(card?.keepInTouch.status?.kind).toBe("ok");
     expect(card?.keepInTouch.dueOn).toBe(addPeriod(toDateString(new Date()), "month"));
   });
@@ -320,16 +348,16 @@ describe("keep in touch", () => {
   it("does not move the term when an old note is edited", async () => {
     const id = await insertContact({ name: "Правка заметки", cadence: "week", createdDaysAgo: 30 });
     await insertNote(id, 10);
-    const before = await getContactWithNotes(id);
+    const before = await getContactWithNotes(user.id, id);
     expect(before?.keepInTouch.status).toEqual({ kind: "overdue", days: 3 });
 
-    expect(await updateNote(id, before!.notes[0].id, "Исправленный текст")).not.toBeNull();
-    expect((await getContactWithNotes(id))?.keepInTouch).toEqual(before?.keepInTouch);
+    expect(await updateNote(user.id, id, before!.notes[0].id, "Исправленный текст")).not.toBeNull();
+    expect((await getContactWithNotes(user.id, id))?.keepInTouch).toEqual(before?.keepInTouch);
   });
 
   it("shows the status in the contact list", async () => {
     const id = await insertContact({ name: "Список", cadence: "week", createdDaysAgo: 20 });
-    const found = await listContacts({ query: `Список ${marker}`, page: 1 });
+    const found = await listContacts(user.id, { query: `Список ${marker}`, page: 1 });
     expect(found.items.map((item) => item.id)).toEqual([id]);
     expect(found.items[0].status).toEqual({ kind: "overdue", days: 13 });
     expect(found.items[0].dueOn).toBeTypeOf("string");
@@ -342,12 +370,12 @@ describe("keep in touch", () => {
       contactOn: dayFromToday(1),
       createdDaysAgo: 5,
     });
-    await addNote(id, "Связались");
+    await addNote(user.id, id, "Связались");
 
-    const contact = await getContact(id);
+    const contact = await getContact(user.id, id);
     expect(contact?.cadence).toBeNull();
     expect(contact?.contactOn).toBeNull();
-    expect((await listReminders()).items.some((item) => item.id === id)).toBe(false);
+    expect((await listReminders(user.id)).items.some((item) => item.id === id)).toBe(false);
   });
 
   it("clears a specific date that is already overdue", async () => {
@@ -357,9 +385,9 @@ describe("keep in touch", () => {
       contactOn: dayFromToday(-5),
       createdDaysAgo: 30,
     });
-    await addNote(id, "Связались");
+    await addNote(user.id, id, "Связались");
 
-    const contact = await getContact(id);
+    const contact = await getContact(user.id, id);
     expect(contact?.cadence).toBeNull();
     expect(contact?.contactOn).toBeNull();
   });
@@ -372,9 +400,9 @@ describe("keep in touch", () => {
       contactOn: date,
       createdDaysAgo: 5,
     });
-    await addNote(id, "Просто заметка");
+    await addNote(user.id, id, "Просто заметка");
 
-    const contact = await getContact(id);
+    const contact = await getContact(user.id, id);
     expect(contact?.cadence).toBe("date");
     expect(contact?.contactOn).toBe(date);
   });
@@ -388,7 +416,7 @@ describe("keep in touch", () => {
       contactOn: date,
       createdDaysAgo: 30,
     });
-    const saved = await getContact(id);
+    const saved = await getContact(user.id, id);
     const form = {
       name: saved!.name,
       about: "",
@@ -404,9 +432,9 @@ describe("keep in touch", () => {
 
     const parsed = contactSchemaFor(saved!.contactOn).safeParse(form);
     expect(parsed.success).toBe(true);
-    expect(await updateContact(id, parsed.data!)).toBe(id);
+    expect(await updateContact(user.id, id, parsed.data!)).toBe(id);
 
-    const card = await getContactWithNotes(id);
+    const card = await getContactWithNotes(user.id, id);
     expect(card?.contact.phone).toBe("+7 (222) 222-22-22");
     expect(card?.contact.contactOn).toBe(date);
     expect(card?.keepInTouch.status).toEqual({ kind: "overdue", days: 5 });
@@ -414,12 +442,12 @@ describe("keep in touch", () => {
 
   it("changes the frequency from the card and recounts the term from the last contact", async () => {
     const id = await insertContact({ name: "Смена частоты", cadence: "month", createdDaysAgo: 20 });
-    expect((await getContactWithNotes(id))?.keepInTouch.status?.kind).toBe("ok");
+    expect((await getContactWithNotes(user.id, id))?.keepInTouch.status?.kind).toBe("ok");
 
     const parsed = cadenceSchemaFor(null).parse({ cadence: "week", contactOn: "" });
-    expect(await setCadence(id, parsed)).toBe(id);
+    expect(await setCadence(user.id, id, parsed)).toBe(id);
 
-    const card = await getContactWithNotes(id);
+    const card = await getContactWithNotes(user.id, id);
     expect(card?.contact.cadence).toBe("week");
     expect(card?.keepInTouch.status).toEqual({ kind: "overdue", days: 13 });
   });
@@ -433,19 +461,19 @@ describe("keep in touch", () => {
       contactOn: date,
       createdDaysAgo: 30,
     });
-    const saved = await getContact(id);
+    const saved = await getContact(user.id, id);
 
     const parsed = cadenceSchemaFor(saved!.contactOn).safeParse({
       cadence: "date",
       contactOn: saved!.contactOn,
     });
     expect(parsed.success).toBe(true);
-    expect(await setCadence(id, parsed.data!)).toBe(id);
+    expect(await setCadence(user.id, id, parsed.data!)).toBe(id);
 
-    const contact = await getContact(id);
+    const contact = await getContact(user.id, id);
     expect(contact?.cadence).toBe("date");
     expect(contact?.contactOn).toBe(date);
-    expect((await getContactWithNotes(id))?.keepInTouch.status).toEqual({
+    expect((await getContactWithNotes(user.id, id))?.keepInTouch.status).toEqual({
       kind: "overdue",
       days: 5,
     });
@@ -458,15 +486,15 @@ describe("keep in touch", () => {
       contactOn: dayFromToday(10),
       createdDaysAgo: 5,
     });
-    const saved = await getContact(id);
+    const saved = await getContact(user.id, id);
 
     const parsed = cadenceSchemaFor(saved!.contactOn).parse({
       cadence: "month",
       contactOn: saved!.contactOn,
     });
-    await setCadence(id, parsed);
+    await setCadence(user.id, id, parsed);
 
-    const contact = await getContact(id);
+    const contact = await getContact(user.id, id);
     expect(contact?.cadence).toBe("month");
     expect(contact?.contactOn).toBeNull();
   });
@@ -485,7 +513,7 @@ describe("failed writes keep personal data out of logs", () => {
         phone: secretPhone,
         email: secretEmail,
       } as unknown as ContactInput;
-      const error = await createContact(broken).catch((caught: unknown) => caught);
+      const error = await createContact(user.id, broken).catch((caught: unknown) => caught);
 
       expect(error).toBeInstanceOf(Error);
       const thrown = error as Error;

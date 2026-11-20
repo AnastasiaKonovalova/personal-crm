@@ -1,33 +1,45 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { decodeHtml, getPage, submitForm, visibleText, withPool } from "./helpers";
+import { decodeHtml, signInClient, visibleText, withPool } from "./helpers";
 
-// Success criteria from the spec, checked over HTTP against a running app.
-// Forms are submitted the way a browser without JavaScript does it.
+// Success criteria from the spec, checked over HTTP against a running app, signed in as a user of
+// this test. Forms are submitted the way a browser without JavaScript does it.
 // Run: `pnpm build && pnpm start`, then `pnpm test:e2e`.
+
+let user: Awaited<ReturnType<typeof signInClient>>;
+
+// Signing in sends an email: the first one of a run opens the SMTP connection
+beforeAll(async () => {
+  user = await signInClient("success");
+}, 30_000);
+
+afterAll(async () => {
+  // The user goes with everything the test created: contacts, notes, the sign-in rows and emails
+  await user?.remove();
+});
+
+async function ownContactCount() {
+  const { rows } = await withPool((pool) =>
+    pool.query<{ total: number }>(
+      "select count(*)::int as total from contacts where user_id = $1",
+      [user.id],
+    ),
+  );
+  return rows[0].total;
+}
 
 const marker = randomUUID().slice(0, 8);
 const contactName = `Проверка Сквозная ${marker}`;
 const noteText = `Обсудили выставку, договорились созвониться ${marker}`;
 let contactId: string | undefined;
 
-afterAll(async () => {
-  if (contactId) {
-    // Remove only the contact this test created; its notes go away via ON DELETE CASCADE
-    await withPool((pool) => pool.query("delete from contacts where id = $1", [contactId]));
-  }
-});
-
 describe("success criteria over HTTP", () => {
-  it("opened → the list shows the total of all contacts in the database", async () => {
-    const { rows } = await withPool((pool) =>
-      pool.query<{ total: number }>("select count(*)::int as total from contacts"),
-    );
-    expect(await getPage("/")).toContain(`Всего: ${rows[0].total}`);
+  it("opened → the list shows the total of the user's contacts", async () => {
+    expect(await user.getPage("/")).toContain(`Всего: ${await ownContactCount()}`);
   });
 
   it("added a contact → redirected to its saved card", async () => {
-    const response = await submitForm("/contacts/new", {
+    const response = await user.submitForm("/contacts/new", {
       name: contactName,
       about: "Сквозная проверка",
       howWeMet: "Автотест",
@@ -39,11 +51,11 @@ describe("success criteria over HTTP", () => {
     expect(match, `redirect to the card, got ${response.status} "${location}"`).not.toBeNull();
     contactId = match![1];
 
-    expect(await getPage(`/contacts/${contactId}`)).toContain(contactName);
+    expect(await user.getPage(`/contacts/${contactId}`)).toContain(contactName);
   });
 
   it("found it by part of the name in lower case", async () => {
-    const html = await getPage(`/?q=${encodeURIComponent(`сквозная ${marker}`)}`);
+    const html = await user.getPage(`/?q=${encodeURIComponent(`сквозная ${marker}`)}`);
     expect(html).toContain("Найдено: 1");
     expect(html).toContain(`href="/contacts/${contactId}"`);
   });
@@ -51,17 +63,21 @@ describe("success criteria over HTTP", () => {
   it("added a note → another client sees it on the card", async () => {
     expect(contactId).toBeDefined();
     // The card also holds the "Связались" and frequency forms, so pick the note form
-    const response = await submitForm(`/contacts/${contactId}`, { body: noteText }, 'name="body"');
+    const response = await user.submitForm(
+      `/contacts/${contactId}`,
+      { body: noteText },
+      'name="body"',
+    );
     expect(response.status, "note form submission").toBe(200);
     expect(await response.text()).toContain("Заметка сохранена");
 
-    expect(await getPage(`/contacts/${contactId}`)).toContain(noteText);
+    expect(await user.getPage(`/contacts/${contactId}`)).toContain(noteText);
   });
 
   it("edited the contact → the card shows the new data", async () => {
     expect(contactId).toBeDefined();
     const editedName = `Проверка Сквозная Фёдорова ${marker}`;
-    const response = await submitForm(`/contacts/${contactId}/edit`, {
+    const response = await user.submitForm(`/contacts/${contactId}/edit`, {
       name: editedName,
       about: "Отредактировано",
       howWeMet: "Автотест",
@@ -73,13 +89,13 @@ describe("success criteria over HTTP", () => {
       new RegExp(`/contacts/${contactId}$`),
     );
 
-    const card = await getPage(`/contacts/${contactId}`);
+    const card = await user.getPage(`/contacts/${contactId}`);
     expect(card).toContain(editedName);
     expect(card).toContain("Отредактировано");
   });
 
   it("found the «ё» name by a query with «е»", async () => {
-    const html = await getPage(`/?q=${encodeURIComponent(`федорова ${marker}`)}`);
+    const html = await user.getPage(`/?q=${encodeURIComponent(`федорова ${marker}`)}`);
     expect(html).toContain("Найдено: 1");
     expect(html).toContain(`href="/contacts/${contactId}"`);
   });
@@ -87,14 +103,14 @@ describe("success criteria over HTTP", () => {
   // The confirm dialog renders only once opened in a browser, so the delete itself is a manual check
   it("the card has a «Удалить» button that opens a dialog", async () => {
     expect(contactId).toBeDefined();
-    const card = await getPage(`/contacts/${contactId}`);
+    const card = await user.getPage(`/contacts/${contactId}`);
     expect(card).toContain('aria-haspopup="dialog"');
     expect(visibleText(card)).toContain("Удалить");
   });
 
   it("after a delete the list says «Контакт удалён»", async () => {
-    expect(visibleText(await getPage("/?deleted=1"))).toContain("Контакт удалён");
-    expect(visibleText(await getPage("/"))).not.toContain("Контакт удалён");
+    expect(visibleText(await user.getPage("/?deleted=1"))).toContain("Контакт удалён");
+    expect(visibleText(await user.getPage("/"))).not.toContain("Контакт удалён");
   });
 });
 
@@ -116,41 +132,32 @@ function arrowHref(html: string, label: string) {
 }
 
 describe("pagination", () => {
-  // One page and one more contact, all with a shared marker so a search returns exactly them
+  // One page and one more contact of the user, all with a shared marker so a search returns exactly them
   beforeAll(async () => {
     await withPool((pool) =>
       pool.query(
-        "insert into contacts (name, about) select $1 || ' ' || lpad(n::text, 2, '0'), 'Проверка страниц' from generate_series(1, $2::int) n",
-        [pagerPrefix, pageSize + 1],
+        "insert into contacts (user_id, name, about) select $3, $1 || ' ' || lpad(n::text, 2, '0'), 'Проверка страниц' from generate_series(1, $2::int) n",
+        [pagerPrefix, pageSize + 1, user.id],
       ),
     );
   });
 
-  afterAll(async () => {
-    await withPool((pool) =>
-      pool.query("delete from contacts where name like $1", [`${pagerPrefix} %`]),
-    );
-  });
-
-  it("the full list shows the page count of all contacts", async () => {
-    const { rows } = await withPool((pool) =>
-      pool.query<{ total: number }>("select count(*)::int as total from contacts"),
-    );
-    const pageCount = Math.ceil(rows[0].total / pageSize);
-    const html = await getPage("/");
+  it("the full list shows the page count of the user's contacts", async () => {
+    const pageCount = Math.ceil((await ownContactCount()) / pageSize);
+    const html = await user.getPage("/");
     expect(visibleText(html)).toContain(`Страница 1 из ${pageCount}`);
     expect(arrowHref(html, "Вперёд")).toBe("/?page=2");
   });
 
   it("search results are paged and the query stays in the page links", async () => {
-    const first = await getPage(`/?q=${pagerMarker}`);
+    const first = await user.getPage(`/?q=${pagerMarker}`);
     expect(visibleText(first)).toContain("Страница 1 из 2");
     expect(first).toContain(`${pagerPrefix} 01`);
     expect(first).not.toContain(`${pagerPrefix} ${pageSize + 1}`);
     expect(arrowTag(first, "Назад")?.[0]).toContain('aria-disabled="true"');
     expect(arrowHref(first, "Вперёд")).toBe(`/?q=${pagerMarker}&page=2`);
 
-    const second = await getPage(`/?q=${pagerMarker}&page=2`);
+    const second = await user.getPage(`/?q=${pagerMarker}&page=2`);
     expect(visibleText(second)).toContain("Страница 2 из 2");
     expect(second).toContain(`${pagerPrefix} ${pageSize + 1}`);
     expect(second).not.toContain(`${pagerPrefix} 01`);

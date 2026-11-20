@@ -1,50 +1,49 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
-import { Pool } from "pg";
+import { signIn, withPool, type SignedInUser } from "../e2e/auth";
+import { useSession } from "./sign-in";
 
 // The «Пора связаться» block in a real browser: what only JavaScript does (expand, collapse,
-// paging, «Связались» in place) and what CSS hides without it.
+// paging, «Связались» in place) and what CSS hides without it. One user of this file, signed in over
+// HTTP; every browser context gets the session cookie (sign-in itself is tested in login.spec.ts).
 // Every test seeds its own group: on the group page the block holds only that group's contacts,
-// so the counts do not depend on what else is in the database.
+// so the counts do not depend on what else the user has.
 
 const marker = randomUUID().slice(0, 8);
 const prefix = `Блок ${marker}`;
+let user: SignedInUser;
 
 type Seeded = { groupId: string; contacts: { id: string; name: string }[] };
 
-async function withPool<T>(run: (pool: Pool) => Promise<T>) {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  try {
-    return await run(pool);
-  } finally {
-    await pool.end();
-  }
-}
-
-// A group of `count` weekly contacts, all 30 days since creation: equally overdue, so the block
-// orders them by name, «… 01» first
+// A group of `count` weekly contacts of the user, all 30 days since creation: equally overdue, so the
+// block orders them by name, «… 01» first
 async function seedGroup(label: string, count: number): Promise<Seeded> {
   const { rows } = await withPool((pool) =>
     pool.query<{ group_id: string; id: string; name: string }>(
-      `with g as (insert into groups (name) values ($1) returning id),
-            c as (insert into contacts (name, cadence, created_at)
-                  select $1 || ' ' || lpad(n::text, 2, '0'), 'week', now() - interval '30 days'
+      `with g as (insert into groups (user_id, name) values ($3, $1) returning id),
+            c as (insert into contacts (user_id, name, cadence, created_at)
+                  select $3, $1 || ' ' || lpad(n::text, 2, '0'), 'week', now() - interval '30 days'
                   from generate_series(1, $2::int) n
                   returning id, name),
             l as (insert into contact_groups (contact_id, group_id) select c.id, g.id from c, g)
        select (select id from g) as group_id, c.id, c.name from c order by c.name`,
-      [`${prefix} ${label}`, count],
+      [`${prefix} ${label}`, count, user.id],
     ),
   );
   return { groupId: rows[0].group_id, contacts: rows.map(({ id, name }) => ({ id, name })) };
 }
 
+test.beforeAll(async () => {
+  user = await signIn("block");
+});
+
+test.beforeEach(async ({ context }) => {
+  await useSession(context, user.cookie);
+});
+
 test.afterAll(async () => {
-  // Notes and memberships go with them: ON DELETE CASCADE
-  await withPool(async (pool) => {
-    await pool.query("delete from contacts where name like $1", [`${prefix} %`]);
-    await pool.query("delete from groups where name like $1", [`${prefix} %`]);
-  });
+  // The user goes with the contacts and groups; notes and memberships follow by cascade
+  await user?.remove();
 });
 
 const block = (page: Page) => page.getByRole("region", { name: "Пора связаться" });
@@ -159,6 +158,7 @@ test("without JavaScript the block shows all 23 rows, no buttons and no pager", 
 }) => {
   const { groupId, contacts } = await seedGroup("без JS", 23);
   const context = await browser.newContext({ javaScriptEnabled: false });
+  await useSession(context, user.cookie);
   try {
     const page = await context.newPage();
     await page.goto(`/groups/${groupId}`);
