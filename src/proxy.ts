@@ -2,7 +2,7 @@ import { getSessionCookie } from "better-auth/cookies";
 import { NextResponse, type NextRequest } from "next/server";
 import { getAuth } from "@/server/auth";
 
-// Renews the session cookie on a visit (openspec/changes/login/design.md, decision 6а). Pages read the
+// Renews the session cookie on a visit (openspec/changes/archive/2026-11-20-login/design.md, decision 6а). Pages read the
 // session in server components, where Next does not let Better Auth set cookies: the term grows in the
 // database, but the browser would drop the cookie 30 days after signing in. Here cookies can be set, so
 // the session is read once more and its Set-Cookie (renewed at most once a day, or removed when the

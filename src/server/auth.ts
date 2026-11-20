@@ -9,7 +9,7 @@ import { accounts, loginEmails, sessions, users, verifications } from "@/db/sche
 import { EMAIL_ERROR, loginEmailSchema } from "@/lib/validation";
 import { LOGIN_LINK_MINUTES, sendLoginEmail } from "@/server/mail";
 
-// Sign-in by a link from an email (Better Auth, magic-link plugin). Decisions: openspec/changes/login/design.md.
+// Sign-in by a link from an email (Better Auth, magic-link plugin). Decisions: openspec/changes/archive/2026-11-20-login/design.md.
 // Better Auth reads BETTER_AUTH_SECRET and BETTER_AUTH_URL from the environment itself.
 
 // Codes of the errors the sign-in endpoint answers with; the login form turns them into texts
