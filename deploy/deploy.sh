@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Deploys one app image to one stand: deploy.sh <prod|staging> <image> <registry user>, GHCR token on stdin.
 #   prod:    pull -> database backup -> migrations -> new app -> smoke /health -> clean up old images
+#            -> check the daily backup timer
 #   staging: pull -> (empty database: copy of the latest prod backup) -> migrations -> new app -> smoke /health
-# Called by .github/workflows/deploy.yml over SSH. Stand settings: stand.sh.
-# No automatic rollback: a failed step stops the deploy, rollback is manual (rollback.sh).
+# Called by .github/workflows/deploy-stand.yml over SSH. Stand settings: stand.sh.
+# No automatic rollback: a failed step stops the deploy, rollback is manual (Deploy prod with rollback, rollback.sh).
 set -euo pipefail
 source "$(dirname "$0")/stand.sh"
 
@@ -34,27 +35,13 @@ fi
 echo "==> Database"
 compose up -d --wait postgres
 
-# The backup is named after the version that ran before this deploy; only the latest one is kept
+# The backup is named after the version that ran before this deploy; the 7 latest deploy backups are kept
 if [[ $backup_before_deploy == true ]]; then
   echo "==> Backup"
-  running=$(sed -n 's/^APP_IMAGE=//p' image.env)
-  version=${running##*:}
-  version=${version:-initial}
-  install -d -m 700 backups
-  backup="backups/$(date -u +%Y%m%dT%H%M%SZ)-${version}.dump"
-  partial="$backup.partial"
-  install -m 600 /dev/null "$partial"
-  # Credentials come from the postgres container's own environment
-  if ! compose exec -T postgres sh -c 'pg_dump -Fc -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > "$partial" ||
-    [[ ! -s $partial ]] ||
-    ! compose exec -T postgres pg_restore --list < "$partial" > /dev/null; then
-    rm -f "$partial"
-    echo "Backup failed: migrations are not applied" >&2
+  if ! backup_db; then
+    echo "Migrations are not applied" >&2
     exit 1
   fi
-  mv "$partial" "$backup"
-  find backups -maxdepth 1 -type f -name '*.dump' ! -name '*-pre-restore.dump' ! -path "$backup" -delete
-  echo "Saved $backup ($(du -h "$backup" | cut -f1))"
 fi
 
 if [[ $copy_prod_into_empty_db == true ]]; then
@@ -97,6 +84,23 @@ if [[ $clean_up_images == true ]]; then
     fi
   done
   docker image prune -f > /dev/null
+fi
+
+# The timer is installed by the owner's sudo once (README, «Бэкапы и восстановление»); the deploy only checks it.
+# "::warning::" lines show up in the summary of the GitHub run
+if [[ $daily_backup == true ]]; then
+  echo "==> Daily backup timer"
+  units=/etc/systemd/system
+  if ! systemctl is-active --quiet personal-crm-backup.timer; then
+    echo "::warning::The daily backup timer is not running: install it (README, «Бэкапы и восстановление»)"
+  elif ! cmp -s "$scripts_dir/personal-crm-backup.timer" "$units/personal-crm-backup.timer" ||
+    ! cmp -s "$scripts_dir/personal-crm-backup.service" "$units/personal-crm-backup.service"; then
+    echo "::warning::The daily backup timer differs from deploy/: install it again (README, «Бэкапы и восстановление»)"
+  elif systemctl is-failed --quiet personal-crm-backup.service; then
+    echo "::warning::The last daily backup failed: journalctl -u personal-crm-backup"
+  else
+    echo "Next: $(systemctl show personal-crm-backup.timer -P NextElapseUSecRealtime)"
+  fi
 fi
 
 echo "Deployed $image to $stand"

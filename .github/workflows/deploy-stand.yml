@@ -1,0 +1,136 @@
+# Deploys one stand from the deploy/ scripts over SSH. Called by deploy.yml (staging, on push to main) and
+# deploy-prod.yml (prod, by hand). What happens on the server is described in the scripts.
+#   deploy:   copies deploy/ of the deployed commit to the server and runs deploy.sh with the image of that commit
+#   rollback: runs rollback.sh that is already on the server, nothing is copied or pulled
+# Then checks /health from outside and writes the version the stand runs now to the summary of the run.
+name: Deploy stand
+
+on:
+  workflow_call:
+    inputs:
+      stand:
+        type: string
+        required: true
+      url:
+        type: string
+        required: true
+      # Full commit SHA to deploy; ignored on rollback
+      sha:
+        type: string
+        default: ""
+      rollback:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Two deploys never run on one stand at once: a newer run waits for the current one (deploy.sh locks too)
+    concurrency:
+      group: deploy-${{ inputs.stand }}
+      cancel-in-progress: false
+    # GitHub keeps the deploy history of each stand. Deploy prod is started on main, so the prod history shows the
+    # SHA of main; the deployed SHA is in the summary of the run
+    environment:
+      name: ${{ inputs.stand }}
+      url: ${{ inputs.url }}
+    permissions:
+      contents: read
+      packages: read
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      STAND: ${{ inputs.stand }}
+    steps:
+      - name: Check inputs
+        if: ${{ !inputs.rollback }}
+        env:
+          SHA: ${{ inputs.sha }}
+        run: |
+          [[ $SHA =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Not a full commit SHA: '$SHA'"; exit 1; }
+
+      # The scripts of the deployed commit: the image and the scripts that passed staging together
+      - uses: actions/checkout@v7
+        if: ${{ !inputs.rollback }}
+        with:
+          ref: ${{ inputs.sha }}
+
+      - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          cat > ~/.ssh/config << 'EOF'
+          Host *
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+
+      # The whole deploy/ folder: a new script goes to the server by itself. It lands in a folder of its own first
+      # and is then renamed into place: the other stand's deploy may be running these scripts right now, and a
+      # rename never changes a file that is already open. The scripts are shared by both stands
+      - name: Copy deploy scripts
+        if: ${{ !inputs.rollback }}
+        env:
+          UPLOAD: .upload-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.stand }}
+        run: |
+          ssh "crm-deploy@${DEPLOY_HOST}" "mkdir -p '/opt/personal-crm/${UPLOAD}'"
+          scp deploy/* "crm-deploy@${DEPLOY_HOST}:/opt/personal-crm/${UPLOAD}/"
+          ssh "crm-deploy@${DEPLOY_HOST}" "cd /opt/personal-crm && mv -f '${UPLOAD}'/* . && rmdir '${UPLOAD}'"
+
+      # The short-lived job token goes over stdin: the server only uses it to pull this image.
+      # GHCR image names must be lowercase
+      - name: Deploy
+        if: ${{ !inputs.rollback }}
+        env:
+          SHA: ${{ inputs.sha }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}:${SHA}"
+          printf '%s' "$GHCR_TOKEN" | ssh "crm-deploy@${DEPLOY_HOST}" \
+            "bash /opt/personal-crm/deploy.sh '${STAND}' '${image}' '${REGISTRY_USER}'"
+
+      - name: Roll back
+        if: ${{ inputs.rollback }}
+        run: ssh "crm-deploy@${DEPLOY_HOST}" "bash /opt/personal-crm/rollback.sh"
+
+      # Through nginx from outside; on staging /health is the only path without the password
+      - name: Check live site
+        env:
+          APP_URL: ${{ inputs.url }}
+        run: |
+          : "${APP_URL:?Set the APP_URL repository variable}"
+          code=$(curl -s -o health.json -w '%{http_code}' "${APP_URL}/health")
+          echo "Live /health: HTTP $code $(cat health.json)"
+          test "$code" = 200
+
+      # Also after a failure. The version comes from image.env on the server: it changes only after a passed smoke
+      # check, so after a failure it is the last good version (a failure after the "App" step may leave the new
+      # image running)
+      - name: Summary
+        if: ${{ always() }}
+        env:
+          ACTION: ${{ inputs.rollback && 'Rollback' || 'Deploy' }}
+          STATUS: ${{ job.status }}
+        run: |
+          image=$(ssh "crm-deploy@${DEPLOY_HOST}" "bash /opt/personal-crm/version.sh '${STAND}'") || image=
+          sha=${image##*:}
+          link="[\`${sha}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${sha})"
+          {
+            echo "### ${STAND}: ${ACTION}"
+            if [[ -z $sha ]]; then
+              echo "Could not read the version from the server"
+            elif [[ $STATUS == success ]]; then
+              echo "Runs now: ${link}"
+            else
+              echo "Failed. Last good version on the server: ${link}"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

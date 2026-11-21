@@ -1,0 +1,80 @@
+# Deploy prod: started by the owner by hand (Actions -> Deploy prod -> Run workflow), on main only.
+#   SHA empty:   the commit of the latest successful staging deploy
+#   SHA given:   the fallback; the commit must have a successful staging deploy too and be on main
+#   rollback:    the prod version before the current one, remembered by the server (rollback.sh); SHA is ignored
+# Deploy: database backup -> migrations -> new image -> smoke (deploy.sh), then GHCR keeps the 10 latest builds.
+# The deployed SHA is in the summary of the run.
+name: Deploy prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA (empty: the latest successful staging deploy)"
+        type: string
+        required: false
+      rollback:
+        description: "Roll back to the previous prod version (SHA is ignored)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: read
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - name: Only from main
+        run: |
+          [[ $GITHUB_REF == refs/heads/main ]] || { echo "::error::Run Deploy prod on main, not $GITHUB_REF"; exit 1; }
+
+      - uses: actions/checkout@v7
+        if: ${{ !inputs.rollback }}
+
+      - id: sha
+        if: ${{ !inputs.rollback }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_SHA: ${{ inputs.sha }}
+        run: bash .github/scripts/prod-sha.sh "$INPUT_SHA"
+
+  prod:
+    needs: resolve
+    uses: ./.github/workflows/deploy-stand.yml
+    permissions:
+      contents: read
+      packages: read
+    with:
+      stand: prod
+      url: ${{ vars.APP_URL }}
+      sha: ${{ needs.resolve.outputs.sha }}
+      rollback: ${{ inputs.rollback }}
+    secrets: inherit
+
+  # After a successful deploy only, not after a rollback
+  ghcr-cleanup:
+    needs: prod
+    if: ${{ !inputs.rollback }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Keep the 10 latest builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/ghcr-cleanup.sh 10

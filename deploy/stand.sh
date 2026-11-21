@@ -2,8 +2,8 @@
 # Settings of one stand, sourced by the other deploy scripts: use_stand <prod|staging>.
 # The scripts and compose.yml live in /opt/personal-crm; each stand keeps its own .env (written by the owner),
 # image.env / image.env.prev (current and previous app image) and lock file:
-#   prod    - /opt/personal-crm          app 127.0.0.1:3000, database 127.0.0.1:5433, backup before each deploy,
-#                                        cleans up old images after a deploy
+#   prod    - /opt/personal-crm          app 127.0.0.1:3000, database 127.0.0.1:5433, backup before each deploy
+#                                        and daily (backup.sh), cleans up old images after a deploy
 #   staging - /opt/personal-crm/staging  app 127.0.0.1:3001, database 127.0.0.1:5434, no backup; an empty
 #                                        database gets a copy of the latest prod backup
 
@@ -15,6 +15,7 @@ use_stand() {
     prod)
       stand_dir=$scripts_dir
       backup_before_deploy=true
+      daily_backup=true
       copy_prod_into_empty_db=false
       clean_up_images=true
       export APP_PORT=3000 DB_PORT=5433
@@ -22,6 +23,7 @@ use_stand() {
     staging)
       stand_dir=$scripts_dir/staging
       backup_before_deploy=false
+      daily_backup=false
       copy_prod_into_empty_db=true
       clean_up_images=false
       export APP_PORT=3001 DB_PORT=5434
@@ -69,8 +71,46 @@ smoke() {
   return 1
 }
 
-# Staging only, with its app stopped: replaces the database with the latest prod deploy backup and drops the
-# sign-in state of prod (sessions, sign-in links, the email counter), so everyone signs in to staging anew
+# Prod only: dumps the database into backups/<UTC time>-<version><kind>.dump, where <version> is the SHA of the
+# running app (the data belongs to it, "initial" before the first deploy) and <kind> is empty for a deploy backup
+# or "-daily" for a daily one. Keeps the 7 latest backups of this kind; restore.sh keeps its own *-pre-restore.dump.
+# A dump that is empty or not a valid archive is removed and the function fails.
+backup_db() {
+  local kind=${1:-} running version backup partial
+  local -a same_kind
+  running=$(sed -n 's/^APP_IMAGE=//p' "$stand_dir/image.env")
+  version=${running##*:}
+  version=${version:-initial}
+  install -d -m 700 "$stand_dir/backups"
+  backup="$stand_dir/backups/$(date -u +%Y%m%dT%H%M%SZ)-${version}${kind}.dump"
+  partial="$backup.partial"
+  install -m 600 /dev/null "$partial"
+  # Credentials come from the postgres container's own environment
+  if ! compose exec -T postgres sh -c 'pg_dump -Fc -U "$POSTGRES_USER" -d "$POSTGRES_DB"' > "$partial" ||
+    [[ ! -s $partial ]] ||
+    ! compose exec -T postgres pg_restore --list < "$partial" > /dev/null; then
+    rm -f "$partial"
+    echo "Backup failed" >&2
+    return 1
+  fi
+  mv "$partial" "$backup"
+  echo "Saved $backup ($(du -h "$backup" | cut -f1))"
+
+  if [[ -n $kind ]]; then
+    same_kind=(-name "*${kind}.dump")
+  else
+    same_kind=(! -name '*-daily.dump' ! -name '*-pre-restore.dump')
+  fi
+  # Names start with the UTC time, so sorting by name sorts by age
+  find "$stand_dir/backups" -maxdepth 1 -type f -name '*.dump' "${same_kind[@]}" -printf '%f\n' |
+    sort -r | tail -n +8 | while read -r old; do
+    rm -f -- "$stand_dir/backups/$old"
+    echo "Removed old backup $old"
+  done
+}
+
+# Staging only, with its app stopped: replaces the database with the latest prod backup (deploy or daily) and drops
+# the sign-in state of prod (sessions, sign-in links, the email counter), so everyone signs in to staging anew
 load_latest_prod_backup() {
   local backup
   backup=$(find "$scripts_dir/backups" -maxdepth 1 -type f -name '*.dump' ! -name '*-pre-restore.dump' \

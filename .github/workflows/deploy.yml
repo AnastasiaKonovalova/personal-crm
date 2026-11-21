@@ -1,7 +1,5 @@
 # Push to main -> the same checks as on a PR (ci.yml) -> app image tagged with the commit SHA in GHCR
-# -> deploy/deploy.sh on the server, for staging and prod at the same time.
-# For now prod is deployed by the same merge, independently of staging: a failed staging deploy does not stop prod.
-# The workflow only calls the scripts from deploy/; what happens on the server is described there.
+# -> the test stand (deploy-stand.yml). Prod is never deployed from here: the owner starts deploy-prod.yml.
 name: Deploy
 
 on:
@@ -23,8 +21,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    outputs:
-      image: ${{ steps.image.outputs.image }}
     steps:
       - uses: actions/checkout@v7
 
@@ -48,75 +44,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy:
+  # A green run here is what Deploy prod looks for in the staging deploy history
+  staging:
     needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      # Stands are independent: a failure on one does not cancel the other
-      fail-fast: false
-      matrix:
-        include:
-          - stand: staging
-            url: https://test-app.mypeoplecrm.ru
-          - stand: prod
-            url: ${{ vars.APP_URL }}
-    # Two deploys never run on one stand at once: a newer run waits for the current one (deploy.sh locks too)
-    concurrency:
-      group: deploy-${{ matrix.stand }}
-      cancel-in-progress: false
-    # GitHub keeps the deploy history of each stand
-    environment:
-      name: ${{ matrix.stand }}
-      url: ${{ matrix.url }}
+    uses: ./.github/workflows/deploy-stand.yml
     permissions:
       contents: read
       packages: read
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up SSH
-        env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
-        run: |
-          install -d -m 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-
-      # The whole deploy/ folder: a new script goes to the server by itself. It lands in a folder of its own first
-      # and is then renamed into place: the other stand's deploy may be running these scripts right now, and a
-      # rename never changes a file that is already open
-      - name: Copy deploy scripts
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          UPLOAD: .upload-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.stand }}
-        run: |
-          ssh_opts=(-i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes)
-          ssh "${ssh_opts[@]}" "crm-deploy@${DEPLOY_HOST}" "mkdir -p '/opt/personal-crm/${UPLOAD}'"
-          scp "${ssh_opts[@]}" deploy/* "crm-deploy@${DEPLOY_HOST}:/opt/personal-crm/${UPLOAD}/"
-          ssh "${ssh_opts[@]}" "crm-deploy@${DEPLOY_HOST}" \
-            "cd /opt/personal-crm && mv -f '${UPLOAD}'/* . && rmdir '${UPLOAD}'"
-
-      # The short-lived job token goes over stdin: the server only uses it to pull this image
-      - name: Deploy
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          STAND: ${{ matrix.stand }}
-          IMAGE: ${{ needs.build.outputs.image }}
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REGISTRY_USER: ${{ github.actor }}
-        run: |
-          printf '%s' "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            "crm-deploy@${DEPLOY_HOST}" \
-            "bash /opt/personal-crm/deploy.sh '${STAND}' '${IMAGE}' '${REGISTRY_USER}'"
-
-      # Through nginx from outside; on staging /health is the only path without the password
-      - name: Check live site
-        env:
-          APP_URL: ${{ matrix.url }}
-        run: |
-          : "${APP_URL:?Set the APP_URL repository variable}"
-          code=$(curl -s -o health.json -w '%{http_code}' "${APP_URL}/health")
-          echo "Live /health: HTTP $code $(cat health.json)"
-          test "$code" = 200
+    with:
+      stand: staging
+      url: https://test-app.mypeoplecrm.ru
+      sha: ${{ github.sha }}
+    secrets: inherit

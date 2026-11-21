@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Rebuilds the staging database from the latest prod deploy backup, when staging data got spoiled: staging-db.sh.
+# Rebuilds the staging database from the latest prod backup (deploy or daily), when staging data got spoiled:
+# staging-db.sh.
 # Stops the staging app, loads the backup without the prod sign-in state, applies the migrations of the running
 # staging version and starts it again. Prod is not touched: its backup file is only read.
 set -euo pipefail

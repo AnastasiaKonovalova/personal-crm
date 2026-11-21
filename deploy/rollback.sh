@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Manual rollback of prod, run by the owner on the server: swaps the current and previous app images and restarts
-# the app. Database migrations are not undone. Running it again returns to the version it rolled back from.
+# Manual rollback of prod: Deploy prod with "rollback" runs it over SSH, or the owner runs it on the server.
+# Swaps the current and previous app images and restarts the app; both images are kept on the server, nothing is
+# pulled. Database migrations are not undone. Running it again returns to the version it rolled back from.
 set -euo pipefail
 source "$(dirname "$0")/stand.sh"
 
