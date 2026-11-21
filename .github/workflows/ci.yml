@@ -9,7 +9,7 @@ on:
 
 # Called from deploy.yml, the github context is the caller's push: there is no PR number,
 # so each deploy run gets its own group and never cancels the checks of another deploy.
-# Must not equal the caller's group ("deploy"), or GitHub cancels the caller.
+# Must not equal a group of the caller ("deploy-<stand>"), or GitHub cancels the caller.
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: true

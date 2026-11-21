@@ -1,12 +1,13 @@
-# Production stack on the server, project "prod": docker compose -p prod (see deploy.sh).
-# Values come from .env (secrets, written by the owner) and image.env (current app image, written by deploy.sh).
-# The server has little memory: every container has a memory cap, logs are size-limited.
+# One stack for both stands on the server, projects "prod" and "staging": docker compose -p <stand> (stand.sh).
+# Values come from the stand's .env (secrets, written by the owner), its image.env (current app image, written by
+# deploy.sh) and APP_PORT / DB_PORT, which stand.sh sets per stand.
+# The server has little memory: every container has a memory cap. Logs go to the server journal (journald):
+# they outlive the container on a deploy or rollback, and the system caps the journal size.
 
 x-logging: &logging
-  driver: json-file
+  driver: journald
   options:
-    max-size: "10m"
-    max-file: "3"
+    tag: "{{.Name}}"
 
 services:
   postgres:
@@ -31,7 +32,7 @@ services:
       - effective_cache_size=128MB
     ports:
       # Localhost only: reachable from the server itself or through an SSH tunnel
-      - "127.0.0.1:5433:5432"
+      - "127.0.0.1:${DB_PORT:?}:5432"
     volumes:
       # Postgres 18+ images keep data under /var/lib/postgresql/<major>/docker
       - pgdata:/var/lib/postgresql
@@ -78,7 +79,7 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:?}
       MAIL_FROM: ${MAIL_FROM:?}
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${APP_PORT:?}:3000"
     depends_on:
       postgres:
         condition: service_healthy
