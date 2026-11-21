@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Manual restore, run by the owner on the server: restore.sh <backup file>.
+# Manual restore of prod, run by the owner on the server: restore.sh <backup file>.
 # Asks for "yes", dumps the current database (backups/*-pre-restore.dump, only the latest is kept),
 # stops the app, drops and recreates the database, loads the backup and starts the same app version.
 # The app version is not changed: image.env is left as it is.
@@ -11,11 +11,10 @@ if [[ ! -f $arg || ! -s $arg ]]; then
   exit 1
 fi
 backup=$(realpath -- "$arg")
-cd "$(dirname "$0")"
 
-compose() {
-  docker compose -p prod -f compose.yml --env-file .env --env-file image.env "$@"
-}
+source "$(dirname "$0")/stand.sh"
+use_stand prod
+cd "$stand_dir"
 
 image=$(sed -n 's/^APP_IMAGE=//p' image.env 2> /dev/null || true)
 if [[ -z $image ]]; then
@@ -39,6 +38,9 @@ if [[ $answer != yes ]]; then
   echo "Cancelled, nothing changed"
   exit 1
 fi
+
+# A deploy or rollback of prod running now finishes first
+lock_stand
 
 echo "==> Copy of the current database"
 install -d -m 700 backups
@@ -77,17 +79,8 @@ echo "==> Start the app"
 compose up -d --wait --wait-timeout 90 app
 
 echo "==> Smoke /health"
-healthy=false
-for _ in $(seq 1 10); do
-  if curl -fsS http://127.0.0.1:3000/health; then
-    echo
-    healthy=true
-    break
-  fi
-  sleep 3
-done
-if [[ $healthy != true ]]; then
-  echo "Smoke failed: /health does not answer 200. Data before the restore: $copy" >&2
+if ! smoke; then
+  echo "Data before the restore: $copy" >&2
   exit 1
 fi
 
