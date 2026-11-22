@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="states" content="default=Новый контакт; from-group=Новый контакт со страницы группы; cadence-date=Частота «Конкретная дата»; no-groups=Групп ещё нет; edit=Редактирование; errors=Ошибки полей">
+  <title>Форма контакта — эскиз</title>
+  <link rel="stylesheet" href="vendor/fonts.css">
+  <link rel="stylesheet" href="vendor/tokens.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <!-- app/contacts/new/page.tsx and [id]/edit/page.tsx, components/contact-form.tsx:
+       five fields → «Как часто связываться» → «Группы» → «Новая группа» → «Сохранить» / «Отмена» -->
+  <header class="header">
+    <div class="header-bar">
+      <a class="brand" href="contacts.html"><svg viewBox="0 0 38 28" width="33" height="24" aria-hidden="true"><circle class="brand-fill" cx="14" cy="14" r="12"/><circle class="brand-ring" cx="24" cy="14" r="11"/></svg><span>Свои люди<span class="brand-dot">.</span></span></a>
+      <span class="brand-note">личная CRM</span>
+      <div class="account">
+        <span class="account-email" title="anna@example.com">anna@example.com</span>
+        <form action="login.html"><button class="btn btn-ghost account-out" type="submit" aria-label="Выйти" title="Выйти"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span class="account-out-label">Выйти</span></button></form>
+      </div>
+    </div>
+  </header>
+
+  <main class="page page-narrow">
+    <!-- back: where the form was opened from; from a group page it leads back there -->
+    <div data-state="default cadence-date no-groups"><a class="btn btn-ghost btn-sm btn-bare" href="contacts.html"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Все контакты</a></div>
+    <div data-state="from-group"><a class="btn btn-ghost btn-sm btn-bare" href="group.html"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Все контакты</a></div>
+    <div data-state="edit errors"><a class="btn btn-ghost btn-sm btn-bare" href="contact.html"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Анна Смирнова</a></div>
+
+    <h1 class="page-title" data-state="default from-group cadence-date no-groups">Новый контакт</h1>
+    <h1 class="page-title" data-state="edit errors">Редактирование контакта</h1>
+
+    <form class="form" novalidate>
+      <div class="field">
+        <label class="label" for="name">Имя<span class="req">*</span></label>
+        <input class="input" id="name" name="name" placeholder="Анна Смирнова" data-state="default from-group cadence-date no-groups">
+        <input class="input" name="name" placeholder="Анна Смирнова" value="Анна Смирнова" data-state="edit">
+        <input class="input" name="name" placeholder="Анна Смирнова" aria-invalid="true" aria-describedby="name-error" data-state="errors">
+        <p class="field-error" id="name-error" data-state="errors"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Имя обязательно</p>
+      </div>
+      <div class="field">
+        <label class="label" for="about">Кто это</label>
+        <input class="input" id="about" name="about" placeholder="Дизайнер, соседка по даче" data-state="default from-group cadence-date no-groups">
+        <input class="input" name="about" placeholder="Дизайнер, соседка по даче" value="Дизайнер, соседка по даче" data-state="edit errors">
+      </div>
+      <div class="field">
+        <label class="label" for="howWeMet">Откуда знакомы</label>
+        <input class="input" id="howWeMet" name="howWeMet" placeholder="Учились вместе на курсах" data-state="default from-group cadence-date no-groups">
+        <input class="input" name="howWeMet" placeholder="Учились вместе на курсах" value="Учились вместе на курсах" data-state="edit errors">
+      </div>
+      <div class="field">
+        <label class="label" for="phone">Телефон</label>
+        <input class="input" id="phone" name="phone" type="tel" placeholder="+7 900 123-45-67" data-state="default from-group cadence-date no-groups">
+        <input class="input" name="phone" type="tel" placeholder="+7 900 123-45-67" value="+7 900 123-45-67" data-state="edit errors">
+      </div>
+      <div class="field">
+        <label class="label" for="email">Почта</label>
+        <input class="input" id="email" name="email" type="email" placeholder="anna@example.com" data-state="default from-group cadence-date no-groups edit">
+        <input class="input" name="email" type="email" placeholder="anna@example.com" value="anna@" aria-invalid="true" aria-describedby="email-error" data-state="errors">
+        <p class="field-error" id="email-error" data-state="errors"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Некорректная почта</p>
+      </div>
+
+      <!-- components/cadence-fields.tsx: native select as a pill; the date shows only for «Конкретная дата» (always without JS) -->
+      <div class="cadence">
+        <label class="label" for="cadence">Как часто связываться</label>
+        <div class="row-gap">
+          <span class="select-box" data-state="default from-group no-groups">
+            <select class="select" id="cadence" name="cadence" onchange="if(this.value==='date')location.hash='cadence-date'"><option value="" selected>Не задано</option><option>Раз в неделю</option><option>Раз в месяц</option><option>Раз в 3 месяца</option><option>Раз в 6 месяцев</option><option>Раз в год</option><option value="date">Конкретная дата</option></select>
+            <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+          <span class="select-box" data-state="edit">
+            <select class="select" name="cadence" aria-label="Как часто связываться"><option value="">Не задано</option><option>Раз в неделю</option><option selected>Раз в месяц</option><option>Раз в 3 месяца</option><option>Раз в 6 месяцев</option><option>Раз в год</option><option>Конкретная дата</option></select>
+            <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+          <span class="select-box" data-state="cadence-date errors">
+            <select class="select" name="cadence" aria-label="Как часто связываться" onchange="if(this.value!=='date')location.hash=''"><option value="">Не задано</option><option>Раз в неделю</option><option>Раз в месяц</option><option>Раз в 3 месяца</option><option>Раз в 6 месяцев</option><option>Раз в год</option><option value="date" selected>Конкретная дата</option></select>
+            <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+          <div class="cadence-date" data-state="cadence-date">
+            <label class="sr-only" for="contactOn">Дата</label>
+            <input class="input" id="contactOn" name="contactOn" type="date" value="2026-12-05">
+          </div>
+          <div class="cadence-date" data-state="errors">
+            <label class="sr-only" for="contactOn-e">Дата</label>
+            <input class="input" id="contactOn-e" name="contactOn" type="date" aria-invalid="true" aria-describedby="contactOn-error">
+          </div>
+        </div>
+        <p class="field-error" id="contactOn-error" data-state="errors"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Укажи дату</p>
+      </div>
+
+      <!-- components/group-fields.tsx: ticks only when groups exist; ticked = accent-soft, accent border, check -->
+      <fieldset class="gpick" data-state="default cadence-date">
+        <legend>Группы</legend>
+        <div class="gpick-list">
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Аналитики">Аналитики</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Бассейн">Бассейн</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Дача">Дача</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Друзья">Друзья</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Книжный клуб по четвергам">Книжный клуб по четвергам</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Работа">Работа</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Семья">Семья</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Соседи">Соседи</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Теннис">Теннис</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Цигун">Цигун</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Школа">Школа</span></label>
+        </div>
+      </fieldset>
+      <!-- from the group page «Теннис»: that group is ticked -->
+      <fieldset class="gpick" data-state="from-group">
+        <legend>Группы</legend>
+        <div class="gpick-list">
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Аналитики">Аналитики</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Бассейн">Бассейн</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Дача">Дача</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Друзья">Друзья</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Книжный клуб по четвергам">Книжный клуб по четвергам</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Работа">Работа</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Семья">Семья</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Соседи">Соседи</span></label>
+          <label><input type="checkbox" name="groupIds" checked><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Теннис">Теннис</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Цигун">Цигун</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Школа">Школа</span></label>
+        </div>
+      </fieldset>
+      <!-- editing: the contact's groups are ticked -->
+      <fieldset class="gpick" data-state="edit errors">
+        <legend>Группы</legend>
+        <div class="gpick-list">
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Аналитики">Аналитики</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Бассейн">Бассейн</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Дача">Дача</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Друзья">Друзья</span></label>
+          <label><input type="checkbox" name="groupIds" checked><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Книжный клуб по четвергам">Книжный клуб по четвергам</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Работа">Работа</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Семья">Семья</span></label>
+          <label><input type="checkbox" name="groupIds" checked><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Соседи">Соседи</span></label>
+          <label><input type="checkbox" name="groupIds" checked><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Теннис">Теннис</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Цигун">Цигун</span></label>
+          <label><input type="checkbox" name="groupIds"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span title="Школа">Школа</span></label>
+        </div>
+      </fieldset>
+
+      <div class="field">
+        <label class="label" for="newGroup">Новая группа</label>
+        <input class="input" id="newGroup" name="newGroup" aria-describedby="newGroup-hint" data-state="default from-group cadence-date no-groups edit">
+        <input class="input" name="newGroup" value="Одноклассники из школы номер пятьдесят семь на Арбате" aria-invalid="true" aria-describedby="newGroup-error newGroup-hint" data-state="errors">
+        <p class="field-error" id="newGroup-error" data-state="errors"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Не длиннее 50 символов</p>
+        <p class="field-hint" id="newGroup-hint">Если такая группа уже есть, контакт попадёт в неё.</p>
+      </div>
+
+      <div class="row-gap">
+        <button class="btn btn-primary" type="button">Сохранить</button>
+        <a class="btn btn-outline" href="contacts.html">Отмена</a>
+      </div>
+    </form>
+  </main>
+  <script src="states.js"></script>
+</body>
+</html>
