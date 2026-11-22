@@ -16,14 +16,15 @@ package=${GITHUB_REPOSITORY#*/}
 image=ghcr.io/${GITHUB_REPOSITORY,,}
 versions_api="users/$owner/packages/container/${package,,}/versions"
 
-# id, digest, tags (comma separated, empty when untagged), created_at; newest first
+# id|digest|tags (comma separated, empty when untagged)|created_at. Not tabs: read merges adjacent whitespace
+# separators, so an empty tags field would vanish; "|" keeps it
 versions=$(gh api --paginate "$versions_api?per_page=100" \
-  --jq '.[] | [.id, .name, (.metadata.container.tags | join(",")), .created_at] | @tsv')
-tagged=$(awk -F'\t' '$3 != ""' <<< "$versions" | sort -t$'\t' -k4,4r)
+  --jq '.[] | [(.id | tostring), .name, (.metadata.container.tags | join(",")), .created_at] | join("|")')
+tagged=$(awk -F'|' '$3 != ""' <<< "$versions" | sort -t'|' -k4,4r)
 echo "Builds in GHCR: $(grep -c . <<< "$tagged" || true), keeping $keep"
 
 # Digests of the kept builds and of everything they refer to. A failed lookup stops the script: nothing is deleted
-kept=$(head -n "$keep" <<< "$tagged" | cut -f2)
+kept=$(head -n "$keep" <<< "$tagged" | cut -d'|' -f2)
 referenced=$(while read -r digest; do
   [[ -n $digest ]] || continue
   docker buildx imagetools inspect --raw "$image@$digest" | jq -r '.manifests[]?.digest'
@@ -32,7 +33,7 @@ keep_digests=$(printf '%s\n%s\n' "$kept" "$referenced")
 
 hour_ago=$(date -u -d '1 hour ago' +%Y-%m-%dT%H:%M:%SZ)
 deleted=0
-while IFS=$'\t' read -r id digest tags created; do
+while IFS='|' read -r id digest tags created; do
   [[ -n $id ]] || continue
   if grep -qxF "$digest" <<< "$keep_digests"; then
     continue
