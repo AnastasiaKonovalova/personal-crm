@@ -1,0 +1,11 @@
+# Starts personal-crm-backup.service every day at 03:00 Moscow time, whatever the server's own time zone.
+# Persistent: a run missed while the server was off happens right after it starts again.
+[Unit]
+Description=personal-crm: daily backup of the prod database at 03:00 Moscow time
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 Europe/Moscow
+Persistent=true
+
+[Install]
+WantedBy=timers.target
