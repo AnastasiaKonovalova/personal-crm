@@ -187,6 +187,14 @@ button, input, select, textarea { font: inherit; color: inherit; background: non
   .block-foot-paged > .btn { margin-left: 0; }
 }
 
+/* «Скоро день рождения» block (components/birthdays-block.tsx, planned): the same card, rows and foot
+   as «Пора связаться»; no dot and no button in the row; Lucide `cake` at the title -------------------- */
+.block-title-icon { display: inline-flex; align-items: center; gap: 10px; }
+.block-title-icon .i { width: 22px; height: 22px; color: var(--teal-deep); }
+/* row: dot slot, name, below «when · date · age»; no button, so no third column.
+   Dots as «Пора связаться»: yesterday = .dot-overdue, today = .dot-soon, other rows an empty slot */
+.bday-row { grid-template-columns: 8px minmax(0, 1fr); }
+
 /* «Связались» (components/mark-contacted-button.tsx, contacted-icon.tsx) ------------------------- */
 .contacted-form { display: grid; justify-items: end; gap: 4px; }
 .contacted .i-contacted { width: 22px; height: 22px; color: var(--teal-deep); }
@@ -317,6 +325,19 @@ button, input, select, textarea { font: inherit; color: inherit; background: non
 .gpick-list .i { display: none; width: 16px; height: 16px; }
 .gpick-list label:has(input:checked) .i { display: block; }
 .gpick-list span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* «День рождения» (components/birthday-fields.tsx, planned): day and month are native selects and the year
+   a numeric field, each with its caption inside, as the group filter; one error under the whole row;
+   the choice for 29 February is pills like the group ticks (with JS only at 29 February, without JS always) */
+.bday { display: grid; min-width: 0; gap: 8px; }
+.bday > legend { margin-bottom: 8px; }
+.bday-fields { display: flex; flex-wrap: wrap; gap: var(--space-cta); }
+.bday-fields > .filter { max-width: none; }
+.bday-fields > .bday-day { flex: 0 0 112px; }
+.bday-fields > .bday-month { flex: 1 1 170px; max-width: 240px; }
+.bday-fields > .bday-year { flex: 0 0 172px; }
+.bday-year .input { border-radius: var(--radius-card); padding: 27px 20px 9px; }
+.bday-leap { margin-top: 6px; }
+.bday-leap legend { font-size: 13px; color: var(--muted); }
 
 /* groups page (app/groups/page.tsx, components/group-forms.tsx) ---------------------------------- */
 .glist { overflow: hidden; border-radius: var(--radius-card); border: 1px solid var(--line); background: var(--surface); }

@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="states" content="default=Основное: следующий раз скоро; overdue=Пора связаться, просрочено; no-cadence=Частота не задана; cadence-date=Конкретная дата: «Дата уже прошла»; saved=«Сохранено» и «Заметка сохранена»; no-groups=Ни в одной группе; remove-group=«Убрать из группы?»; delete=«Удалить контакт?»; note-edit=Правка заметки: «Заметка пустая»; no-notes=Заметок пока нет">
+  <meta name="states" content="default=Основное: следующий раз скоро; overdue=Пора связаться, просрочено; no-cadence=Частота не задана; cadence-date=Конкретная дата: «Дата уже прошла»; saved=«Сохранено» и «Заметка сохранена»; no-groups=Ни в одной группе; remove-group=«Убрать из группы?»; delete=«Удалить контакт?»; note-edit=Правка заметки: «Заметка пустая»; no-notes=Заметок пока нет; birthday-no-year=День рождения без года; birthday-leap=День рождения 29 февраля; no-birthday=Дня рождения нет">
   <title>Карточка контакта — эскиз</title>
   <link rel="stylesheet" href="vendor/fonts.css">
   <link rel="stylesheet" href="vendor/tokens.css">
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
-  <!-- app/contacts/[id]/page.tsx: back → name and actions → «Связь» → «Группы» → data → notes -->
+  <!-- app/contacts/[id]/page.tsx: back → name and actions → «Связь» → «Группы» → data (with «День рождения») → notes -->
   <header class="header">
     <div class="header-bar">
       <a class="brand" href="contacts.html"><svg viewBox="0 0 38 28" width="33" height="24" aria-hidden="true"><circle class="brand-fill" cx="14" cy="14" r="12"/><circle class="brand-ring" cx="24" cy="14" r="11"/></svg><span>Свои люди<span class="brand-dot">.</span></span></a>
@@ -37,7 +37,7 @@
     <section class="card touch" aria-label="Связь с контактом">
       <div class="touch-top">
         <div class="touch-status">
-          <p class="touch-line" data-state="default cadence-date saved no-groups remove-group delete note-edit no-notes"><span class="dot dot-soon" aria-hidden="true"></span>Следующий раз — до 26 ноября</p>
+          <p class="touch-line" data-state="default birthday-no-year birthday-leap no-birthday cadence-date saved no-groups remove-group delete note-edit no-notes"><span class="dot dot-soon" aria-hidden="true"></span>Следующий раз — до 26 ноября</p>
           <p class="touch-line" data-state="overdue"><span class="dot dot-overdue" aria-hidden="true"></span>Пора связаться</p>
           <p class="touch-overdue" data-state="overdue">просрочено на 10 дней</p>
           <p class="touch-none" data-state="no-cadence">Выбери, как часто хочешь общаться</p>
@@ -48,7 +48,7 @@
         <div class="cadence">
           <label class="label card-label" for="card-cadence">Как часто связываться</label>
           <div class="row-gap">
-            <span class="select-box" data-state="default overdue saved no-groups remove-group delete note-edit no-notes">
+            <span class="select-box" data-state="default birthday-no-year birthday-leap no-birthday overdue saved no-groups remove-group delete note-edit no-notes">
               <select class="select" id="card-cadence" name="cadence"><option value="">Не задано</option><option>Раз в неделю</option><option selected>Раз в месяц</option><option>Раз в 3 месяца</option><option>Раз в 6 месяцев</option><option>Раз в год</option><option>Конкретная дата</option></select>
               <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </span>
@@ -76,7 +76,7 @@
     <!-- «Группы» (components/contact-groups-card.tsx): pills lead to the group page, the cross asks first -->
     <section class="card groups-card" aria-labelledby="groups-title">
       <h2 class="card-label" id="groups-title">Группы</h2>
-      <ul class="gtags" data-state="default overdue no-cadence cadence-date saved remove-group delete note-edit no-notes">
+      <ul class="gtags" data-state="default birthday-no-year birthday-leap no-birthday overdue no-cadence cadence-date saved remove-group delete note-edit no-notes">
         <li class="gtag"><a href="group.html" title="Соседи">Соседи</a><a class="gtag-x" href="#remove-group" aria-label="Убрать из группы «Соседи»"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a></li>
         <li class="gtag"><a href="group.html" title="Теннис">Теннис</a><a class="gtag-x" href="#remove-group" aria-label="Убрать из группы «Теннис»"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a></li>
         <li class="gtag"><a href="group.html" title="Книжный клуб по четвергам">Книжный клуб по четвергам</a><a class="gtag-x" href="#remove-group" aria-label="Убрать из группы «Книжный клуб по четвергам»"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a></li>
@@ -98,6 +98,14 @@
         <div><dt class="card-label">Откуда знакомы</dt><dd>Учились вместе на курсах</dd></div>
         <div><dt class="card-label">Телефон</dt><dd><a href="tel:+79001234567">+7 900 123-45-67</a></dd></div>
         <div><dt class="card-label">Почта</dt><dd><span class="muted">—</span></dd></div>
+        <!-- only the date: no «in N days» and no age in the card -->
+        <div>
+          <dt class="card-label">День рождения</dt>
+          <dd data-state="default overdue no-cadence cadence-date saved no-groups remove-group delete note-edit no-notes">22 ноября 1990</dd>
+          <dd data-state="birthday-no-year">22 ноября</dd>
+          <dd data-state="birthday-leap">29 февраля 1992 · в невисокосный год — 1 марта</dd>
+          <dd data-state="no-birthday"><span class="muted">—</span></dd>
+        </div>
       </dl>
     </section>
 
@@ -113,7 +121,7 @@
           <span class="status-saved" role="status" data-state="saved">Заметка сохранена</span>
         </div>
       </form>
-      <ul class="notes" data-state="default overdue no-cadence cadence-date saved no-groups remove-group delete note-edit">
+      <ul class="notes" data-state="default birthday-no-year birthday-leap no-birthday overdue no-cadence cadence-date saved no-groups remove-group delete note-edit">
         <li class="note">
           <div class="note-top">
             <time datetime="2026-11-15T18:40">15 ноября 2026 г. в 18:40</time>
@@ -121,7 +129,7 @@
           </div>
           <p>Созвонились насчёт ремонта кухни. Пришлёт подборку плитки до пятницы, встречаемся на объекте в субботу утром.</p>
         </li>
-        <li class="note" data-state="default overdue no-cadence cadence-date saved no-groups remove-group delete">
+        <li class="note" data-state="default birthday-no-year birthday-leap no-birthday overdue no-cadence cadence-date saved no-groups remove-group delete">
           <div class="note-top">
             <time datetime="2026-10-26T11:15">26 октября 2026 г. в 11:15</time>
             <button class="btn btn-ghost btn-sm btn-bare" type="button" onclick="location.hash='note-edit'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>Изменить</button>

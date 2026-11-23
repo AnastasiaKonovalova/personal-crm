@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
-  <!-- app/groups/[id]/page.tsx: back links → head → «Пора связаться» of the group → search → list. No switch, no filter -->
+  <!-- app/groups/[id]/page.tsx: back links → head → search → «Скоро день рождения» and «Пора связаться» of the group → list. No switch, no filter -->
   <header class="header">
     <div class="header-bar">
       <a class="brand" href="contacts.html"><svg viewBox="0 0 38 28" width="33" height="24" aria-hidden="true"><circle class="brand-fill" cx="14" cy="14" r="12"/><circle class="brand-ring" cx="24" cy="14" r="11"/></svg><span>Свои люди<span class="brand-dot">.</span></span></a>
@@ -43,6 +43,35 @@
         <a class="btn btn-primary" href="contact-form.html#from-group"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Добавить контакт</a>
       </div>
 
+      <!-- only the search, inside the group; «Сбросить» stays on the group page. Above both blocks, as on the main page -->
+      <form class="search-form" role="search" action="group.html">
+        <div class="search-row">
+          <label class="search-box">
+            <span class="sr-only">Поиск по имени в группе «Теннис»</span>
+            <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input class="input" type="search" name="q" placeholder="Поиск по имени" data-state="default empty">
+            <input class="input" type="search" name="q" placeholder="Поиск по имени" value="Иван" data-state="search">
+          </label>
+          <span class="search-actions">
+            <button class="btn btn-outline" type="button" onclick="location.hash='search'">Найти</button>
+            <a class="btn btn-ghost btn-bare" href="#" aria-label="Сбросить поиск" data-state="search">Сбросить</a>
+          </span>
+        </div>
+      </form>
+
+      <!-- «Скоро день рождения» of the group: the same rules as on the main page; three rows, no button -->
+      <section class="block" aria-labelledby="birthdays-title" data-state="default">
+        <div class="block-head">
+          <h2 class="block-title block-title-icon" id="birthdays-title"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>Скоро день рождения</h2>
+          <span class="counter">3</span>
+        </div>
+        <ul>
+          <li class="block-row bday-row"><span class="dot-slot"><span class="dot dot-soon" aria-hidden="true"></span></span><a class="block-name" href="contact.html">Анна Смирнова</a><p class="block-meta">Сегодня · 22 ноября · исполняется 36</p></li>
+          <li class="block-row bday-row"><span class="dot-slot"></span><a class="block-name" href="contact.html#birthday-no-year">Вера Лебедева</a><p class="block-meta">Завтра · 23 ноября</p></li>
+          <li class="block-row bday-row"><span class="dot-slot"></span><a class="block-name" href="contact.html">Иван Петров</a><p class="block-meta">Через 4 дня · 26 ноября · исполнится 40</p></li>
+        </ul>
+      </section>
+
       <!-- the same rules as on the main page: first page, no search, the group has contacts -->
       <section class="block" aria-labelledby="reminders-title" data-state="default">
         <div class="block-head">
@@ -64,22 +93,6 @@
           </li>
         </ul>
       </section>
-
-      <!-- only the search, inside the group; «Сбросить» stays on the group page -->
-      <form class="search-form" role="search" action="group.html">
-        <div class="search-row">
-          <label class="search-box">
-            <span class="sr-only">Поиск по имени в группе «Теннис»</span>
-            <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input class="input" type="search" name="q" placeholder="Поиск по имени" data-state="default empty">
-            <input class="input" type="search" name="q" placeholder="Поиск по имени" value="Иван" data-state="search">
-          </label>
-          <span class="search-actions">
-            <button class="btn btn-outline" type="button" onclick="location.hash='search'">Найти</button>
-            <a class="btn btn-ghost btn-bare" href="#" aria-label="Сбросить поиск" data-state="search">Сбросить</a>
-          </span>
-        </div>
-      </form>
 
       <div class="list" data-state="default">
         <div class="list-head" aria-hidden="true"><span>Имя</span><span>Кто это</span><span>Откуда знакомы</span><span>Группы</span><span></span></div>
