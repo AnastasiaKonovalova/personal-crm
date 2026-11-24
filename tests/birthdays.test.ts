@@ -3,6 +3,7 @@ import {
   birthdayIn,
   birthdayRow,
   formatBirthday,
+  isCongratulated,
   nextBirthday,
   sortForBirthdays,
 } from "@/lib/birthdays";
@@ -165,6 +166,47 @@ describe("birthdayRow (requirement «Строка блока „Скоро де�
     expect(row({ day: 31, month: 12, year: 1990, leapDay: null }, "2027-01-01").age).toBe(
       "исполнилось 36",
     );
+  });
+});
+
+describe("isCongratulated (requirement «Отметка «Поздравил(а)»»)", () => {
+  const anna = { day: 25, month: 11, leapDay: null };
+
+  it("is false when nobody has congratulated", () => {
+    expect(isCongratulated(anna, null, "2026-11-24")).toBe(false);
+  });
+
+  it("hides tomorrow's birthday congratulated today, and still the day after", () => {
+    expect(isCongratulated(anna, "2026-11-24", "2026-11-24")).toBe(true);
+    expect(isCongratulated(anna, "2026-11-24", "2026-11-26")).toBe(true);
+  });
+
+  it("scenario «Поздравили вчерашнего»: 22 November, birthday 21 November, congratulated today", () => {
+    expect(isCongratulated({ day: 21, month: 11, leapDay: null }, "2026-11-22", "2026-11-22")).toBe(
+      true,
+    );
+  });
+
+  it("hides yesterday's birthday across the New Year", () => {
+    expect(isCongratulated({ day: 31, month: 12, leapDay: null }, "2027-01-01", "2027-01-01")).toBe(
+      true,
+    );
+  });
+
+  it("scenario «До следующего дня рождения»: congratulated this year, 7 days to the next one - back in the block", () => {
+    expect(isCongratulated(anna, "2026-11-24", "2027-11-18")).toBe(false);
+  });
+
+  it("hides when congratulated exactly 7 days before the celebrated date, not 8", () => {
+    expect(isCongratulated(anna, "2026-11-18", "2026-11-20")).toBe(true);
+    expect(isCongratulated(anna, "2026-11-17", "2026-11-20")).toBe(false);
+  });
+
+  it("counts 29 February by the day it is celebrated this year", () => {
+    const leap = { day: 29, month: 2, leapDay: "mar_1" as const };
+    // 2027 is a common year: celebrated on 1 March, the window opens on 22 February
+    expect(isCongratulated(leap, "2027-02-22", "2027-02-25")).toBe(true);
+    expect(isCongratulated(leap, "2027-02-21", "2027-02-25")).toBe(false);
   });
 });
 

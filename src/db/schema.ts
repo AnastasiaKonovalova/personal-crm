@@ -129,6 +129,8 @@ export const contacts = pgTable(
     birthYear: smallint("birth_year"),
     // Set exactly when the birthday is 29 February
     birthLeapDay: birthLeapDay("birth_leap_day"),
+    // Day of the last «Поздравил(а)» in APP_TIME_ZONE; hides the birthday from the block until the next one (birthdays.ts)
+    birthCongratulatedOn: date("birth_congratulated_on", { mode: "string" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

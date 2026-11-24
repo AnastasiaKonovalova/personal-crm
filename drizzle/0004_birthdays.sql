@@ -3,6 +3,7 @@ ALTER TABLE "contacts" ADD COLUMN "birth_day" smallint;--> statement-breakpoint
 ALTER TABLE "contacts" ADD COLUMN "birth_month" smallint;--> statement-breakpoint
 ALTER TABLE "contacts" ADD COLUMN "birth_year" smallint;--> statement-breakpoint
 ALTER TABLE "contacts" ADD COLUMN "birth_leap_day" "birth_leap_day";--> statement-breakpoint
+ALTER TABLE "contacts" ADD COLUMN "birth_congratulated_on" date;--> statement-breakpoint
 ALTER TABLE "contacts" ADD CONSTRAINT "contacts_birthday_check" CHECK (("contacts"."birth_day" IS NULL) = ("contacts"."birth_month" IS NULL)
         AND ("contacts"."birth_year" IS NULL OR "contacts"."birth_day" IS NOT NULL)
         AND ("contacts"."birth_day" IS NULL OR "contacts"."birth_day" BETWEEN 1 AND 31)

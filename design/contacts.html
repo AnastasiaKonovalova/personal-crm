@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="states" content="default=Основное: оба блока свёрнуты; birthdays-all=«Скоро день рождения» раскрыт, страница 1 из 2; birthdays-page-2=«Скоро день рождения», страница 2 из 2; no-birthdays=Ни у кого нет дня рождения в ближайшую неделю; reminders-all=«Пора связаться» раскрыт, страница 1 из 3;all-in-touch=Со всеми на связи; no-cadence=Частота нигде не задана; search=Поиск; not-found=Никого не нашлось; filter=Фильтр по группе; filter-empty=Фильтр: пустая группа; page-2=Вторая страница списка; no-groups=Групп ещё нет; deleted=Контакт удалён; first=Первый вход; long-email=Длинная почта в шапке">
+  <meta name="states" content="default=Основное: оба блока свёрнуты; birthdays-all=«Скоро день рождения» раскрыт, страница 1 из 2; birthdays-page-2=«Скоро день рождения», страница 2 из 2; congratulated=После «Поздравил(а)»: строки Анны нет, в блоке 11; no-birthdays=Ни у кого нет дня рождения в ближайшую неделю; reminders-all=«Пора связаться» раскрыт, страница 1 из 3;all-in-touch=Со всеми на связи; no-cadence=Частота нигде не задана; search=Поиск; not-found=Никого не нашлось; filter=Фильтр по группе; filter-empty=Фильтр: пустая группа; page-2=Вторая страница списка; no-groups=Групп ещё нет; deleted=Контакт удалён; first=Первый вход; long-email=Длинная почта в шапке">
   <title>Контакты — эскиз</title>
   <link rel="stylesheet" href="vendor/fonts.css">
   <link rel="stylesheet" href="vendor/tokens.css">
@@ -21,7 +21,7 @@
       <a class="brand" href="contacts.html"><svg viewBox="0 0 38 28" width="33" height="24" aria-hidden="true"><circle class="brand-fill" cx="14" cy="14" r="12"/><circle class="brand-ring" cx="24" cy="14" r="11"/></svg><span>Свои люди<span class="brand-dot">.</span></span></a>
       <span class="brand-note">личная CRM</span>
       <div class="account">
-        <span class="account-email" title="anna@example.com" data-state="default reminders-all birthdays-all birthdays-page-2 no-birthdays all-in-touch no-cadence search not-found filter filter-empty page-2 no-groups deleted first">anna@example.com</span>
+        <span class="account-email" title="anna@example.com" data-state="default reminders-all birthdays-all birthdays-page-2 congratulated no-birthdays all-in-touch no-cadence search not-found filter filter-empty page-2 no-groups deleted first">anna@example.com</span>
         <span class="account-email" title="anastasia.konstantinova.personal.contacts.2026@very-long-domain.example" data-state="long-email">anastasia.konstantinova.personal.contacts.2026@very-long-domain.example</span>
         <form action="login.html"><button class="btn btn-ghost account-out" type="submit" aria-label="Выйти" title="Выйти"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span class="account-out-label">Выйти</span></button></form>
       </div>
@@ -33,7 +33,7 @@
     <main class="page">
       <div class="page-head">
         <div>
-          <p class="eyebrow" data-state="default reminders-all birthdays-all birthdays-page-2 no-birthdays all-in-touch no-cadence page-2 no-groups deleted long-email">Всего: 1000</p>
+          <p class="eyebrow" data-state="default reminders-all birthdays-all birthdays-page-2 congratulated no-birthdays all-in-touch no-cadence page-2 no-groups deleted long-email">Всего: 1000</p>
           <p class="eyebrow" data-state="search">Найдено: 1</p>
           <p class="eyebrow" data-state="not-found filter-empty">Найдено: 0</p>
           <p class="eyebrow" data-state="filter">Найдено: 4</p>
@@ -52,7 +52,7 @@
           <label class="search-box">
             <span class="sr-only">Поиск по имени</span>
             <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input class="input" type="search" name="q" placeholder="Поиск по имени" data-state="default reminders-all birthdays-all birthdays-page-2 no-birthdays all-in-touch no-cadence filter filter-empty page-2 no-groups deleted first long-email">
+            <input class="input" type="search" name="q" placeholder="Поиск по имени" data-state="default reminders-all birthdays-all birthdays-page-2 congratulated no-birthdays all-in-touch no-cadence filter filter-empty page-2 no-groups deleted first long-email">
             <input class="input" type="search" name="q" placeholder="Поиск по имени" value="Иван" data-state="search">
             <input class="input" type="search" name="q" placeholder="Поиск по имени" value="Ивн" data-state="not-found">
           </label>
@@ -61,7 +61,7 @@
             <a class="btn btn-ghost btn-bare" href="#" aria-label="Сбросить поиск" data-state="search not-found">Сбросить</a>
           </span>
         </div>
-        <span class="filter" data-state="default reminders-all birthdays-all birthdays-page-2 no-birthdays all-in-touch no-cadence search not-found page-2 deleted long-email">
+        <span class="filter" data-state="default reminders-all birthdays-all birthdays-page-2 congratulated no-birthdays all-in-touch no-cadence search not-found page-2 deleted long-email">
           <label class="filter-label" for="group-filter">Фильтр по группам</label>
           <select class="select" id="group-filter" name="group" onchange="location.hash=this.value==='tennis'?'filter':this.value==='analysts'?'filter-empty':''">
             <option value="" selected>Все группы</option><option value="analysts">Аналитики</option><option>Бассейн</option><option>Дача</option><option>Друзья</option><option>Книжный клуб</option><option>Работа</option><option>Семья</option><option>Соседи</option><option value="tennis">Теннис</option><option>Цигун</option><option>Школа</option>
@@ -88,77 +88,95 @@
 
       <!-- «Скоро день рождения»: the same rules as «Пора связаться» plus someone in the window (yesterday … in 7 days).
            Today is 22 November 2026. Yesterday first, then by days, then by name. The server sends all 12 rows;
-           collapsed shows 5, expanded 10 per page, in place, no reload. Without JS: all rows, no buttons -->
-      <section class="block" aria-labelledby="birthdays-title" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all birthdays-page-2">
+           collapsed shows 5, expanded 10 per page, in place, no reload. Without JS: all rows, no «Показать все».
+           «Поздравил(а)» in every row, as «Связались»: a form, works without JS; the row leaves the block in place.
+           #congratulated: Анна was congratulated, her row is gone, 11 left, Егор Фомин moves up into the first 5 -->
+      <section class="block" aria-labelledby="birthdays-title" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all birthdays-page-2 congratulated">
         <div class="block-head">
           <h2 class="block-title block-title-icon" id="birthdays-title"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>Скоро день рождения</h2>
-          <span class="counter">12</span>
+          <span class="counter" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all birthdays-page-2">12</span>
+          <span class="counter" data-state="congratulated">11</span>
         </div>
         <ul>
           <!-- dots as «Пора связаться»: yesterday = overdue (terracotta), today = soon (teal), others an empty slot -->
-          <li class="block-row bday-row" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all">
+          <li class="block-row bday-row" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all congratulated">
             <span class="dot-slot"><span class="dot dot-overdue" aria-hidden="true"></span></span>
             <a class="block-name" href="contact.html">Глеб Орлов</a>
             <p class="block-meta">Вчера · 21 ноября · исполнилось 36</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Глеб Орлов"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
           <li class="block-row bday-row" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all">
             <span class="dot-slot"><span class="dot dot-soon" aria-hidden="true"></span></span>
             <a class="block-name" href="contact.html">Анна Смирнова</a>
             <p class="block-meta">Сегодня · 22 ноября · исполняется 36</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Анна Смирнова" onclick="location.hash='congratulated'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
-          <li class="block-row bday-row" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all">
+          <li class="block-row bday-row" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all congratulated">
             <span class="dot-slot"><span class="dot dot-soon" aria-hidden="true"></span></span>
             <a class="block-name" href="contact.html#birthday-no-year">Ирина Соколова</a>
             <p class="block-meta">Сегодня · 22 ноября</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Ирина Соколова"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
-          <li class="block-row bday-row" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all">
+          <li class="block-row bday-row" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all congratulated">
             <span class="dot-slot"></span>
             <a class="block-name" href="contact.html#birthday-no-year">Вера Лебедева</a>
             <p class="block-meta">Завтра · 23 ноября</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Вера Лебедева"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
-          <li class="block-row bday-row" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all">
+          <li class="block-row bday-row" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email birthdays-all congratulated">
             <span class="dot-slot"></span>
             <a class="block-name" href="contact.html">Дарья Котова</a>
             <p class="block-meta">Послезавтра · 24 ноября · исполнится 41</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Дарья Котова"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
-          <li class="block-row bday-row" data-state="birthdays-all">
+          <li class="block-row bday-row" data-state="birthdays-all congratulated">
             <span class="dot-slot"></span>
             <a class="block-name" href="contact.html">Егор Фомин</a>
             <p class="block-meta">Через 3 дня · 25 ноября · исполнится 36</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Егор Фомин"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
           <li class="block-row bday-row" data-state="birthdays-all">
             <span class="dot-slot"></span>
             <a class="block-name" href="contact.html#birthday-no-year">Жанна Белова</a>
             <p class="block-meta">Через 3 дня · 25 ноября</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Жанна Белова"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
           <li class="block-row bday-row" data-state="birthdays-all">
             <span class="dot-slot"></span>
             <a class="block-name" href="contact.html">Иван Петров</a>
             <p class="block-meta">Через 4 дня · 26 ноября · исполнится 40</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Иван Петров"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
           <li class="block-row bday-row" data-state="birthdays-all">
             <span class="dot-slot"></span>
             <a class="block-name" href="contact.html#birthday-no-year">Константин Ершов</a>
             <p class="block-meta">Через 5 дней · 27 ноября</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Константин Ершов"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
           <li class="block-row bday-row" data-state="birthdays-all">
             <span class="dot-slot"></span>
             <a class="block-name" href="contact.html">Лидия Павлова</a>
             <p class="block-meta">Через 6 дней · 28 ноября · исполнится 52</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Лидия Павлова"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
           <li class="block-row bday-row" data-state="birthdays-page-2">
             <span class="dot-slot"></span>
             <a class="block-name" href="contact.html">Марк Зуев</a>
             <p class="block-meta">Через 7 дней · 29 ноября · исполнится 45</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Марк Зуев"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
           <li class="block-row bday-row" data-state="birthdays-page-2">
             <span class="dot-slot"></span>
             <a class="block-name" href="contact.html#birthday-no-year">Ольга Титова</a>
             <p class="block-meta">Через 7 дней · 29 ноября</p>
+            <div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Ольга Титова"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div>
           </li>
         </ul>
         <div class="block-foot" data-state="default reminders-all all-in-touch no-cadence no-groups deleted long-email">
           <button class="btn btn-ghost btn-sm btn-teal" type="button" aria-expanded="false" onclick="location.hash='birthdays-all'">Показать все (12)<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+        <div class="block-foot" data-state="congratulated">
+          <button class="btn btn-ghost btn-sm btn-teal" type="button" aria-expanded="false">Показать все (11)<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         </div>
         <div class="block-foot block-foot-paged" data-state="birthdays-all">
           <nav class="pager" aria-label="Страницы блока «Скоро день рождения»">
@@ -178,22 +196,22 @@
         </div>
       </section>
 
-      <!-- the block in the group filter «Теннис»: only the group, three rows, no button -->
+      <!-- the block in the group filter «Теннис»: only the group, three rows, no «Показать все» -->
       <section class="block" aria-labelledby="birthdays-title-f" data-state="filter">
         <div class="block-head">
           <h2 class="block-title block-title-icon" id="birthdays-title-f"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>Скоро день рождения</h2>
           <span class="counter">3</span>
         </div>
         <ul>
-          <li class="block-row bday-row"><span class="dot-slot"><span class="dot dot-soon" aria-hidden="true"></span></span><a class="block-name" href="contact.html">Анна Смирнова</a><p class="block-meta">Сегодня · 22 ноября · исполняется 36</p></li>
-          <li class="block-row bday-row"><span class="dot-slot"></span><a class="block-name" href="contact.html#birthday-no-year">Вера Лебедева</a><p class="block-meta">Завтра · 23 ноября</p></li>
-          <li class="block-row bday-row"><span class="dot-slot"></span><a class="block-name" href="contact.html">Иван Петров</a><p class="block-meta">Через 4 дня · 26 ноября · исполнится 40</p></li>
+          <li class="block-row bday-row"><span class="dot-slot"><span class="dot dot-soon" aria-hidden="true"></span></span><a class="block-name" href="contact.html">Анна Смирнова</a><p class="block-meta">Сегодня · 22 ноября · исполняется 36</p><div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Анна Смирнова"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div></li>
+          <li class="block-row bday-row"><span class="dot-slot"></span><a class="block-name" href="contact.html#birthday-no-year">Вера Лебедева</a><p class="block-meta">Завтра · 23 ноября</p><div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Вера Лебедева"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div></li>
+          <li class="block-row bday-row"><span class="dot-slot"></span><a class="block-name" href="contact.html">Иван Петров</a><p class="block-meta">Через 4 дня · 26 ноября · исполнится 40</p><div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Иван Петров"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div></li>
         </ul>
       </section>
 
       <!-- «Пора связаться»: first page, no search, there are contacts. Overdue first (longer overdue higher), then soon.
            In the app the server sends all 23 rows; collapsed shows 5, expanded 10 per page, in place, no reload -->
-      <section class="block" aria-labelledby="reminders-title" data-state="default reminders-all birthdays-all birthdays-page-2 no-birthdays no-groups deleted long-email">
+      <section class="block" aria-labelledby="reminders-title" data-state="default reminders-all birthdays-all birthdays-page-2 congratulated no-birthdays no-groups deleted long-email">
         <div class="block-head">
           <h2 class="block-title" id="reminders-title">Пора связаться</h2>
           <span class="counter">23</span>
@@ -261,7 +279,7 @@
           </li>
         </ul>
         <!-- collapsed: «Показать все (N)»; in the mockup the button switches the state -->
-        <div class="block-foot" data-state="default birthdays-all birthdays-page-2 no-birthdays no-groups deleted long-email">
+        <div class="block-foot" data-state="default birthdays-all birthdays-page-2 congratulated no-birthdays no-groups deleted long-email">
           <button class="btn btn-ghost btn-sm btn-teal" type="button" aria-expanded="false" onclick="location.hash='reminders-all'">Показать все (23)<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         </div>
         <!-- expanded: the block's own pager, «Свернуть» on the right; stacked at 560px and below -->
@@ -312,7 +330,7 @@
       </section>
 
       <!-- page 1 -->
-      <div class="list" data-state="default reminders-all birthdays-all birthdays-page-2 no-birthdays all-in-touch no-cadence no-groups deleted long-email">
+      <div class="list" data-state="default reminders-all birthdays-all birthdays-page-2 congratulated no-birthdays all-in-touch no-cadence no-groups deleted long-email">
         <div class="list-head" aria-hidden="true"><span>Имя</span><span>Кто это</span><span>Откуда знакомы</span><span>Группы</span><span></span></div>
         <ul>
           <li class="list-row">
@@ -500,7 +518,7 @@
       </div>
 
       <!-- pages of the list: links; the inactive arrow stays visible -->
-      <nav class="pager" aria-label="Страницы" data-state="default reminders-all birthdays-all birthdays-page-2 no-birthdays all-in-touch no-cadence no-groups deleted long-email">
+      <nav class="pager" aria-label="Страницы" data-state="default reminders-all birthdays-all birthdays-page-2 congratulated no-birthdays all-in-touch no-cadence no-groups deleted long-email">
         <span class="btn btn-outline btn-icon" role="link" aria-disabled="true" aria-label="Назад"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></span>
         <span class="counter">Страница <b>1</b> из 20</span>
         <a class="btn btn-outline btn-icon" href="#page-2" aria-label="Вперёд"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>

@@ -81,7 +81,9 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
         <ContactsSearch query={query} groupId={groupId} groups={groups} />
       </Form>
 
-      {birthdayRows.length > 0 && <BirthdaysBlock rows={birthdayRows} />}
+      {birthdayRows.length > 0 && (
+        <BirthdaysBlock rows={birthdayRows} returnTo={groupId ? `/?group=${groupId}` : "/"} />
+      )}
 
       {reminders && (
         <RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />

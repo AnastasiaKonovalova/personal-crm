@@ -50,6 +50,19 @@ export function nextBirthday(
   throw new Error("No birthday ahead");
 }
 
+// Whether «Поздравил(а)» was pressed for the birthday shown today. The button is only in the block, so a
+// congratulation is never earlier than SOON_DAYS before the celebrated date; an older one is for a past
+// birthday, and the row comes back by itself the next year
+export function isCongratulated(
+  { day, month, leapDay }: Pick<Birthday, "day" | "month" | "leapDay">,
+  congratulatedOn: string | null,
+  today: string,
+): boolean {
+  if (congratulatedOn === null) return false;
+  const { on } = nextBirthday(month, day, leapDay, today);
+  return daysBetween(congratulatedOn, on) <= SOON_DAYS;
+}
+
 // The age turned on the celebrated date
 export function ageOn(birthYear: number, celebratedOn: string): number {
   return parseDate(celebratedOn).year - birthYear;

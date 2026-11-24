@@ -186,6 +186,39 @@ test("scenarios «Много дней рождения», «Листание б�
   expect(calls).toEqual([]);
 });
 
+test("scenario «Поздравил(а)»: the row leaves in place, the expansion drops at 5, the note is in the card", async ({
+  page,
+}) => {
+  const { groupId, names } = await seedGroup("поздравил", 6);
+  await page.goto(`/groups/${groupId}`);
+  await markPage(page);
+
+  await block(page).getByRole("button", { name: "Показать все (6)" }).click();
+  await expectVisibleNames(page, names);
+  await block(page)
+    .getByRole("button", { name: `Поздравил(а): ${names[0]}` })
+    .click();
+
+  await expect(block(page).getByRole("link", { name: names[0] })).toHaveCount(0);
+  await expectVisibleNames(page, names.slice(1));
+  await expect(block(page).getByRole("button", { name: "Свернуть" })).toHaveCount(0);
+  await expect(block(page).getByRole("button", { name: /Показать все/ })).toHaveCount(0);
+  // Counted as «Связались»: the contact leaves «Пора связаться» too
+  await expect(
+    page.getByRole("region", { name: "Пора связаться" }).getByRole("link", { name: names[0] }),
+  ).toHaveCount(0);
+  await expectNotReloaded(page);
+
+  const { rows } = await withPool((pool) =>
+    pool.query<{ id: string }>("select id from contacts where user_id = $1 and name = $2", [
+      user.id,
+      names[0],
+    ]),
+  );
+  await page.goto(`/contacts/${rows[0].id}`);
+  await expect(page.getByTestId("notes")).toContainText("Поздравил(а)");
+});
+
 test("scenario «Браузер без JavaScript»: all 14 rows, no buttons and no pager", async ({
   browser,
 }) => {

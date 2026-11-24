@@ -109,7 +109,7 @@ export default async function GroupPage({
         />
       </Form>
 
-      {birthdayRows.length > 0 && <BirthdaysBlock rows={birthdayRows} />}
+      {birthdayRows.length > 0 && <BirthdaysBlock rows={birthdayRows} returnTo={groupHref} />}
 
       {reminders && (
         <RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />

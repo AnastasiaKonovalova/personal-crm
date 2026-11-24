@@ -7,6 +7,7 @@ import { contactSchema } from "@/lib/validation";
 import {
   addContactToGroup,
   addNote,
+  congratulate,
   createContact,
   deleteContact,
   getContact,
@@ -153,6 +154,16 @@ describe("only own data on the screens", () => {
     await contact(b, "Свой", tomorrow);
 
     expect((await listBirthdays(b.id)).map((item) => item.name)).toEqual(["Свой"]);
+    expect((await listBirthdays(a.id)).map((item) => item.name)).toEqual(["Именинник"]);
+  });
+
+  it("does not congratulate a contact of A for a request of B (scenario «Чужой контакт» of contact-birthdays)", async () => {
+    const { month, day } = parseDate(toDateString(new Date(Date.now() + 86_400_000)));
+    const id = await contact(a, "Именинник", { birthDay: String(day), birthMonth: String(month) });
+    const before = await storedContact(id);
+
+    expect(await congratulate(b.id, id)).toBeNull();
+    expect(await storedContact(id)).toEqual(before);
     expect((await listBirthdays(a.id)).map((item) => item.name)).toEqual(["Именинник"]);
   });
 

@@ -5,8 +5,8 @@ import { BirthdaysBlock, type BirthdayBlockRow } from "@/components/birthdays-bl
 
 // The server render of the «Скоро день рождения» block: what a visitor sees before (or without) JavaScript
 
-function render(rows: BirthdayBlockRow[]) {
-  return renderToStaticMarkup(createElement(BirthdaysBlock, { rows }));
+function render(rows: BirthdayBlockRow[], returnTo = "/") {
+  return renderToStaticMarkup(createElement(BirthdaysBlock, { rows, returnTo }));
 }
 
 function tomorrowRows(count: number): BirthdayBlockRow[] {
@@ -55,6 +55,17 @@ describe("BirthdaysBlock rows", () => {
     expect(html).toContain('href="/contacts/00000000-0000-4000-8000-000000000001"');
     expect(html).toContain("Сегодня · 22 ноября · исполняется 36");
     expect(html).toContain("Завтра · 23 ноября<");
+  });
+
+  it("a row has «Поздравил(а)» with the name in its label and the page to return to (requirement «Отметка «Поздравил(а)»»)", () => {
+    const groupPage = "/groups/3f1c2b9e-7a4d-4e8f-9b2a-1c5d6e7f8a90";
+    const html = render(tomorrowRows(2), groupPage);
+    expect(html.split('aria-label="Поздравил(а): ').length - 1).toBe(2);
+    expect(html).toContain('aria-label="Поздравил(а): Контакт 1"');
+    expect(html).toContain('name="contactId" value="00000000-0000-4000-8000-000000000000"');
+    expect(html.split(`name="returnTo" value="${groupPage}"`).length - 1).toBe(2);
+    // The text next to the icon, hidden on phones only
+    expect(html).toContain(">Поздравил(а)</span>");
   });
 
   it("dots (decision 39): yesterday as overdue, today as soon, none later", () => {

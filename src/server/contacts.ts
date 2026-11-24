@@ -1,7 +1,7 @@
 import { type SQL, and, count, desc, eq, ilike, inArray, isNotNull, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { contactGroups, contacts, notes } from "@/db/schema";
-import { type Birthday, nextBirthday, sortForBirthdays } from "@/lib/birthdays";
+import { type Birthday, isCongratulated, nextBirthday, sortForBirthdays } from "@/lib/birthdays";
 import {
   type Cadence,
   dueDate,
@@ -153,7 +153,8 @@ export async function listReminders(userId: string, { groupId }: { groupId?: str
 
 // The "Скоро день рождения" block: contacts whose birthday was yesterday, is today or within SOON_DAYS,
 // in display order. Birthdays are a few hundred at most, so the window (across the New Year and
-// 29 February) is computed here, not in SQL. A malformed or missing group is ignored, like in the list
+// 29 February) is computed here, not in SQL. A birthday already congratulated is left out until the
+// next one. A malformed or missing group is ignored, like in the list
 export async function listBirthdays(userId: string, { groupId }: { groupId?: string } = {}) {
   const group = await findGroup(userId, groupId);
   const rows = await getDb()
@@ -164,6 +165,7 @@ export async function listBirthdays(userId: string, { groupId }: { groupId?: str
       month: contacts.birthMonth,
       year: contacts.birthYear,
       leapDay: contacts.birthLeapDay,
+      congratulatedOn: contacts.birthCongratulatedOn,
     })
     .from(contacts)
     .where(
@@ -176,10 +178,11 @@ export async function listBirthdays(userId: string, { groupId }: { groupId?: str
 
   const today = toDateString(new Date());
   return sortForBirthdays(
-    rows.flatMap(({ id, name, day, month, year, leapDay }) => {
+    rows.flatMap(({ id, name, day, month, year, leapDay, congratulatedOn }) => {
       // The CHECK keeps day and month together; this only narrows the types
       if (day === null || month === null) return [];
       const birthday: Birthday = { day, month, year, leapDay };
+      if (isCongratulated(birthday, congratulatedOn, today)) return [];
       return [{ id, name, days: nextBirthday(month, day, leapDay, today).days, birthday }];
     }),
   );
@@ -368,6 +371,33 @@ export async function deleteContact(userId: string, id: string) {
   return deleted?.id ?? null;
 }
 
+// A new note of the user's contact inside the caller's transaction, with what keep-in-touch does after
+// a note: the term starts again from it, and a specific date it settles is cleared. Null when the
+// contact is not the user's
+async function addNoteIn(tx: Executor, userId: string, contactId: string, body: string) {
+  const [contact] = await tx
+    .select({ cadence: contacts.cadence, contactOn: contacts.contactOn })
+    .from(contacts)
+    .where(and(eq(contacts.id, contactId), eq(contacts.userId, userId)));
+  if (!contact) {
+    return null;
+  }
+
+  const [note] = await tx.insert(notes).values({ contactId, body }).returning();
+
+  // A date is settled by a note made when it is overdue or soon; a note long before it leaves it
+  if (contact.cadence === "date" && contact.contactOn) {
+    const { kind } = statusOn(contact.contactOn, toDateString(note.createdAt), "date");
+    if (kind !== "ok") {
+      await tx
+        .update(contacts)
+        .set({ cadence: null, contactOn: null })
+        .where(eq(contacts.id, contactId));
+    }
+  }
+  return note;
+}
+
 export async function addNote(userId: string, contactId: string, body: string) {
   if (!UUID_PATTERN.test(contactId)) {
     return null;
@@ -375,27 +405,29 @@ export async function addNote(userId: string, contactId: string, body: string) {
   const db = getDb();
   // One transaction: the note and, when it settles a specific date, the clearing of that date
   return safeWrite("add note", () =>
+    db.transaction((tx) => addNoteIn(tx, userId, contactId, body)),
+  );
+}
+
+const CONGRATULATED_NOTE = "Поздравил(а)";
+
+// «Поздравил(а)» in the «Скоро день рождения» block: one transaction for the note (a regular one, as
+// «Связались») and the day of the congratulation, which hides the birthday until the next one
+export async function congratulate(userId: string, contactId: string) {
+  if (!UUID_PATTERN.test(contactId)) {
+    return null;
+  }
+  const db = getDb();
+  return safeWrite("congratulate", () =>
     db.transaction(async (tx) => {
-      const [contact] = await tx
-        .select({ cadence: contacts.cadence, contactOn: contacts.contactOn })
-        .from(contacts)
-        .where(and(eq(contacts.id, contactId), eq(contacts.userId, userId)));
-      if (!contact) {
+      const note = await addNoteIn(tx, userId, contactId, CONGRATULATED_NOTE);
+      if (!note) {
         return null;
       }
-
-      const [note] = await tx.insert(notes).values({ contactId, body }).returning();
-
-      // A date is settled by a note made when it is overdue or soon; a note long before it leaves it
-      if (contact.cadence === "date" && contact.contactOn) {
-        const { kind } = statusOn(contact.contactOn, toDateString(note.createdAt), "date");
-        if (kind !== "ok") {
-          await tx
-            .update(contacts)
-            .set({ cadence: null, contactOn: null })
-            .where(eq(contacts.id, contactId));
-        }
-      }
+      await tx
+        .update(contacts)
+        .set({ birthCongratulatedOn: toDateString(note.createdAt) })
+        .where(eq(contacts.id, contactId));
       return note;
     }),
   );

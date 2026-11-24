@@ -1,5 +1,5 @@
 {
-  "id": "5f41e2ef-2d36-4fc2-b6e1-fba416edfc90",
+  "id": "2767830d-8101-4c88-aad2-aed613f29349",
   "prevId": "3d99e027-2097-4ea0-abdb-eb8363fce557",
   "version": "7",
   "dialect": "postgresql",
@@ -285,6 +285,12 @@
           "name": "birth_leap_day",
           "type": "birth_leap_day",
           "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "birth_congratulated_on": {
+          "name": "birth_congratulated_on",
+          "type": "date",
           "primaryKey": false,
           "notNull": false
         },

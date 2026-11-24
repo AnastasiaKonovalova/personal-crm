@@ -1,8 +1,17 @@
+import { Pool } from "pg";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { closeDb } from "@/db";
-import { parseDate, toDateString } from "@/lib/keep-in-touch";
+import { addPeriod, parseDate, toDateString } from "@/lib/keep-in-touch";
 import { contactSchema } from "@/lib/validation";
-import { createContact, getContact, listBirthdays, updateContact } from "@/server/contacts";
+import {
+  congratulate,
+  createContact,
+  getContact,
+  getContactWithNotes,
+  listBirthdays,
+  listReminders,
+  updateContact,
+} from "@/server/contacts";
 import { createGroup } from "@/server/groups";
 import { type TestUser, createTestUser } from "./helpers/test-user";
 
@@ -20,7 +29,11 @@ afterEach(async () => {
   await user.remove();
 });
 
+// For what the app cannot do by itself: a creation date in the past, a congratulation a year ago
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
 afterAll(async () => {
+  await pool.end();
   await closeDb();
 });
 
@@ -167,5 +180,94 @@ describe("listBirthdays (requirement «Блок „Скоро день рожд�
   it("ignores a malformed or missing group, like the list", async () => {
     await contact("Анна", inDays(1));
     expect(names(await listBirthdays(user.id, { groupId: "not-a-uuid" }))).toEqual(["Анна"]);
+  });
+});
+
+describe("congratulate (requirement «Отметка «Поздравил(а)»»)", () => {
+  const names = (items: { name: string }[]) => items.map((item) => item.name);
+  const today = () => toDateString(new Date());
+
+  // A contact with a cadence, created `createdDaysAgo` days ago, so it is overdue without waiting
+  async function insertWithCadence(
+    name: string,
+    birthday: BirthdayForm,
+    cadence: { cadence: "week" | "date"; contactOn?: string; createdDaysAgo: number },
+  ) {
+    const { rows } = await pool.query<{ id: string }>(
+      `insert into contacts (user_id, name, birth_day, birth_month, birth_leap_day, cadence, contact_on, created_at)
+       values ($1, $2, $3, $4, $5, $6::contact_cadence, $7, now() - $8 * interval '1 day') returning id`,
+      [
+        user.id,
+        name,
+        Number(birthday.birthDay),
+        Number(birthday.birthMonth),
+        // 29 February needs the choice; the default one
+        birthday.birthDay === "29" && birthday.birthMonth === "2" ? "feb_28" : null,
+        cadence.cadence,
+        cadence.contactOn ?? null,
+        cadence.createdDaysAgo,
+      ],
+    );
+    return rows[0].id;
+  }
+
+  it("scenario «Поздравил(а)»: the row leaves the block, the note «Поздравил(а)» is on top of the card", async () => {
+    const anna = await contact("Анна", inDays(1));
+    await contact("Борис", inDays(2));
+
+    const note = await congratulate(user.id, anna);
+    expect(note?.body).toBe("Поздравил(а)");
+    expect(names(await listBirthdays(user.id))).toEqual(["Борис"]);
+    const card = await getContactWithNotes(user.id, anna);
+    expect(card?.notes.map((item) => item.body)).toEqual(["Поздравил(а)"]);
+    expect(card?.contact.birthCongratulatedOn).toBe(today());
+  });
+
+  it("scenario «Поздравили вчерашнего»: yesterday's birthday leaves the block", async () => {
+    const gleb = await contact("Глеб", inDays(-1));
+    await congratulate(user.id, gleb);
+    expect(await listBirthdays(user.id)).toEqual([]);
+  });
+
+  it("scenario «До следующего дня рождения»: congratulated a year ago, 7 days to the next one - back in the block", async () => {
+    const anna = await contact("Анна", inDays(7));
+    await pool.query(
+      "update contacts set birth_congratulated_on = (now() at time zone 'Europe/Moscow')::date - 358 where id = $1",
+      [anna],
+    );
+    expect(names(await listBirthdays(user.id))).toEqual(["Анна"]);
+  });
+
+  it("scenario «Считается как «Связались»»: the contact leaves «Пора связаться», the term counts from today", async () => {
+    const anna = await insertWithCadence("Анна", inDays(1), {
+      cadence: "week",
+      createdDaysAgo: 30,
+    });
+    expect(names((await listReminders(user.id)).items)).toEqual(["Анна"]);
+
+    await congratulate(user.id, anna);
+    expect((await listReminders(user.id)).items).toEqual([]);
+    const card = await getContactWithNotes(user.id, anna);
+    expect(card?.keepInTouch.dueOn).toBe(addPeriod(today(), "week"));
+    expect(card?.contact.cadence).toBe("week");
+  });
+
+  it("scenario «Конкретная дата связи»: the specific date in 3 days is cleared, like after «Связались»", async () => {
+    const { rows } = await pool.query<{ on: string }>(
+      "select to_char((now() at time zone 'Europe/Moscow')::date + 3, 'YYYY-MM-DD') as on",
+    );
+    const anna = await insertWithCadence("Анна", inDays(1), {
+      cadence: "date",
+      contactOn: rows[0].on,
+      createdDaysAgo: 1,
+    });
+
+    await congratulate(user.id, anna);
+    expect(await getContact(user.id, anna)).toMatchObject({ cadence: null, contactOn: null });
+  });
+
+  it("changes nothing for a missing or malformed contact id", async () => {
+    expect(await congratulate(user.id, "00000000-0000-4000-8000-000000000000")).toBeNull();
+    expect(await congratulate(user.id, "not-a-uuid")).toBeNull();
   });
 });

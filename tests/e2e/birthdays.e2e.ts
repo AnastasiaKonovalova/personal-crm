@@ -266,7 +266,9 @@ function birthdaysBlock(html: string) {
 
 // The block row of one contact: from its link to the end of the <li>
 function blockRow(html: string, id: string) {
-  return visibleText(birthdaysBlock(html).split(`href="/contacts/${id}"`)[1]?.split("</li>")[0] ?? "");
+  return visibleText(
+    birthdaysBlock(html).split(`href="/contacts/${id}"`)[1]?.split("</li>")[0] ?? "",
+  );
 }
 
 describe("the «Скоро день рождения» block", () => {
@@ -348,6 +350,57 @@ describe("the «Скоро день рождения» block", () => {
     );
     expect(await user.getPage("/?page=2")).not.toContain(BLOCK_TITLE);
     expect(await user.getPage("/")).toContain(BLOCK_TITLE);
+  });
+});
+
+describe("«Поздравил(а)» without JavaScript (requirement «Отметка «Поздравил(а)»»)", () => {
+  const prefix = `Поздравил ${marker}`;
+  const button = (name: string) => `aria-label="Поздравил(а): ${name}"`;
+
+  async function noteBodies(contactId: string) {
+    const { rows } = await withPool((pool) =>
+      pool.query<{ body: string }>("select body from notes where contact_id = $1", [contactId]),
+    );
+    return rows.map((row) => row.body);
+  }
+
+  it("scenario «Поздравил(а) без JavaScript»: the note is added, back to the same group page without the row", async () => {
+    const groupId = await insertGroup(user.id, `${prefix} Хор`);
+    const gleb = `${prefix} Глеб`;
+    const glebId = await insertContact(user.id, gleb, { inDays: 1, groupId });
+    const dinaId = await insertContact(user.id, `${prefix} Дина`, { inDays: 1, groupId });
+
+    const response = await user.submitForm(`/groups/${groupId}`, {}, button(gleb));
+    // A redirect (not the page in the POST answer), so refreshing the page cannot send the form again
+    expect(response.headers.get("location") ?? "", `got ${response.status}`).toMatch(
+      new RegExp(`/groups/${groupId}$`),
+    );
+
+    expect(await noteBodies(glebId)).toEqual(["Поздравил(а)"]);
+    const block = birthdaysBlock(await user.getPage(`/groups/${groupId}`));
+    expect(block).not.toContain(`href="/contacts/${glebId}"`);
+    expect(block).toContain(`href="/contacts/${dinaId}"`);
+  });
+
+  it("scenario «Последний в блоке»: the only row congratulated on the filtered main page - no block there", async () => {
+    const groupId = await insertGroup(user.id, `${prefix} Один`);
+    const vera = `${prefix} Вера`;
+    const veraId = await insertContact(user.id, vera, { inDays: 0, groupId });
+    const page = `/?group=${groupId}`;
+
+    const response = await user.submitForm(page, {}, button(vera));
+    expect(response.headers.get("location") ?? "", `got ${response.status}`).toMatch(
+      new RegExp(`/\\?group=${groupId}$`),
+    );
+    expect(await noteBodies(veraId)).toEqual(["Поздравил(а)"]);
+    expect(await user.getPage(page)).not.toContain(BLOCK_TITLE);
+  });
+
+  it("scenario «Только в блоке»: no «Поздравил(а)» in the card of a contact with the birthday tomorrow", async () => {
+    const id = await insertContact(user.id, `${prefix} Карточка`, { inDays: 1 });
+    const card = await user.getPage(`/contacts/${id}`);
+    expect(visibleText(card)).toContain(`${prefix} Карточка`);
+    expect(card).not.toContain("Поздравил(а)");
   });
 });
 

@@ -187,20 +187,21 @@ button, input, select, textarea { font: inherit; color: inherit; background: non
   .block-foot-paged > .btn { margin-left: 0; }
 }
 
-/* «Скоро день рождения» block (components/birthdays-block.tsx, planned): the same card, rows and foot
-   as «Пора связаться»; no dot and no button in the row; Lucide `cake` at the title -------------------- */
+/* «Скоро день рождения» block (components/birthdays-block.tsx): the same card, rows and foot
+   as «Пора связаться»; Lucide `cake` at the title and on «Поздравил(а)» in the row ------------------- */
 .block-title-icon { display: inline-flex; align-items: center; gap: 10px; }
 .block-title-icon .i { width: 22px; height: 22px; color: var(--teal-deep); }
-/* row: dot slot, name, below «when · date · age»; no button, so no third column.
+/* row: dot slot, name, below «when · date · age», «Поздравил(а)» on the right as «Связались».
    Dots as «Пора связаться»: yesterday = .dot-overdue, today = .dot-soon, other rows an empty slot */
-.bday-row { grid-template-columns: 8px minmax(0, 1fr); }
+.bday-row { grid-template-columns: 8px minmax(0, 1fr) auto; }
 
-/* «Связались» (components/mark-contacted-button.tsx, contacted-icon.tsx) ------------------------- */
+/* «Связались» (components/mark-contacted-button.tsx, contacted-icon.tsx) and «Поздравил(а)»
+   (components/congratulate-button.tsx, planned): the same ghost button, 22px `teal-deep` icon ------ */
 .contacted-form { display: grid; justify-items: end; gap: 4px; }
-.contacted .i-contacted { width: 22px; height: 22px; color: var(--teal-deep); }
+.contacted .i-contacted, .congrats .i { width: 22px; height: 22px; color: var(--teal-deep); }
 @media (max-width: 560px) {
-  .contacted-compact { width: var(--hit-carousel); height: var(--hit-carousel); gap: 0; padding: 0; }
-  .contacted-compact .contacted-label { display: none; }
+  .contacted-compact, .congrats-compact { width: var(--hit-carousel); height: var(--hit-carousel); gap: 0; padding: 0; }
+  .contacted-compact .contacted-label, .congrats-compact .congrats-label { display: none; }
 }
 
 /* contact list (components/contact-list.tsx, row-groups.tsx, groups-more.tsx) -------------------- */

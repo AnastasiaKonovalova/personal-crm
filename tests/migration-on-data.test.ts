@@ -505,7 +505,8 @@ describe("data checks per migration", () => {
             pool,
             `select count(*)::int as n from contacts
              where birth_day is not null or birth_month is not null
-               or birth_year is not null or birth_leap_day is not null`,
+               or birth_year is not null or birth_leap_day is not null
+               or birth_congratulated_on is not null`,
           ),
       },
     );
@@ -518,7 +519,13 @@ describe("data checks per migration", () => {
     expect(report.problems).toEqual([]);
     expect(report.newTables).toEqual([]);
     expect(report.newColumns).toEqual({
-      contacts: ["birth_day", "birth_month", "birth_year", "birth_leap_day"],
+      contacts: [
+        "birth_day",
+        "birth_month",
+        "birth_year",
+        "birth_leap_day",
+        "birth_congratulated_on",
+      ],
     });
     expect(report.inspected).toBe(0);
   });

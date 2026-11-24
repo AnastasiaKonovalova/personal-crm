@@ -385,15 +385,27 @@ const BIRTHDAY_SHARE = 0.3;
 // so the expanded block has two pages. Just outside it: 2 days ago and in 8 days
 const WINDOW_OFFSETS = [-1, 0, 0, 1, 2, 3, 3, 4, 5, 6, 7, 7];
 const OUTSIDE_OFFSETS = [-2, 8];
+// One more birthday tomorrow, already congratulated today: not in the block, the note in the card
+const CONGRATULATED_OFFSET = 1;
+// The same text as `congratulate` in src/server/contacts.ts writes
+const CONGRATULATED_NOTE = "Поздравил(а)";
 
 type LeapDay = "feb_28" | "mar_1";
-type BirthdayRow = { day: number; month: number; year: number | null; leapDay: LeapDay | null };
+type BirthdayRow = {
+  day: number;
+  month: number;
+  year: number | null;
+  leapDay: LeapDay | null;
+  congratulated?: boolean;
+};
 
 // A third of the dates without the year
 function birthYear() {
-  return faker.helpers.maybe(() => faker.number.int({ min: 1955, max: 2005 }), {
-    probability: 2 / 3,
-  }) ?? null;
+  return (
+    faker.helpers.maybe(() => faker.number.int({ min: 1955, max: 2005 }), {
+      probability: 2 / 3,
+    }) ?? null
+  );
 }
 
 function shiftedBirthday(today: string, offset: number): BirthdayRow {
@@ -451,6 +463,7 @@ async function seedBirthdays(db: Db, ownerId: string) {
   const today = toDateString(new Date());
   const fixed: BirthdayRow[] = [
     ...[...WINDOW_OFFSETS, ...OUTSIDE_OFFSETS].map((offset) => shiftedBirthday(today, offset)),
+    { ...shiftedBirthday(today, CONGRATULATED_OFFSET), congratulated: true },
     { day: 29, month: 2, year: 1992, leapDay: "feb_28" },
     { day: 29, month: 2, year: null, leapDay: "mar_1" },
   ];
@@ -469,8 +482,12 @@ async function seedBirthdays(db: Db, ownerId: string) {
           birthMonth: birthday.month,
           birthYear: birthday.year,
           birthLeapDay: birthday.leapDay,
+          birthCongratulatedOn: birthday.congratulated ? today : null,
         })
         .where(eq(contacts.id, contactIds[index]));
+      if (birthday.congratulated) {
+        await tx.insert(notes).values({ contactId: contactIds[index], body: CONGRATULATED_NOTE });
+      }
     }
   });
 

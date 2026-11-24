@@ -59,16 +59,17 @@
         </div>
       </form>
 
-      <!-- «Скоро день рождения» of the group: the same rules as on the main page; three rows, no button -->
+      <!-- «Скоро день рождения» of the group: the same rules as on the main page; three rows, no «Показать все»;
+           «Поздравил(а)» without JS returns to this group page -->
       <section class="block" aria-labelledby="birthdays-title" data-state="default">
         <div class="block-head">
           <h2 class="block-title block-title-icon" id="birthdays-title"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg>Скоро день рождения</h2>
           <span class="counter">3</span>
         </div>
         <ul>
-          <li class="block-row bday-row"><span class="dot-slot"><span class="dot dot-soon" aria-hidden="true"></span></span><a class="block-name" href="contact.html">Анна Смирнова</a><p class="block-meta">Сегодня · 22 ноября · исполняется 36</p></li>
-          <li class="block-row bday-row"><span class="dot-slot"></span><a class="block-name" href="contact.html#birthday-no-year">Вера Лебедева</a><p class="block-meta">Завтра · 23 ноября</p></li>
-          <li class="block-row bday-row"><span class="dot-slot"></span><a class="block-name" href="contact.html">Иван Петров</a><p class="block-meta">Через 4 дня · 26 ноября · исполнится 40</p></li>
+          <li class="block-row bday-row"><span class="dot-slot"><span class="dot dot-soon" aria-hidden="true"></span></span><a class="block-name" href="contact.html">Анна Смирнова</a><p class="block-meta">Сегодня · 22 ноября · исполняется 36</p><div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Анна Смирнова"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div></li>
+          <li class="block-row bday-row"><span class="dot-slot"></span><a class="block-name" href="contact.html#birthday-no-year">Вера Лебедева</a><p class="block-meta">Завтра · 23 ноября</p><div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Вера Лебедева"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div></li>
+          <li class="block-row bday-row"><span class="dot-slot"></span><a class="block-name" href="contact.html">Иван Петров</a><p class="block-meta">Через 4 дня · 26 ноября · исполнится 40</p><div class="block-action"><form class="contacted-form"><button class="btn btn-ghost btn-sm congrats congrats-compact" type="button" aria-label="Поздравил(а): Иван Петров"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/></svg><span class="congrats-label">Поздравил(а)</span></button></form></div></li>
         </ul>
       </section>
 
