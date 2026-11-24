@@ -250,7 +250,7 @@ async function fillContactsWithCadence(pool: Pool, owner?: string) {
   await fillNotes(pool);
 }
 
-// The same contacts and notes for the schema after all real migrations (the self-checks append theirs after 0003)
+// The same contacts and notes for the schema from 0003 on (the self-checks append theirs after the last migration)
 const CHECK_USER = "check-user";
 async function fillContactsOfUser(pool: Pool) {
   await pool.query(
@@ -258,6 +258,23 @@ async function fillContactsOfUser(pool: Pool) {
     [CHECK_USER],
   );
   await fillContactsWithCadence(pool, CHECK_USER);
+}
+
+// Contacts of one user with notes, groups and memberships, for the schema from 0003 on
+async function fillContactsGroupsNotesOfUser(pool: Pool) {
+  await fillContactsOfUser(pool);
+  await pool.query(
+    `insert into groups (user_id, name, created_at) values
+      ($1, 'Друзья', now() - interval '20 days'),
+      ($1, 'Соседи', now() - interval '10 days')`,
+    [CHECK_USER],
+  );
+  await pool.query(`
+    insert into contact_groups (contact_id, group_id)
+    select c.id, g.id from contacts c join groups g
+      on (c.name = 'Анна Тестова' and g.name in ('Друзья', 'Соседи'))
+      or (c.name = 'Вера Ёлкина' and g.name = 'Соседи')
+  `);
 }
 
 async function fillNotes(pool: Pool) {
@@ -308,7 +325,12 @@ const outcome = (pool: Pool, sql: string, params: unknown[] = []) =>
   );
 
 // One test per migration from the journal; the first one runs on an empty database and has none
-const CHECKED_MIGRATIONS = ["0001_unique_rachel_grey", "0002_gorgeous_magdalene", "0003_login"];
+const CHECKED_MIGRATIONS = [
+  "0001_unique_rachel_grey",
+  "0002_gorgeous_magdalene",
+  "0003_login",
+  "0004_birthdays",
+];
 
 describe("data checks per migration", () => {
   it("every migration has a data check", async () => {
@@ -470,6 +492,94 @@ describe("data checks per migration", () => {
       contactWithoutOwner: "23502", // not null violation
       contactOfUnknownUser: "23503", // foreign key violation
       groupWithoutOwner: "23502",
+    });
+  });
+
+  it("0004 birthdays: old contacts get no birthday, data, notes and groups unchanged (scenario «Существующие контакты после выкатки»)", async () => {
+    const report = await checkMigration(
+      { tag: "0004_birthdays" },
+      {
+        fill: fillContactsGroupsNotesOfUser,
+        inspect: (pool) =>
+          count(
+            pool,
+            `select count(*)::int as n from contacts
+             where birth_day is not null or birth_month is not null
+               or birth_year is not null or birth_leap_day is not null
+               or birth_congratulated_on is not null`,
+          ),
+      },
+    );
+    expect(report.rowsBefore).toMatchObject({
+      contacts: 4,
+      notes: 3,
+      groups: 2,
+      contact_groups: 3,
+    });
+    expect(report.problems).toEqual([]);
+    expect(report.newTables).toEqual([]);
+    expect(report.newColumns).toEqual({
+      contacts: [
+        "birth_day",
+        "birth_month",
+        "birth_year",
+        "birth_leap_day",
+        "birth_congratulated_on",
+      ],
+    });
+    expect(report.inspected).toBe(0);
+  });
+
+  it("0004 birthdays: the database lets in only a whole birthday, the leap day choice only for 29 February (design.md decision 1)", async () => {
+    // [day, month, year, leap day choice]
+    const insert = (pool: Pool, birthday: [unknown, unknown, unknown, unknown]) =>
+      outcome(
+        pool,
+        `insert into contacts (user_id, name, birth_day, birth_month, birth_year, birth_leap_day)
+         values ($1, 'Проба', $2, $3, $4, $5)`,
+        [CHECK_USER, ...birthday],
+      );
+    const report = await checkMigration(
+      { tag: "0004_birthdays" },
+      {
+        fill: fillContactsOfUser,
+        inspect: async (pool) => ({
+          none: await insert(pool, [null, null, null, null]),
+          withoutYear: await insert(pool, [3, 3, null, null]),
+          withYear: await insert(pool, [25, 11, 1990, null]),
+          leapDayFeb28: await insert(pool, [29, 2, null, "feb_28"]),
+          leapDayMar1: await insert(pool, [29, 2, 1992, "mar_1"]),
+          dayWithoutMonth: await insert(pool, [3, null, null, null]),
+          monthWithoutDay: await insert(pool, [null, 4, null, null]),
+          yearWithoutDay: await insert(pool, [null, null, 1990, null]),
+          choiceForOtherDate: await insert(pool, [3, 3, null, "mar_1"]),
+          choiceWithoutDate: await insert(pool, [null, null, null, "feb_28"]),
+          leapDayWithoutChoice: await insert(pool, [29, 2, null, null]),
+          day0: await insert(pool, [0, 1, null, null]),
+          day32: await insert(pool, [32, 1, null, null]),
+          month13: await insert(pool, [1, 13, null, null]),
+          year1899: await insert(pool, [1, 1, 1899, null]),
+          unknownChoice: await insert(pool, [29, 2, null, "mar_2"]),
+        }),
+      },
+    );
+    expect(report.inspected).toEqual({
+      none: "ok",
+      withoutYear: "ok",
+      withYear: "ok",
+      leapDayFeb28: "ok",
+      leapDayMar1: "ok",
+      dayWithoutMonth: "23514", // check violation
+      monthWithoutDay: "23514",
+      yearWithoutDay: "23514",
+      choiceForOtherDate: "23514",
+      choiceWithoutDate: "23514",
+      leapDayWithoutChoice: "23514",
+      day0: "23514",
+      day32: "23514",
+      month13: "23514",
+      year1899: "23514",
+      unknownChoice: "22P02", // invalid input value for enum
     });
   });
 });

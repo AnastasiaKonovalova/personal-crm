@@ -115,7 +115,8 @@ html:not([data-js]) [data-js-only] {
   display: none !important;
 }
 html[data-js] [data-row-out],
-html[data-js] [data-cadence-date][data-visible="false"] {
+html[data-js] [data-cadence-date][data-visible="false"],
+html[data-js] [data-birth-leap][data-visible="false"] {
   display: none !important;
 }
 

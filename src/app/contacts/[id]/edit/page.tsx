@@ -25,7 +25,13 @@ export default async function EditContactPage({ params }: { params: Promise<{ id
       <BackLink href={`/contacts/${contact.id}`}>{contact.name}</BackLink>
       <h1 className="font-display text-page-title font-semibold">Редактирование контакта</h1>
       <ContactForm
-        contact={contact}
+        // The form holds strings, as the browser sends them
+        contact={{
+          ...contact,
+          birthDay: contact.birthDay?.toString() ?? null,
+          birthMonth: contact.birthMonth?.toString() ?? null,
+          birthYear: contact.birthYear?.toString() ?? null,
+        }}
         groups={groups.map(({ id: groupId, name }) => ({ id: groupId, name }))}
         groupIds={data.groups.map((group) => group.id)}
         cancelHref={`/contacts/${contact.id}`}

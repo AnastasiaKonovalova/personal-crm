@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { blockReturnTo } from "@/lib/block-return";
 import {
   cadenceSchemaFor,
   contactSchema,
@@ -15,6 +16,7 @@ import {
 import {
   addContactToGroup,
   addNote,
+  congratulate,
   createContact,
   deleteContact,
   getContact,
@@ -84,6 +86,10 @@ function readContactValues(formData: FormData): ContactFormValues {
     email: readString(formData, "email"),
     cadence: readString(formData, "cadence"),
     contactOn: readString(formData, "contactOn"),
+    birthDay: readString(formData, "birthDay"),
+    birthMonth: readString(formData, "birthMonth"),
+    birthYear: readString(formData, "birthYear"),
+    birthLeapDay: readString(formData, "birthLeapDay"),
     groupIds: readStrings(formData, "groupIds"),
     newGroup: readString(formData, "newGroup"),
   };
@@ -227,6 +233,30 @@ export async function markContactedAction(
   if (!(await calledFromJs())) {
     if (returnTo === "/") redirect("/");
     if (returnTo === "card") redirect(`/contacts/${contactId}`);
+  }
+  return { savedAt: Date.now() };
+}
+
+// «Поздравил(а)» in the «Скоро день рождения» block: the note «Поздравил(а)» (a regular one, as
+// «Связались») and the row leaves the block until the next birthday. Without JavaScript - a redirect
+// back to the page of the block (checked here: the value comes from the form); with it - in place
+export async function congratulateAction(
+  _previous: MarkContactedState,
+  formData: FormData,
+): Promise<MarkContactedState> {
+  const user = await requireUser();
+  const contactId = readString(formData, "contactId");
+  const returnTo = blockReturnTo(readString(formData, "returnTo"));
+
+  const note = await congratulate(user.id, contactId);
+  if (!note) {
+    return { error: "Контакт не найден" };
+  }
+
+  revalidatePath("/");
+  revalidatePath(`/contacts/${contactId}`);
+  if (!(await calledFromJs())) {
+    redirect(returnTo);
   }
   return { savedAt: Date.now() };
 }

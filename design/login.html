@@ -3,42 +3,55 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="states" content="default=Вход; error=«Проверь адрес почты»; throttled=«Слишком часто…»; sent=Ссылка отправлена; expired=Ссылка устарела (/login/expired)">
   <title>Вход — эскиз</title>
   <link rel="stylesheet" href="vendor/fonts.css">
   <link rel="stylesheet" href="vendor/tokens.css">
-  <link rel="stylesheet" href="vendor/styles.css">
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
-<div class="ak-root">
-  <header class="ak-header">
-    <div class="ak-wrap ak-bar">
-      <div class="ak-brand-group">
-        <a class="ak-brand ak-brand-logo" href="login.html">
-          <svg class="ak-logo" viewBox="0 0 38 28" width="33" height="24" aria-hidden="true"><circle class="ak-logo-fill" cx="14" cy="14" r="12"/><circle class="ak-logo-ring" cx="24" cy="14" r="11"/></svg>
-          <span>Свои люди<b>.</b></span>
-        </a>
-        <span class="ak-brand-note">личная CRM</span>
-      </div>
+  <!-- app/login/page.tsx, components/login-form.tsx; app/login/expired/page.tsx. No session: the header has only the brand -->
+  <header class="header">
+    <div class="header-bar">
+      <a class="brand" href="login.html"><svg viewBox="0 0 38 28" width="33" height="24" aria-hidden="true"><circle class="brand-fill" cx="14" cy="14" r="12"/><circle class="brand-ring" cx="24" cy="14" r="11"/></svg><span>Свои люди<span class="brand-dot">.</span></span></a>
+      <span class="brand-note">личная CRM</span>
     </div>
   </header>
 
-  <main class="ak-wrap ak-main ak-stack-y ak-login">
-    <div>
-      <h1 class="ak-page-title">Вход</h1>
-      <p class="ak-lede">Введи почту: пришлём ссылку для входа. Пароль не нужен.</p>
+  <!-- one column of 520px, everything centered; the field label and the error stay at the field edge -->
+  <main class="login">
+    <div data-state="default error throttled">
+      <h1 class="page-title">Вход</h1>
+      <p class="login-lede">Введи почту: пришлём ссылку для входа. Пароль не нужен.</p>
     </div>
-
-    <form class="ak-card ak-stack-y" action="login-sent.html" novalidate>
-      <div class="ak-field">
-        <label class="ak-field-label" for="email">Почта</label>
-        <input class="ak-input" id="email" name="email" type="email" placeholder="anna@example.com" autocomplete="email" autofocus>
+    <form class="card login-form" novalidate data-state="default error throttled">
+      <div class="field">
+        <label class="label" for="email">Почта</label>
+        <input class="input" id="email" name="email" type="email" autocomplete="email" placeholder="anna@example.com" data-state="default">
+        <input class="input" name="email" type="email" placeholder="anna@example.com" value="anna@" aria-invalid="true" aria-describedby="email-error" data-state="error">
+        <input class="input" name="email" type="email" placeholder="anna@example.com" value="anna@example.com" aria-describedby="email-limit" data-state="throttled">
+        <p class="field-error" id="email-error" data-state="error"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Проверь адрес почты</p>
+        <!-- the limit is not about the field: the field keeps its normal look -->
+        <p class="field-error" id="email-limit" role="alert" data-state="throttled"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Слишком часто, попробуй через несколько минут</p>
       </div>
-      <div class="ak-btn-row">
-        <button class="ak-btn ak-btn-primary" type="submit">Получить ссылку</button>
-      </div>
+      <div class="center"><button class="btn btn-primary" type="button" onclick="location.hash='sent'">Получить ссылку</button></div>
     </form>
+
+    <h1 class="page-title" data-state="sent">Вход</h1>
+    <section class="card login-sent" role="status" data-state="sent">
+      <span class="glyph" aria-hidden="true"><svg class="i i-lg" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+      <h2>Ссылка для входа отправлена на anna@example.com</h2>
+      <p>Открой письмо и нажми «Войти». Ссылка работает 15 минут.</p>
+      <a class="btn btn-ghost" href="#">Ввести другую почту</a>
+    </section>
+
+    <!-- /login/expired: every link that does not let in (old, used, replaced, unknown) -->
+    <div class="empty" data-state="expired">
+      <h1 class="empty-title">Ссылка устарела, запроси новую</h1>
+      <p>Ссылка работает 15 минут и только один раз.</p>
+      <div class="btn-center"><a class="btn btn-primary" href="#">Запросить новую ссылку</a></div>
+    </div>
   </main>
-</div>
+  <script src="states.js"></script>
 </body>
 </html>

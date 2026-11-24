@@ -3,106 +3,187 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="states" content="default=Основное: следующий раз скоро; overdue=Пора связаться, просрочено; no-cadence=Частота не задана; cadence-date=Конкретная дата: «Дата уже прошла»; saved=«Сохранено» и «Заметка сохранена»; no-groups=Ни в одной группе; remove-group=«Убрать из группы?»; delete=«Удалить контакт?»; note-edit=Правка заметки: «Заметка пустая»; no-notes=Заметок пока нет; birthday-no-year=День рождения без года; birthday-leap=День рождения 29 февраля; no-birthday=Дня рождения нет">
   <title>Карточка контакта — эскиз</title>
   <link rel="stylesheet" href="vendor/fonts.css">
   <link rel="stylesheet" href="vendor/tokens.css">
-  <link rel="stylesheet" href="vendor/styles.css">
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
-<div class="ak-root">
-  <header class="ak-header">
-    <div class="ak-wrap ak-bar">
-      <a class="ak-brand" href="contacts.html">Личная CRM<b>.</b></a>
+  <!-- app/contacts/[id]/page.tsx: back → name and actions → «Связь» → «Группы» → data (with «День рождения») → notes -->
+  <header class="header">
+    <div class="header-bar">
+      <a class="brand" href="contacts.html"><svg viewBox="0 0 38 28" width="33" height="24" aria-hidden="true"><circle class="brand-fill" cx="14" cy="14" r="12"/><circle class="brand-ring" cx="24" cy="14" r="11"/></svg><span>Свои люди<span class="brand-dot">.</span></span></a>
+      <span class="brand-note">личная CRM</span>
+      <div class="account">
+        <span class="account-email" title="anna@example.com">anna@example.com</span>
+        <form action="login.html"><button class="btn btn-ghost account-out" type="submit" aria-label="Выйти" title="Выйти"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span class="account-out-label">Выйти</span></button></form>
+      </div>
     </div>
   </header>
 
-  <main class="ak-wrap ak-main ak-stack-y ak-narrow">
-    <a class="ak-back" href="contacts.html">
-      <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-      Все контакты
-    </a>
+  <main class="page page-narrow">
+    <div><a class="btn btn-ghost btn-sm btn-bare" href="contacts.html"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Все контакты</a></div>
 
-    <div class="ak-page-head">
-      <h1 class="ak-page-title">Анна Смирнова</h1>
-      <div class="ak-page-actions">
-        <a class="ak-btn ak-btn-ghost ak-btn-sm" href="contact-edit.html">
-          <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
-          Редактировать
-        </a>
-        <a class="ak-btn ak-btn-text ak-btn-sm" href="contact-delete.html">
-          <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-          Удалить
-        </a>
+    <div class="page-head">
+      <h1 class="page-title">Анна Смирнова</h1>
+      <div class="page-actions">
+        <a class="btn btn-outline btn-sm" href="contact-form.html#edit"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>Редактировать</a>
+        <button class="btn btn-ghost btn-sm btn-bare" type="button" onclick="location.hash='delete'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>Удалить</button>
       </div>
     </div>
 
-    <section class="ak-card" aria-label="Данные контакта">
-      <dl class="ak-dl">
-        <div><dt>Кто это</dt><dd>Дизайнер, соседка по даче</dd></div>
-        <div><dt>Откуда знакомы</dt><dd>Учились вместе на курсах</dd></div>
-        <div><dt>Телефон</dt><dd><a href="tel:+79001234567">+7 900 123-45-67</a></dd></div>
-        <div><dt>Почта</dt><dd><span class="ak-empty-value">—</span></dd></div>
+    <!-- «Связь» (components/keep-in-touch-card.tsx): the term, «Связались», the frequency form -->
+    <section class="card touch" aria-label="Связь с контактом">
+      <div class="touch-top">
+        <div class="touch-status">
+          <p class="touch-line" data-state="default birthday-no-year birthday-leap no-birthday cadence-date saved no-groups remove-group delete note-edit no-notes"><span class="dot dot-soon" aria-hidden="true"></span>Следующий раз — до 26 ноября</p>
+          <p class="touch-line" data-state="overdue"><span class="dot dot-overdue" aria-hidden="true"></span>Пора связаться</p>
+          <p class="touch-overdue" data-state="overdue">просрочено на 10 дней</p>
+          <p class="touch-none" data-state="no-cadence">Выбери, как часто хочешь общаться</p>
+        </div>
+        <form class="contacted-form"><button class="btn btn-ghost btn-sm contacted" type="button"><svg class="i i-contacted" viewBox="0 0 24 24" aria-hidden="true"><g transform="translate(3.5 1.2) scale(.62)" stroke-width="2.3"><path d="m11 17 2 2a1 1 0 1 0 3-3"/><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="m21 3 1 11h-2"/><path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/><path d="M3 4h8"/></g><path d="M2 13.5l7 7.5L22.5 10"/></svg><span class="contacted-label">Связались</span></button></form>
+      </div>
+      <form class="cadence-form" novalidate>
+        <div class="cadence">
+          <label class="label card-label" for="card-cadence">Как часто связываться</label>
+          <div class="row-gap">
+            <span class="select-box" data-state="default birthday-no-year birthday-leap no-birthday overdue saved no-groups remove-group delete note-edit no-notes">
+              <select class="select" id="card-cadence" name="cadence"><option value="">Не задано</option><option>Раз в неделю</option><option selected>Раз в месяц</option><option>Раз в 3 месяца</option><option>Раз в 6 месяцев</option><option>Раз в год</option><option>Конкретная дата</option></select>
+              <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+            <span class="select-box" data-state="no-cadence">
+              <select class="select" aria-label="Как часто связываться"><option value="" selected>Не задано</option><option>Раз в неделю</option><option>Раз в месяц</option><option>Раз в 3 месяца</option><option>Раз в 6 месяцев</option><option>Раз в год</option><option>Конкретная дата</option></select>
+              <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+            <span class="select-box" data-state="cadence-date">
+              <select class="select" aria-label="Как часто связываться"><option value="">Не задано</option><option>Раз в неделю</option><option>Раз в месяц</option><option>Раз в 3 месяца</option><option>Раз в 6 месяцев</option><option>Раз в год</option><option selected>Конкретная дата</option></select>
+              <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+            <!-- with JavaScript the date shows only for «Конкретная дата»; without it, always -->
+            <div class="cadence-date" data-state="cadence-date">
+              <label class="sr-only" for="card-contactOn">Дата</label>
+              <input class="input" id="card-contactOn" name="contactOn" type="date" value="2026-11-20" aria-invalid="true" aria-describedby="card-contactOn-error">
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button">Сохранить</button>
+            <span class="status-saved" role="status" data-state="saved">Сохранено</span>
+          </div>
+          <p class="field-error" id="card-contactOn-error" data-state="cadence-date"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Дата уже прошла</p>
+        </div>
+      </form>
+    </section>
+
+    <!-- «Группы» (components/contact-groups-card.tsx): pills lead to the group page, the cross asks first -->
+    <section class="card groups-card" aria-labelledby="groups-title">
+      <h2 class="card-label" id="groups-title">Группы</h2>
+      <ul class="gtags" data-state="default birthday-no-year birthday-leap no-birthday overdue no-cadence cadence-date saved remove-group delete note-edit no-notes">
+        <li class="gtag"><a href="group.html" title="Соседи">Соседи</a><a class="gtag-x" href="#remove-group" aria-label="Убрать из группы «Соседи»"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a></li>
+        <li class="gtag"><a href="group.html" title="Теннис">Теннис</a><a class="gtag-x" href="#remove-group" aria-label="Убрать из группы «Теннис»"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a></li>
+        <li class="gtag"><a href="group.html" title="Книжный клуб по четвергам">Книжный клуб по четвергам</a><a class="gtag-x" href="#remove-group" aria-label="Убрать из группы «Книжный клуб по четвергам»"><svg class="i i-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a></li>
+      </ul>
+      <p class="muted" data-state="no-groups">Ни в одной группе</p>
+      <form class="field" novalidate>
+        <label class="sr-only" for="groupName">Добавить в группу</label>
+        <div class="gadd">
+          <input class="input" id="groupName" name="groupName" list="group-suggestions" maxlength="50" autocomplete="off" placeholder="Группа: выбрать или новая">
+          <datalist id="group-suggestions"><option value="Аналитики"><option value="Дача"><option value="Семья"><option value="Цигун"></datalist>
+          <button class="btn btn-outline btn-sm" type="button"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Добавить</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card" aria-label="Данные контакта">
+      <dl class="dl">
+        <div><dt class="card-label">Кто это</dt><dd>Дизайнер, соседка по даче</dd></div>
+        <div><dt class="card-label">Откуда знакомы</dt><dd>Учились вместе на курсах</dd></div>
+        <div><dt class="card-label">Телефон</dt><dd><a href="tel:+79001234567">+7 900 123-45-67</a></dd></div>
+        <div><dt class="card-label">Почта</dt><dd><span class="muted">—</span></dd></div>
+        <!-- only the date: no «in N days» and no age in the card -->
+        <div>
+          <dt class="card-label">День рождения</dt>
+          <dd data-state="default overdue no-cadence cadence-date saved no-groups remove-group delete note-edit no-notes">22 ноября 1990</dd>
+          <dd data-state="birthday-no-year">22 ноября</dd>
+          <dd data-state="birthday-leap">29 февраля 1992 · в невисокосный год — 1 марта</dd>
+          <dd data-state="no-birthday"><span class="muted">—</span></dd>
+        </div>
       </dl>
     </section>
 
-    <section class="ak-card" aria-labelledby="notes-title">
-      <div class="ak-notes-head">
-        <h2 class="ak-notes-title" id="notes-title">Заметки</h2>
-      </div>
-
-      <form class="ak-note-form">
-        <label class="ak-sr-only" for="body">Новая заметка</label>
-        <textarea class="ak-textarea" id="body" rows="3" placeholder="О чём поговорили, о чём договорились"></textarea>
-        <div class="ak-btn-row">
-          <button class="ak-btn ak-btn-primary" type="submit">Добавить заметку</button>
-          <span class="ak-status" role="status">Заметка сохранена</span>
+    <section class="card" aria-labelledby="notes-title">
+      <h2 class="notes-title" id="notes-title">Заметки</h2>
+      <form class="note-form" novalidate>
+        <div class="field">
+          <label class="sr-only" for="body">Новая заметка</label>
+          <textarea class="textarea" id="body" name="body" rows="3" placeholder="О чём поговорили, о чём договорились"></textarea>
+        </div>
+        <div class="row-gap">
+          <button class="btn btn-primary" type="button">Добавить заметку</button>
+          <span class="status-saved" role="status" data-state="saved">Заметка сохранена</span>
         </div>
       </form>
-
-      <ul class="ak-notes">
-        <li class="ak-note">
-          <div class="ak-note-top">
-            <time datetime="2026-10-20T18:40">20 октября 2026 г. в 18:40</time>
-            <button class="ak-btn ak-btn-text ak-btn-sm" type="button">
-              <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
-              Изменить
-            </button>
+      <ul class="notes" data-state="default birthday-no-year birthday-leap no-birthday overdue no-cadence cadence-date saved no-groups remove-group delete note-edit">
+        <li class="note">
+          <div class="note-top">
+            <time datetime="2026-11-15T18:40">15 ноября 2026 г. в 18:40</time>
+            <button class="btn btn-ghost btn-sm btn-bare" type="button" onclick="location.hash='note-edit'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>Изменить</button>
           </div>
           <p>Созвонились насчёт ремонта кухни. Пришлёт подборку плитки до пятницы, встречаемся на объекте в субботу утром.</p>
         </li>
-        <li class="ak-note ak-note-editing">
-          <div class="ak-note-top">
-            <time datetime="2026-09-02T11:15">2 сентября 2026 г. в 11:15</time>
+        <li class="note" data-state="default birthday-no-year birthday-leap no-birthday overdue no-cadence cadence-date saved no-groups remove-group delete">
+          <div class="note-top">
+            <time datetime="2026-10-26T11:15">26 октября 2026 г. в 11:15</time>
+            <button class="btn btn-ghost btn-sm btn-bare" type="button" onclick="location.hash='note-edit'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>Изменить</button>
           </div>
-          <form class="ak-note-form">
-            <div class="ak-field">
-              <label class="ak-sr-only" for="note-2-body">Текст заметки</label>
-              <textarea class="ak-textarea" id="note-2-body" rows="3" aria-invalid="true" aria-describedby="note-2-error"></textarea>
-              <p class="ak-field-error" id="note-2-error">
-                <svg class="ak-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-                Заметка пустая
-              </p>
+          <p>Связались</p>
+        </li>
+        <!-- editing in place: the note sits on a bg panel; empty text gives «Заметка пустая» -->
+        <li class="note note-editing" data-state="note-edit">
+          <div class="note-top">
+            <time datetime="2026-10-26T11:15">26 октября 2026 г. в 11:15</time>
+          </div>
+          <form class="note-form" novalidate>
+            <div class="field">
+              <label class="sr-only" for="note-2-body">Текст заметки</label>
+              <textarea class="textarea" id="note-2-body" name="body" rows="3" aria-invalid="true" aria-describedby="note-2-error"></textarea>
+              <p class="field-error" id="note-2-error"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Заметка пустая</p>
             </div>
-            <div class="ak-btn-row">
-              <button class="ak-btn ak-btn-ghost ak-btn-sm" type="submit">Сохранить</button>
-              <button class="ak-btn ak-btn-text ak-btn-sm" type="button">Отмена</button>
+            <div class="row-gap">
+              <button class="btn btn-outline btn-sm" type="button">Сохранить</button>
+              <button class="btn btn-ghost btn-sm btn-bare" type="button" onclick="location.hash=''">Отмена</button>
             </div>
           </form>
         </li>
-        <li class="ak-note">
-          <div class="ak-note-top">
+        <li class="note">
+          <div class="note-top">
             <time datetime="2026-06-14T20:05">14 июня 2026 г. в 20:05</time>
-            <button class="ak-btn ak-btn-text ak-btn-sm" type="button">
-              <svg class="ak-ico ak-ico-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
-              Изменить
-            </button>
+            <button class="btn btn-ghost btn-sm btn-bare" type="button" onclick="location.hash='note-edit'"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>Изменить</button>
           </div>
           <p>Встретились на даче. Советовала мастера по крыше — контакт обещала скинуть.</p>
         </li>
       </ul>
+      <p class="notes-none" data-state="no-notes">Заметок пока нет</p>
     </section>
   </main>
-</div>
+
+  <!-- confirmations (components/confirm-dialog.tsx, delete-contact-button.tsx): focus on «Отмена» -->
+  <div data-state="delete">
+    <div class="overlay"></div>
+    <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="delete-title">
+      <a class="close" href="#" aria-label="Закрыть"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a>
+      <h2 class="dialog-title" id="delete-title">Удалить контакт?</h2>
+      <p>Заметки тоже удалятся.</p>
+      <form><button class="btn btn-primary" type="button" onclick="location.href='contacts.html#deleted'">Удалить</button><a class="btn btn-outline" href="#">Отмена</a></form>
+    </div>
+  </div>
+  <div data-state="remove-group">
+    <div class="overlay"></div>
+    <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="remove-title">
+      <a class="close" href="#" aria-label="Закрыть"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a>
+      <h2 class="dialog-title" id="remove-title">Убрать из группы «Соседи»?</h2>
+      <p>Анна Смирнова останется в остальных группах, сама группа не удалится.</p>
+      <form><button class="btn btn-primary" type="button">Убрать</button><a class="btn btn-outline" href="#">Отмена</a></form>
+    </div>
+  </div>
+  <script src="states.js"></script>
 </body>
 </html>

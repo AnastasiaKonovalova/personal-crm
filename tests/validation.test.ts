@@ -34,6 +34,10 @@ describe("contactSchema", () => {
       email: null,
       cadence: null,
       contactOn: null,
+      birthDay: null,
+      birthMonth: null,
+      birthYear: null,
+      birthLeapDay: null,
       groupIds: [],
       newGroup: null,
     });
@@ -162,6 +166,124 @@ describe("contact cadence", () => {
     expect(errorsOf(schema.safeParse({ cadence: "date", contactOn: "2026-10-27" }))).toEqual({
       contactOn: "Дата уже прошла",
     });
+  });
+});
+
+// Requirements «Проверка даты рождения» and «29 февраля в невисокосный год»
+describe("contact birthday", () => {
+  const BIRTHDAY_TODAY = "2026-11-22";
+  const named = { ...emptyContact, name: "Анна" };
+  const schema = contactSchemaFor(null, BIRTHDAY_TODAY);
+  // Form fields as the browser sends them: strings, "" when not chosen
+  const birthday = (birthDay: string, birthMonth: string, birthYear = "", birthLeapDay = "") => ({
+    ...named,
+    birthDay,
+    birthMonth,
+    birthYear,
+    birthLeapDay,
+  });
+  const errorsOf = (input: Record<string, unknown>) =>
+    Object.fromEntries(
+      (schema.safeParse(input).error?.issues ?? []).map((issue) => [
+        String(issue.path[0]),
+        issue.message,
+      ]),
+    );
+  const saved = (input: Record<string, unknown>) => {
+    const { birthDay, birthMonth, birthYear, birthLeapDay } = schema.parse(input);
+    return { birthDay, birthMonth, birthYear, birthLeapDay };
+  };
+
+  it("scenario «Контакт без даты рождения»: untouched or missing fields - no birthday", () => {
+    const none = { birthDay: null, birthMonth: null, birthYear: null, birthLeapDay: null };
+    expect(saved(birthday("", ""))).toEqual(none);
+    expect(saved(named)).toEqual(none);
+  });
+
+  it("scenario «Дата без года»: 3 March", () => {
+    expect(saved(birthday("3", "3"))).toEqual({
+      birthDay: 3,
+      birthMonth: 3,
+      birthYear: null,
+      birthLeapDay: null,
+    });
+  });
+
+  it("saves a date with the year: 25 November 1990", () => {
+    expect(saved(birthday("25", "11", " 1990 "))).toEqual({
+      birthDay: 25,
+      birthMonth: 11,
+      birthYear: 1990,
+      birthLeapDay: null,
+    });
+  });
+
+  it("scenario «Год без дня и месяца»", () => {
+    expect(errorsOf(birthday("", "", "1990"))).toEqual({ birthDay: "Укажи день и месяц" });
+  });
+
+  it("scenario «Месяц без дня», and a day without a month", () => {
+    expect(errorsOf(birthday("", "4"))).toEqual({ birthDay: "Укажи день и месяц" });
+    expect(errorsOf(birthday("3", ""))).toEqual({ birthDay: "Укажи день и месяц" });
+  });
+
+  it("scenario «Несуществующий день»: 31 April", () => {
+    expect(errorsOf(birthday("31", "4"))).toEqual({ birthDay: "Такой даты нет" });
+    expect(errorsOf(birthday("31", "4", "1990"))).toEqual({ birthDay: "Такой даты нет" });
+  });
+
+  it("scenario «29 февраля в невисокосный год»: 29 February 2023", () => {
+    expect(errorsOf(birthday("29", "2", "2023", "feb_28"))).toEqual({
+      birthDay: "Такой даты нет",
+    });
+  });
+
+  it("scenario «29 февраля без года»", () => {
+    expect(saved(birthday("29", "2", "", "feb_28"))).toMatchObject({
+      birthDay: 29,
+      birthMonth: 2,
+      birthYear: null,
+    });
+  });
+
+  it("scenario «Дата в будущем»: on 22 November 2026 - 1 December 2026; today itself is fine", () => {
+    expect(errorsOf(birthday("1", "12", "2026"))).toEqual({ birthDay: "Проверь год" });
+    expect(errorsOf(birthday("1", "1", "2027"))).toEqual({ birthDay: "Проверь год" });
+    expect(saved(birthday("22", "11", "2026")).birthYear).toBe(2026);
+  });
+
+  it("scenario «Слишком ранний год»: 1890; 1900 is fine", () => {
+    expect(errorsOf(birthday("1", "5", "1890"))).toEqual({ birthDay: "Проверь год" });
+    expect(saved(birthday("1", "5", "1900")).birthYear).toBe(1900);
+  });
+
+  it("rejects a year that is not a number", () => {
+    expect(errorsOf(birthday("1", "5", "19ab"))).toEqual({ birthDay: "Проверь год" });
+  });
+
+  it("scenario «Запрос в обход формы»: day 32, month 13, an unknown choice for 29 February", () => {
+    expect(schema.safeParse(birthday("32", "1")).success).toBe(false);
+    expect(schema.safeParse(birthday("0", "1")).success).toBe(false);
+    expect(schema.safeParse(birthday("1", "13")).success).toBe(false);
+    expect(schema.safeParse(birthday("1.5", "1")).success).toBe(false);
+    expect(schema.safeParse(birthday("29", "2", "", "mar_2")).success).toBe(false);
+  });
+
+  it("scenario «Выбор по умолчанию»: 29 February without a choice - 28 February", () => {
+    expect(saved(birthday("29", "2")).birthLeapDay).toBe("feb_28");
+  });
+
+  it("scenario «Выбор 1 марта»: 29 February 1992 with 1 March", () => {
+    expect(saved(birthday("29", "2", "1992", "mar_1"))).toEqual({
+      birthDay: 29,
+      birthMonth: 2,
+      birthYear: 1992,
+      birthLeapDay: "mar_1",
+    });
+  });
+
+  it("scenario «Выбор без JavaScript при другой дате»: 3 March with 1 March ticked - the choice is not saved", () => {
+    expect(saved(birthday("3", "3", "", "mar_1")).birthLeapDay).toBeNull();
   });
 });
 

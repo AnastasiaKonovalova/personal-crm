@@ -7,6 +7,7 @@ import {
   pgEnum,
   pgTable,
   primaryKey,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
@@ -21,6 +22,9 @@ export const contactCadence = pgEnum("contact_cadence", [
   "year",
   "date",
 ]);
+
+// The day a 29 February birthday is celebrated in a common year
+export const birthLeapDay = pgEnum("birth_leap_day", ["feb_28", "mar_1"]);
 
 // Better Auth tables (users, sessions, accounts, verifications): the fields are those of better-auth
 // 1.7.25 (@better-auth/core get-tables), the table names are plural like ours. Better Auth fills the ids
@@ -118,6 +122,15 @@ export const contacts = pgTable(
     // NULL means "not set"; contactOn is filled only when cadence is 'date'
     cadence: contactCadence("cadence"),
     contactOn: date("contact_on", { mode: "string" }),
+    // Birthday: day and month together or none, the year is optional. Whether the date exists and is
+    // not in the future is checked in code (validation.ts): a CHECK cannot say it
+    birthDay: smallint("birth_day"),
+    birthMonth: smallint("birth_month"),
+    birthYear: smallint("birth_year"),
+    // Set exactly when the birthday is 29 February
+    birthLeapDay: birthLeapDay("birth_leap_day"),
+    // Day of the last «Поздравил(а)» in APP_TIME_ZONE; hides the birthday from the block until the next one (birthdays.ts)
+    birthCongratulatedOn: date("birth_congratulated_on", { mode: "string" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -126,6 +139,19 @@ export const contacts = pgTable(
       "contacts_cadence_contact_on_check",
       // coalesce: with cadence NULL a plain comparison yields NULL, which CHECK lets through
       sql`coalesce(${table.cadence} = 'date', false) = (${table.contactOn} IS NOT NULL)`,
+    ),
+    check(
+      "contacts_birthday_check",
+      sql`(${table.birthDay} IS NULL) = (${table.birthMonth} IS NULL)
+        AND (${table.birthYear} IS NULL OR ${table.birthDay} IS NOT NULL)
+        AND (${table.birthDay} IS NULL OR ${table.birthDay} BETWEEN 1 AND 31)
+        AND (${table.birthMonth} IS NULL OR ${table.birthMonth} BETWEEN 1 AND 12)
+        AND (${table.birthYear} IS NULL OR ${table.birthYear} >= 1900)`,
+    ),
+    check(
+      "contacts_birth_leap_day_check",
+      // coalesce: with the day NULL the comparison yields NULL, which CHECK lets through
+      sql`coalesce(${table.birthDay} = 29 AND ${table.birthMonth} = 2, false) = (${table.birthLeapDay} IS NOT NULL)`,
     ),
   ],
 );

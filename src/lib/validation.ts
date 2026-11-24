@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { CADENCES, type Cadence, toDateString } from "@/lib/keep-in-touch";
+import { LEAP_DAYS, type LeapDay, isLeapYear } from "@/lib/birthdays";
+import { CADENCES, type Cadence, formatDate, toDateString } from "@/lib/keep-in-touch";
 
 // Error messages are user-facing, hence in Russian
 
@@ -86,6 +87,64 @@ function dropStrayDate<T extends CadenceFields>(value: T) {
   return { ...value, contactOn: value.cadence === "date" ? value.contactOn : null };
 }
 
+// Birthday fields as the form sends them: strings, "" when not chosen. They are checked together and
+// the error goes under the whole field (path birthDay)
+const birthdayShape = {
+  birthDay: z.string().trim().default(""),
+  birthMonth: z.string().trim().default(""),
+  birthYear: z.string().trim().default(""),
+  birthLeapDay: z.union([z.enum(LEAP_DAYS), z.literal("")], "Некорректный выбор").default(""),
+};
+
+type BirthdayFields = { birthDay: string; birthMonth: string; birthYear: string };
+
+// "" -> null, a whole number -> the number, anything else -> NaN
+const toWhole = (value: string) =>
+  value === "" ? null : /^\d+$/.test(value) ? Number(value) : NaN;
+
+const daysInMonth = (year: number, month: number) =>
+  month === 2 ? (isLeapYear(year) ? 29 : 28) : [4, 6, 9, 11].includes(month) ? 30 : 31;
+
+function checkBirthday(today: string | undefined) {
+  return (value: BirthdayFields, ctx: z.RefinementCtx) => {
+    const fail = (message: string) => ctx.addIssue({ code: "custom", path: ["birthDay"], message });
+    const day = toWhole(value.birthDay);
+    const month = toWhole(value.birthMonth);
+    const year = toWhole(value.birthYear);
+    if (day === null && month === null) {
+      if (year !== null) fail("Укажи день и месяц");
+      return;
+    }
+    if (day === null || month === null) return fail("Укажи день и месяц");
+    // Without the year the date must exist in some year: a leap one, so 29 February passes
+    if (!(month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth(year || 2000, month))) {
+      return fail("Такой даты нет");
+    }
+    if (year === null) return;
+    if (
+      Number.isNaN(year) ||
+      year < 1900 ||
+      formatDate(year, month, day) > (today ?? toDateString(new Date()))
+    ) {
+      fail("Проверь год");
+    }
+  };
+}
+
+// Numbers for the database; the choice for 29 February is kept only for that date, 28 February by default
+function toBirthday<T extends BirthdayFields & { birthLeapDay: LeapDay | "" }>(value: T) {
+  const day = toWhole(value.birthDay);
+  const month = toWhole(value.birthMonth);
+  const leapDayDate = day === 29 && month === 2;
+  return {
+    ...value,
+    birthDay: day,
+    birthMonth: month,
+    birthYear: toWhole(value.birthYear),
+    birthLeapDay: leapDayDate ? value.birthLeapDay || "feb_28" : null,
+  };
+}
+
 // `today` is for tests; by default it is the current day in the app time zone
 export function contactSchemaFor(savedContactOn: string | null, today?: string) {
   return z
@@ -106,10 +165,12 @@ export function contactSchemaFor(savedContactOn: string | null, today?: string) 
         .refine((value) => value === "" || z.email().safeParse(value).success, "Некорректная почта")
         .transform(emptyToNull),
       ...cadenceShape,
+      ...birthdayShape,
       ...contactGroupsShape,
     })
     .superRefine(checkCadence(savedContactOn, today))
-    .transform(dropStrayDate);
+    .superRefine(checkBirthday(today))
+    .transform((value) => toBirthday(dropStrayDate(value)));
 }
 
 // Frequency alone, for the form in the contact card
