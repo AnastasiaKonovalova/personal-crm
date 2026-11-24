@@ -1,6 +1,7 @@
 import Form from "next/form";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { BirthdaysBlock } from "@/components/birthdays-block";
 import { ContactList } from "@/components/contact-list";
 import { ContactsSearch } from "@/components/contacts-search";
 import { DeletedToast } from "@/components/deleted-toast";
@@ -9,9 +10,10 @@ import { PageShell } from "@/components/page-shell";
 import { RemindersBlock } from "@/components/reminders-block";
 import { SectionSwitch } from "@/components/section-switch";
 import { Button } from "@/components/ui/button";
+import { birthdayRow } from "@/lib/birthdays";
 import { contactsHref, listCaption } from "@/lib/contact-list";
 import { CADENCE_LABELS, dueText, toDateString } from "@/lib/keep-in-touch";
-import { listContacts, listReminders } from "@/server/contacts";
+import { listBirthdays, listContacts, listReminders } from "@/server/contacts";
 import { listGroups } from "@/server/groups";
 import { requireUser } from "@/server/session";
 
@@ -31,11 +33,18 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
   ]);
   const groupId = group?.id;
 
-  // The "Пора связаться" block is for the first page of the list: not in search, not on page 2+,
-  // and not when there are no contacts at all (in the filtered group, with a filter)
-  const reminders =
-    !query && page === 1 && total > 0 ? await listReminders(user.id, { groupId }) : null;
+  // The "Пора связаться" and "Скоро день рождения" blocks are for the first page of the list: not in
+  // search, not on page 2+, and not when there are no contacts at all (in the filtered group, with a filter)
+  const showBlocks = !query && page === 1 && total > 0;
+  const [reminders, birthdays] = showBlocks
+    ? await Promise.all([listReminders(user.id, { groupId }), listBirthdays(user.id, { groupId })])
+    : [null, []];
   const today = toDateString(new Date());
+  const birthdayRows = birthdays.map((item) => ({
+    id: item.id,
+    name: item.name,
+    ...birthdayRow(item.birthday, today),
+  }));
   const reminderRows = (reminders?.items ?? []).map((item) => ({
     id: item.id,
     name: item.name,
@@ -66,14 +75,17 @@ export default async function ContactsPage({ searchParams }: { searchParams: Sea
 
       <SectionSwitch current="contacts" />
 
-      {reminders && (
-        <RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />
-      )}
-
-      {/* keyed by the address: after «Сбросить» or Back the fields show the new state, not the typed text */}
+      {/* above both blocks (decision 42): two blocks in a row would push the search down.
+          Keyed by the address: after «Сбросить» or Back the fields show the new state, not the typed text */}
       <Form key={`${query}|${groupId ?? ""}`} action="/" className="grid gap-cta" role="search">
         <ContactsSearch query={query} groupId={groupId} groups={groups} />
       </Form>
+
+      {birthdayRows.length > 0 && <BirthdaysBlock rows={birthdayRows} />}
+
+      {reminders && (
+        <RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />
+      )}
 
       <ContactList
         items={items}

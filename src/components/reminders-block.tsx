@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, HeartHandshake } from "lucide-react";
+import { HeartHandshake } from "lucide-react";
+import { BlockFooter } from "@/components/block-footer";
 import { DueDot, DueDotLabel } from "@/components/due-dot";
 import { MarkContactedButton } from "@/components/mark-contacted-button";
-import { Button } from "@/components/ui/button";
 import { blockView, type BlockState } from "@/lib/reminders-view";
 
 export type ReminderRow = {
@@ -123,66 +123,7 @@ export function RemindersBlock({ rows, hasCadence }: { rows: ReminderRow[]; hasC
         ))}
       </ul>
 
-      {(view.canExpand || view.expanded) && (
-        <div
-          data-js-only=""
-          className={
-            view.expanded
-              ? `flex flex-wrap items-center justify-between gap-controls border-t border-line ${edgePadding} py-2.5 max-[560px]:flex-col`
-              : `border-t border-line ${edgePadding} py-1`
-          }
-        >
-          {view.showPager && (
-            <nav
-              className="flex items-center gap-controls"
-              aria-label="Страницы блока «Пора связаться»"
-            >
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label="Назад"
-                disabled={view.page <= 1}
-                onClick={() => setState({ expanded: true, page: view.page - 1 })}
-              >
-                <ChevronLeft />
-              </Button>
-              <span className="font-display text-counter font-semibold text-muted-foreground">
-                Страница <b className="font-bold text-teal-deep">{view.page}</b>
-                {` из ${view.pageCount}`}
-              </span>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                aria-label="Вперёд"
-                disabled={view.page >= view.pageCount}
-                onClick={() => setState({ expanded: true, page: view.page + 1 })}
-              >
-                <ChevronRight />
-              </Button>
-            </nav>
-          )}
-          {/* the same button element in both states, so keyboard focus stays on it after the toggle */}
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            aria-expanded={view.expanded}
-            className={
-              view.expanded
-                ? "ml-auto text-teal-deep hover:text-ink max-[560px]:ml-0"
-                : "text-teal-deep hover:text-ink"
-            }
-            onClick={() =>
-              setState(view.expanded ? { expanded: false, page: 1 } : { expanded: true, page: 1 })
-            }
-          >
-            {view.expanded ? "Свернуть" : `Показать все (${rows.length})`}
-            {view.expanded ? <ChevronUp /> : <ChevronDown />}
-          </Button>
-        </div>
-      )}
+      <BlockFooter view={view} total={rows.length} title="Пора связаться" onChange={setState} />
     </section>
   );
 }

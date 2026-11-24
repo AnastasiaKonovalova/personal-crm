@@ -84,6 +84,10 @@ function readContactValues(formData: FormData): ContactFormValues {
     email: readString(formData, "email"),
     cadence: readString(formData, "cadence"),
     contactOn: readString(formData, "contactOn"),
+    birthDay: readString(formData, "birthDay"),
+    birthMonth: readString(formData, "birthMonth"),
+    birthYear: readString(formData, "birthYear"),
+    birthLeapDay: readString(formData, "birthLeapDay"),
     groupIds: readStrings(formData, "groupIds"),
     newGroup: readString(formData, "newGroup"),
   };

@@ -1,6 +1,7 @@
 import { type SQL, and, count, desc, eq, ilike, inArray, isNotNull, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { contactGroups, contacts, notes } from "@/db/schema";
+import { type Birthday, nextBirthday, sortForBirthdays } from "@/lib/birthdays";
 import {
   type Cadence,
   dueDate,
@@ -148,6 +149,40 @@ export async function listReminders(userId: string, { groupId }: { groupId?: str
   });
 
   return { items: sortForReminders(withStatus), withCadenceCount: rows.length, totalCount: total };
+}
+
+// The "Скоро день рождения" block: contacts whose birthday was yesterday, is today or within SOON_DAYS,
+// in display order. Birthdays are a few hundred at most, so the window (across the New Year and
+// 29 February) is computed here, not in SQL. A malformed or missing group is ignored, like in the list
+export async function listBirthdays(userId: string, { groupId }: { groupId?: string } = {}) {
+  const group = await findGroup(userId, groupId);
+  const rows = await getDb()
+    .select({
+      id: contacts.id,
+      name: contacts.name,
+      day: contacts.birthDay,
+      month: contacts.birthMonth,
+      year: contacts.birthYear,
+      leapDay: contacts.birthLeapDay,
+    })
+    .from(contacts)
+    .where(
+      and(
+        eq(contacts.userId, userId),
+        isNotNull(contacts.birthMonth),
+        group ? inGroupSql(group.id) : undefined,
+      ),
+    );
+
+  const today = toDateString(new Date());
+  return sortForBirthdays(
+    rows.flatMap(({ id, name, day, month, year, leapDay }) => {
+      // The CHECK keeps day and month together; this only narrows the types
+      if (day === null || month === null) return [];
+      const birthday: Birthday = { day, month, year, leapDay };
+      return [{ id, name, days: nextBirthday(month, day, leapDay, today).days, birthday }];
+    }),
+  );
 }
 
 export async function getContact(userId: string, id: string) {

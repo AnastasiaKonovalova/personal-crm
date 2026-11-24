@@ -7,6 +7,7 @@ import {
   updateContactAction,
   type ContactFormState,
 } from "@/app/contacts/actions";
+import { BirthdayFields } from "@/components/birthday-fields";
 import { CadenceFields } from "@/components/cadence-fields";
 import { FieldError } from "@/components/field-error";
 import { GroupFields } from "@/components/group-fields";
@@ -47,6 +48,13 @@ export function ContactForm({ contact, groups, groupIds, cancelHref }: ContactFo
     contact ? updateContactAction : createContactAction,
     {},
   );
+  const initial = (field: ContactField) => state.values?.[field] ?? contact?.[field] ?? "";
+  const birthday = {
+    day: initial("birthDay"),
+    month: initial("birthMonth"),
+    year: initial("birthYear"),
+    leapDay: initial("birthLeapDay"),
+  };
 
   return (
     <form
@@ -79,6 +87,15 @@ export function ContactForm({ contact, groups, groupIds, cancelHref }: ContactFo
           </div>
         );
       })}
+      <BirthdayFields
+        // remounted with the returned values, like CadenceFields below
+        key={`birthday:${birthday.day}|${birthday.month}|${birthday.year}|${birthday.leapDay}`}
+        defaultDay={birthday.day}
+        defaultMonth={birthday.month}
+        defaultYear={birthday.year}
+        defaultLeapDay={birthday.leapDay}
+        errors={state.errors}
+      />
       <CadenceFields
         // remounted when the defaults change: React reads a select's defaultValue only on mount,
         // and the form reset after a failed submit would otherwise bring back the first value

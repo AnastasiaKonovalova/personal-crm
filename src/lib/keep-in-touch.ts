@@ -20,22 +20,25 @@ const PERIODS: Record<Period, { days: number } | { months: number }> = {
   year: { months: 12 },
 };
 
+// The "soon" window, in days ahead (inclusive): shared by "Пора связаться" and "Скоро день рождения"
+export const SOON_DAYS = 7;
+
 // How many days before the due date (inclusive) a contact counts as "soon"
 const SOON_WINDOW_DAYS: Record<Cadence, number> = {
   week: 2,
-  month: 7,
-  quarter: 7,
-  half_year: 7,
-  year: 7,
-  date: 7,
+  month: SOON_DAYS,
+  quarter: SOON_DAYS,
+  half_year: SOON_DAYS,
+  year: SOON_DAYS,
+  date: SOON_DAYS,
 };
 
-function parseDate(date: string) {
+export function parseDate(date: string) {
   const [year = 0, month = 1, day = 1] = date.split("-").map(Number);
   return { year, month, day };
 }
 
-function formatDate(year: number, month: number, day: number) {
+export function formatDate(year: number, month: number, day: number) {
   return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
@@ -129,11 +132,20 @@ const dueDateYearFormat = new Intl.DateTimeFormat("ru-RU", {
   timeZone: "UTC",
 });
 
+const toMoment = (date: string) => {
+  const { year, month, day } = parseDate(date);
+  return new Date(Date.UTC(year, month - 1, day));
+};
+
+// "15 ноября", never with the year
+export function formatDayMonth(date: string): string {
+  return dueDateFormat.format(toMoment(date));
+}
+
 // "15 ноября"; the year is added when the date is not in the current one ("раз в год" lands there)
 export function formatDueDate(date: string, today: string = toDateString(new Date())): string {
-  const { year, month, day } = parseDate(date);
-  const moment = new Date(Date.UTC(year, month - 1, day));
-  return (parseDate(today).year === year ? dueDateFormat : dueDateYearFormat).format(moment);
+  const sameYear = parseDate(today).year === parseDate(date).year;
+  return (sameYear ? dueDateFormat : dueDateYearFormat).format(toMoment(date));
 }
 
 // The term in a block row: "просрочено на 13 дней", "Срок — сегодня", "До 1 ноября"

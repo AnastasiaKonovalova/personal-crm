@@ -535,13 +535,14 @@ describe("records of another user, a new user", SLOW, () => {
     expect(foreign.html).not.toContain(groupName);
   });
 
-  it("«Первый вход»: an empty list with «Добавь первый контакт», no groups, no reminders", async () => {
+  it("«Первый вход»: an empty list with «Добавь первый контакт», no groups, no blocks", async () => {
     const cookie = await signInAs(newEmail("fresh"));
 
     const home = await getPage("/", { cookie });
     expect(visibleText(home)).toContain("Всего: 0");
     expect(visibleText(home)).toContain("Добавь первый контакт");
     expect(home).not.toContain('id="reminders-title"');
+    expect(home).not.toContain('id="birthdays-title"');
     expect(home).not.toContain(contactName);
 
     const groups = await getPage("/groups", { cookie });

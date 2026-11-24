@@ -68,6 +68,7 @@
 - Команды расширению - по одной, не пачкой; открыта только своя вкладка с расширением. Иначе действия падают с «Couldn't determine which page this action targets»
 - Окно не шире 937px, `resize_window` его не сужает: ширину 390 смотреть через iframe 390px, вставленный в страницу через `javascript_tool` (как в `scripts/mockup-shots.sh`)
 - Фокус с клавиатуры - `el.focus({focusVisible: true})`; стиль читать через ~400ms: `transition-colors` анимирует и цвет рамки
+- Нажать и отправить - только по `id`: форму отправлять через поле с `id` (`document.getElementById("name").form.requestSubmit()`), кнопку искать по `id` или по тексту внутри найденной так формы. Не брать первый элемент по тегу или типу (`form button[type=submit]`, `button`): на каждой странице в шапке форма «Выйти», она идёт первой
 
 ## Данные
 

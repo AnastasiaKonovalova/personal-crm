@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { closeDb } from "@/db";
+import { parseDate, toDateString } from "@/lib/keep-in-touch";
 import { contactSchema } from "@/lib/validation";
 import {
   addContactToGroup,
@@ -10,6 +11,7 @@ import {
   deleteContact,
   getContact,
   getContactWithNotes,
+  listBirthdays,
   listContacts,
   listReminders,
   removeContactFromGroup,
@@ -43,7 +45,10 @@ afterAll(async () => {
   await closeDb();
 });
 
-function form(name: string, extra: { groupIds?: string[]; newGroup?: string } = {}) {
+function form(
+  name: string,
+  extra: { groupIds?: string[]; newGroup?: string; birthDay?: string; birthMonth?: string } = {},
+) {
   return contactSchema.parse({ name, about: "", howWeMet: "", phone: "", email: "", ...extra });
 }
 
@@ -139,6 +144,16 @@ describe("only own data on the screens", () => {
 
     expect(await listReminders(b.id)).toEqual({ items: [], withCadenceCount: 0, totalCount: 1 });
     expect((await listReminders(a.id)).items.map((item) => item.name)).toEqual(["Просрочен"]);
+  });
+
+  it("does not show a contact of A with a birthday tomorrow in the «Скоро день рождения» of B (scenario «Скоро день рождения»)", async () => {
+    const { month, day } = parseDate(toDateString(new Date(Date.now() + 86_400_000)));
+    const tomorrow = { birthDay: String(day), birthMonth: String(month) };
+    await contact(a, "Именинник", tomorrow);
+    await contact(b, "Свой", tomorrow);
+
+    expect((await listBirthdays(b.id)).map((item) => item.name)).toEqual(["Свой"]);
+    expect((await listBirthdays(a.id)).map((item) => item.name)).toEqual(["Именинник"]);
   });
 
   it("does not show a group of A to B: not in the groups, not in the filter, not in the form (scenario «Группы и фильтр»)", async () => {

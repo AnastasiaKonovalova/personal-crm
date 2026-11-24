@@ -209,6 +209,83 @@ describe("contact form with groups", () => {
   });
 });
 
+describe("contact form with a birthday", () => {
+  const noBirthday = { birthDay: "", birthMonth: "", birthYear: "", birthLeapDay: "" };
+
+  it("keeps everything typed on an error and saves nothing (scenario «Ошибка не теряет введённое»)", async () => {
+    const name = `Апрельская ${marker}`;
+    const state = await createContactAction(
+      {},
+      formData({
+        ...emptyContactFields,
+        ...noBirthday,
+        name,
+        phone: "+7 (000) 333-33-33",
+        birthDay: "31",
+        birthMonth: "4",
+      }),
+    );
+
+    expect(state.errors).toEqual({ birthDay: "Такой даты нет" });
+    expect(state.values).toMatchObject({
+      name,
+      phone: "+7 (000) 333-33-33",
+      birthDay: "31",
+      birthMonth: "4",
+      birthYear: "",
+      birthLeapDay: "",
+    });
+    const { rows } = await withSeparateConnection((pool) =>
+      pool.query("select 1 from contacts where name = $1", [name]),
+    );
+    expect(rows).toHaveLength(0);
+  });
+
+  it("saves the birthday sent by a plain form post", async () => {
+    const url = await redirectOf(() =>
+      createContactAction(
+        {},
+        formData({
+          ...emptyContactFields,
+          ...noBirthday,
+          name: `Мартовский ${marker}`,
+          birthDay: "29",
+          birthMonth: "2",
+          birthYear: "1992",
+          birthLeapDay: "mar_1",
+        }),
+      ),
+    );
+
+    const id = url?.match(/^\/contacts\/([0-9a-f-]{36})$/)?.[1];
+    expect(id).toBeDefined();
+    expect((await getContactWithNotes(user.id, id!))?.contact).toMatchObject({
+      birthDay: 29,
+      birthMonth: 2,
+      birthYear: 1992,
+      birthLeapDay: "mar_1",
+    });
+  });
+
+  it("keeps the birthday typed on an error when editing", async () => {
+    const id = await contact("Правка даты");
+    const state = await updateContactAction(
+      {},
+      formData({
+        ...emptyContactFields,
+        ...noBirthday,
+        contactId: id,
+        name: `Правка даты ${marker}`,
+        birthYear: "1990",
+      }),
+    );
+
+    expect(state.errors).toEqual({ birthDay: "Укажи день и месяц" });
+    expect(state.values?.birthYear).toBe("1990");
+    expect((await getContactWithNotes(user.id, id))?.contact.birthYear).toBeNull();
+  });
+});
+
 describe("groups in the contact card", () => {
   it("rejects an empty group name and changes nothing", async () => {
     const id = await contact("Пустое имя");

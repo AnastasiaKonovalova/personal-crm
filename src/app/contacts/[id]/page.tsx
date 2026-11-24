@@ -9,6 +9,7 @@ import { NoteForm } from "@/components/note-form";
 import { NoteItem } from "@/components/note-item";
 import { PageShell } from "@/components/page-shell";
 import { Button } from "@/components/ui/button";
+import { formatBirthday } from "@/lib/birthdays";
 import { getContactWithNotes } from "@/server/contacts";
 import { listGroups } from "@/server/groups";
 import { requireUser } from "@/server/session";
@@ -99,6 +100,16 @@ export default async function ContactPage({
                 {contact.email}
               </a>
             )}
+          </Field>
+          <Field label="День рождения">
+            {contact.birthDay !== null && contact.birthMonth !== null
+              ? formatBirthday({
+                  day: contact.birthDay,
+                  month: contact.birthMonth,
+                  year: contact.birthYear,
+                  leapDay: contact.birthLeapDay,
+                })
+              : null}
           </Field>
         </dl>
       </section>

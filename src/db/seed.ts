@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { fakerRU as faker } from "@faker-js/faker";
-import { count, eq, sql } from "drizzle-orm";
+import { and, count, eq, isNotNull, sql } from "drizzle-orm";
+import { daysBetween, formatDate, parseDate, toDateString } from "../lib/keep-in-touch";
 import { closeDb, getDb } from "./index";
 import { type contactCadence, contactGroups, contacts, groups, notes, users } from "./schema";
 
@@ -379,6 +380,103 @@ async function seedGroups(db: Db, ownerId: string) {
   console.log(`Seeded ${groupRows.length} groups and ${memberships.length} memberships`);
 }
 
+const BIRTHDAY_SHARE = 0.3;
+// Days from the seed day. Inside the «Скоро день рождения» window (yesterday … in 7 days): 12 rows,
+// so the expanded block has two pages. Just outside it: 2 days ago and in 8 days
+const WINDOW_OFFSETS = [-1, 0, 0, 1, 2, 3, 3, 4, 5, 6, 7, 7];
+const OUTSIDE_OFFSETS = [-2, 8];
+
+type LeapDay = "feb_28" | "mar_1";
+type BirthdayRow = { day: number; month: number; year: number | null; leapDay: LeapDay | null };
+
+// A third of the dates without the year
+function birthYear() {
+  return faker.helpers.maybe(() => faker.number.int({ min: 1955, max: 2005 }), {
+    probability: 2 / 3,
+  }) ?? null;
+}
+
+function shiftedBirthday(today: string, offset: number): BirthdayRow {
+  const { year, month, day } = parseDate(today);
+  const moved = new Date(Date.UTC(year, month - 1, day + offset));
+  const [movedDay, movedMonth] = [moved.getUTCDate(), moved.getUTCMonth() + 1];
+  return {
+    day: movedDay,
+    month: movedMonth,
+    year: birthYear(),
+    // The database wants the choice exactly for 29 February
+    leapDay: movedDay === 29 && movedMonth === 2 ? "feb_28" : null,
+  };
+}
+
+// A random date that stays out of the window and its two edges, so the block holds only the dates above.
+// No 29 February: the two of them are set apart
+function randomBirthday(today: string): BirthdayRow {
+  const { year } = parseDate(today);
+  for (;;) {
+    const month = faker.number.int({ min: 1, max: 12 });
+    // 2001 is a common year: its February has 28 days
+    const day = faker.number.int({ min: 1, max: new Date(Date.UTC(2001, month, 0)).getUTCDate() });
+    const nearWindow = [year - 1, year, year + 1].some((candidate) => {
+      const days = daysBetween(today, formatDate(candidate, month, day));
+      return days >= OUTSIDE_OFFSETS[0] && days <= OUTSIDE_OFFSETS[1];
+    });
+    if (!nearWindow) return { day, month, year: birthYear(), leapDay: null };
+  }
+}
+
+// Runs separately from contacts, so a database seeded before birthdays existed gets them too.
+// Dates around the window are counted from the seed day (design.md п.7 of the change `birthdays`)
+async function seedBirthdays(db: Db, ownerId: string) {
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(contacts)
+    .where(and(eq(contacts.userId, ownerId), isNotNull(contacts.birthMonth)));
+  if (total > 0) {
+    console.log(`Birthdays skipped: the owner already has ${total} birthdays`);
+    return;
+  }
+
+  faker.seed(20261124);
+  const contactIds = faker.helpers.shuffle(
+    (
+      await db
+        .select({ id: contacts.id })
+        .from(contacts)
+        .where(eq(contacts.userId, ownerId))
+        .orderBy(sql`lower(${contacts.name})`, contacts.id)
+    ).map((row) => row.id),
+  );
+
+  const today = toDateString(new Date());
+  const fixed: BirthdayRow[] = [
+    ...[...WINDOW_OFFSETS, ...OUTSIDE_OFFSETS].map((offset) => shiftedBirthday(today, offset)),
+    { day: 29, month: 2, year: 1992, leapDay: "feb_28" },
+    { day: 29, month: 2, year: null, leapDay: "mar_1" },
+  ];
+  const randomCount = Math.max(0, Math.round(contactIds.length * BIRTHDAY_SHARE) - fixed.length);
+  const birthdays = [
+    ...fixed,
+    ...Array.from({ length: randomCount }, () => randomBirthday(today)),
+  ].slice(0, contactIds.length);
+
+  await db.transaction(async (tx) => {
+    for (const [index, birthday] of birthdays.entries()) {
+      await tx
+        .update(contacts)
+        .set({
+          birthDay: birthday.day,
+          birthMonth: birthday.month,
+          birthYear: birthday.year,
+          birthLeapDay: birthday.leapDay,
+        })
+        .where(eq(contacts.id, contactIds[index]));
+    }
+  });
+
+  console.log(`Seeded ${birthdays.length} birthdays`);
+}
+
 // The owner of the demo data: the user with OWNER_EMAIL, created if missing
 async function findOrCreateOwner(db: Db) {
   const email = process.env.OWNER_EMAIL?.trim().toLowerCase();
@@ -408,6 +506,7 @@ async function main() {
     await seedContacts(db, ownerId);
   }
   await seedGroups(db, ownerId);
+  await seedBirthdays(db, ownerId);
 }
 
 async function seedContacts(db: Db, ownerId: string) {

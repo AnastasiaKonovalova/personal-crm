@@ -3,15 +3,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Plus } from "lucide-react";
 import { BackLink } from "@/components/back-link";
+import { BirthdaysBlock } from "@/components/birthdays-block";
 import { ContactList } from "@/components/contact-list";
 import { SearchRow } from "@/components/contacts-search";
 import { EmptyList } from "@/components/empty-list";
 import { PageShell } from "@/components/page-shell";
 import { RemindersBlock } from "@/components/reminders-block";
 import { Button } from "@/components/ui/button";
+import { birthdayRow } from "@/lib/birthdays";
 import { groupPageHref, listCaption } from "@/lib/contact-list";
 import { CADENCE_LABELS, dueText, toDateString } from "@/lib/keep-in-touch";
-import { listContacts, listReminders } from "@/server/contacts";
+import { listBirthdays, listContacts, listReminders } from "@/server/contacts";
 import { findGroup } from "@/server/groups";
 import { requireUser } from "@/server/session";
 
@@ -43,9 +45,19 @@ export default async function GroupPage({
   });
 
   // The same rules as on the main page: first page, no search, the group has contacts
-  const reminders =
-    !query && page === 1 && total > 0 ? await listReminders(user.id, { groupId: group.id }) : null;
+  const showBlocks = !query && page === 1 && total > 0;
+  const [reminders, birthdays] = showBlocks
+    ? await Promise.all([
+        listReminders(user.id, { groupId: group.id }),
+        listBirthdays(user.id, { groupId: group.id }),
+      ])
+    : [null, []];
   const today = toDateString(new Date());
+  const birthdayRows = birthdays.map((item) => ({
+    id: item.id,
+    name: item.name,
+    ...birthdayRow(item.birthday, today),
+  }));
   const reminderRows = (reminders?.items ?? []).map((item) => ({
     id: item.id,
     name: item.name,
@@ -87,11 +99,8 @@ export default async function GroupPage({
         </Button>
       </div>
 
-      {reminders && (
-        <RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />
-      )}
-
-      {/* keyed by the search: after «Сбросить» or Back the field shows the new state, not the typed text */}
+      {/* under the title, above both blocks (decision 42).
+          Keyed by the search: after «Сбросить» or Back the field shows the new state, not the typed text */}
       <Form key={query} action={groupHref} className="grid gap-cta" role="search">
         <SearchRow
           query={query}
@@ -99,6 +108,12 @@ export default async function GroupPage({
           label={`Поиск по имени в группе «${group.name}»`}
         />
       </Form>
+
+      {birthdayRows.length > 0 && <BirthdaysBlock rows={birthdayRows} />}
+
+      {reminders && (
+        <RemindersBlock rows={reminderRows} hasCadence={reminders.withCadenceCount > 0} />
+      )}
 
       <ContactList
         items={items}
