@@ -75,7 +75,7 @@ export default async function GroupPage({
         <BackLink href="/">Все контакты</BackLink>
       </nav>
 
-      <div className="flex flex-wrap items-end justify-between gap-grid">
+      <div className="flex flex-col items-start gap-grid">
         <div className="min-w-0">
           <p
             className="mb-3.5 inline-flex items-center gap-3 font-display text-eyebrow text-muted-foreground uppercase before:h-0.5 before:w-rule-label before:rounded-pill before:bg-teal before:content-['']"
