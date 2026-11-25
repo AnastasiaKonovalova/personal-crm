@@ -5,6 +5,7 @@ import {
   emailCount,
   emailsFor,
   formBody,
+  fromIp,
   loginLinks,
   mailpitTotal,
   openLoginLink,
@@ -12,6 +13,7 @@ import {
   requestLoginLink,
   signInAs,
   uniqueEmail,
+  unusedTestIp,
   userIdOf,
 } from "./auth";
 import { baseUrl, getPage, submitForm, visibleText, withPool } from "./helpers";
@@ -68,11 +70,20 @@ async function loginEmailRows(email: string) {
 
 const verificationValue = (email: string) => JSON.stringify({ type: "magic-link", email });
 
+async function loginEmailRowsOfIp(ip: string) {
+  const { rows } = await withPool((pool) =>
+    pool.query<{ total: number }>("select count(*)::int as total from login_emails where ip = $1", [
+      ip,
+    ]),
+  );
+  return rows[0].total;
+}
+
 // A sign-in link request straight to Better Auth, outside the form (and outside its own normalization)
-function requestLinkDirectly(email: string) {
+function requestLinkDirectly(email: string, headers: Record<string, string> = {}) {
   return fetch(new URL("/api/auth/sign-in/magic-link", baseUrl), {
     method: "POST",
-    headers: { "content-type": "application/json", Origin: new URL(baseUrl).origin },
+    headers: { ...headers, "content-type": "application/json", Origin: new URL(baseUrl).origin },
     body: JSON.stringify({ email, callbackURL: "/" }),
   });
 }
@@ -328,6 +339,20 @@ describe("limit of emails", SLOW, () => {
     expect(await emailCount(email)).toBe(3);
   });
 
+  it("«Четвёртый запрос за 10 минут» with 12 requests at once: still 3 emails, the rest «Слишком часто»", async () => {
+    const email = newEmail("limit-race");
+
+    const answers = await Promise.all(
+      Array.from({ length: 12 }, async () => visibleText((await requestLoginLink(email)).html)),
+    );
+
+    expect(answers.filter((text) => text.includes(`${SENT} ${email}`))).toHaveLength(3);
+    expect(answers.filter((text) => text.includes(TOO_OFTEN))).toHaveLength(9);
+    // Every answer is in, so every email that was going to be sent has been sent
+    expect(await emailCount(email)).toBe(3);
+    expect(await loginEmailRows(email)).toBe(3);
+  });
+
   it("«Лимит после пробелов и регистра»: the limit counts the normalized address", async () => {
     const email = newEmail("limit-case");
     await requestThreeTimes(email);
@@ -361,6 +386,107 @@ describe("limit of emails", SLOW, () => {
 
     expect(visibleText((await requestLoginLink(email)).html)).toContain(`${SENT} ${email}`);
     expect(await emailsFor(email, 4)).toHaveLength(4);
+  });
+});
+
+// The IP comes from X-Real-IP, which nginx sets on the server; here each test sends it itself, with its own
+// fictional IP, so the tests do not share a counter. Requests without the header have no IP limit
+describe("limit of emails per IP", { timeout: 60_000 }, () => {
+  const IP_LIMIT = 10;
+
+  // Links for `count` new addresses from the IP one by one; every one must be sent
+  async function exhaustIp(headers: Record<string, string>, count = IP_LIMIT) {
+    for (let n = 0; n < count; n += 1) {
+      const email = newEmail(`ip-${n}`);
+      expect(visibleText((await requestLoginLink(email, headers)).html), email).toContain(
+        `${SENT} ${email}`,
+      );
+    }
+  }
+
+  async function expectRefusedFrom(headers: Record<string, string>) {
+    const email = newEmail("ip-over");
+    expect(visibleText((await requestLoginLink(email, headers)).html)).toContain(TOO_OFTEN);
+    expect(await emailCount(email)).toBe(0);
+  }
+
+  it("«11-й запрос с одного IP за час»: «Слишком часто», no email to the 11th address", async () => {
+    const ip = await unusedTestIp();
+    await exhaustIp(fromIp(ip));
+
+    await expectRefusedFrom(fromIp(ip));
+    expect(await loginEmailRowsOfIp(ip)).toBe(IP_LIMIT);
+  });
+
+  it("«Лимит одного IP не мешает другому»: another IP gets its email", async () => {
+    const used = await unusedTestIp();
+    await exhaustIp(fromIp(used));
+    await expectRefusedFrom(fromIp(used));
+
+    const other = await unusedTestIp();
+    const email = newEmail("ip-other");
+    expect(visibleText((await requestLoginLink(email, fromIp(other))).html)).toContain(
+      `${SENT} ${email}`,
+    );
+    expect(await loginLinks(email)).toHaveLength(1);
+  });
+
+  it("«После часа снова можно»: refused while the first of 10 is under an hour old, sent once it is older", async () => {
+    const ip = await unusedTestIp();
+    await exhaustIp(fromIp(ip));
+    const shiftOldest = (minutes: number) =>
+      withPool((pool) =>
+        pool.query(
+          `update login_emails set sent_at = now() - make_interval(mins => $2)
+           where id = (select id from login_emails where ip = $1 order by sent_at limit 1)`,
+          [ip, minutes],
+        ),
+      );
+
+    await shiftOldest(59);
+    await expectRefusedFrom(fromIp(ip));
+
+    await shiftOldest(61);
+    const email = newEmail("ip-later");
+    expect(visibleText((await requestLoginLink(email, fromIp(ip))).html)).toContain(
+      `${SENT} ${email}`,
+    );
+    expect(await loginLinks(email)).toHaveLength(1);
+  });
+
+  it("«Лимит IP для запроса мимо формы»: a direct request from the same IP is refused, no email", async () => {
+    const ip = await unusedTestIp();
+    await exhaustIp(fromIp(ip));
+
+    const email = newEmail("ip-direct");
+    expect((await requestLinkDirectly(email, fromIp(ip))).status).toBe(429);
+    expect(await loginEmailRows(email)).toBe(0);
+    expect(await emailCount(email)).toBe(0);
+  });
+
+  it("«11-й запрос с одного IP за час» with 15 requests at once to different addresses: 10 emails, the rest «Слишком часто»", async () => {
+    const ip = await unusedTestIp();
+    const emails = Array.from({ length: 15 }, (_, n) => newEmail(`ip-race-${n}`));
+
+    const answers = await Promise.all(
+      emails.map(async (email) => visibleText((await requestLoginLink(email, fromIp(ip))).html)),
+    );
+
+    expect(answers.filter((text) => text.includes(SENT))).toHaveLength(IP_LIMIT);
+    expect(answers.filter((text) => text.includes(TOO_OFTEN))).toHaveLength(15 - IP_LIMIT);
+    // Every answer is in, so every email that was going to be sent has been sent
+    const sent = await Promise.all(emails.map((email) => emailCount(email)));
+    expect(sent.reduce((total, n) => total + n, 0)).toBe(IP_LIMIT);
+    expect(await loginEmailRowsOfIp(ip)).toBe(IP_LIMIT);
+  });
+
+  it("«11-й запрос с одного IP за час» with a different X-Forwarded-For each time: still one counter by X-Real-IP", async () => {
+    const ip = await unusedTestIp();
+    // The client writes X-Forwarded-For itself; nginx only appends to it
+    const spoofed = (n: number) => ({ ...fromIp(ip), "X-Forwarded-For": `203.0.113.${n + 1}` });
+
+    for (let n = 0; n < IP_LIMIT; n += 1) await exhaustIp(spoofed(n), 1);
+    await expectRefusedFrom(spoofed(IP_LIMIT));
   });
 });
 

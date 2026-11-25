@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins/magic-link";
-import { and, count, eq, gt, like, lt, ne, sql } from "drizzle-orm";
+import { type SQL, and, count, desc, eq, gt, like, lt, ne, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { accounts, loginEmails, sessions, users, verifications } from "@/db/schema";
 import { EMAIL_ERROR, loginEmailSchema } from "@/lib/validation";
@@ -22,6 +22,9 @@ export const TOO_MANY_EMAILS_ERROR = "Слишком часто, попробу�
 // At most 3 sign-in emails per address in 10 minutes
 const EMAIL_LIMIT = 3;
 const EMAIL_LIMIT_WINDOW_MINUTES = 10;
+// At most 10 sign-in emails from one IP an hour, to any addresses (openspec/changes/email-ip-limit/design.md)
+const IP_LIMIT = 10;
+const IP_LIMIT_WINDOW_MINUTES = 60;
 
 // Where Better Auth sends the person after the link: the app, or the «Ссылка устарела» screen
 const AFTER_SIGN_IN_URL = "/";
@@ -30,24 +33,70 @@ const EXPIRED_LINK_URL = "/login/expired";
 const SESSION_DAYS = 30;
 const DAY_SECONDS = 24 * 60 * 60;
 
-async function tooManyEmails(email: string) {
-  const [{ sent }] = await getDb()
-    .select({ sent: count() })
-    .from(loginEmails)
+// The client's IP: only X-Real-IP, which nginx overwrites with $remote_addr. X-Forwarded-For is not read: nginx
+// appends to what the client sent, so its first value is the client's own. No header (no nginx in front:
+// locally, e2e; on the server the app port is open only on localhost) means no IP and no IP limit
+function clientIp(headers: Headers | undefined) {
+  const ip = headers?.get("x-real-ip")?.trim();
+  return ip ? ip : null;
+}
+
+// Takes a place in both limits for one email from one IP; false when the IP or the address has used them all.
+// The counts and the new row are one transaction under locks on the address and then on the IP, always in
+// this order (so no two requests wait for each other): requests that come at once wait here one by one, and
+// each sees the places taken before it. The two-key locks keep an address and an IP with the same hash apart
+async function takeEmailPlace(email: string, ip: string | null) {
+  return getDb().transaction(async (tx) => {
+    const sentSince = async (match: SQL, minutes: number) => {
+      const [{ sent }] = await tx
+        .select({ sent: count() })
+        .from(loginEmails)
+        .where(
+          and(
+            match,
+            gt(loginEmails.sentAt, sql`now() - ${sql.raw(`interval '${minutes} minutes'`)}`),
+          ),
+        );
+      return sent;
+    };
+
+    await tx.execute(sql`select pg_advisory_xact_lock(1, hashtext(${email}))`);
+    if (ip !== null) {
+      await tx.execute(sql`select pg_advisory_xact_lock(2, hashtext(${ip}))`);
+      if ((await sentSince(eq(loginEmails.ip, ip), IP_LIMIT_WINDOW_MINUTES)) >= IP_LIMIT)
+        return false;
+    }
+    if (
+      (await sentSince(eq(loginEmails.email, email), EMAIL_LIMIT_WINDOW_MINUTES)) >= EMAIL_LIMIT
+    ) {
+      return false;
+    }
+    await tx.insert(loginEmails).values({ email, ip });
+    return true;
+  });
+}
+
+// The email did not go out: the limits count sent emails only, so the latest row of the address is removed,
+// and with it the place in the limit of its IP
+async function giveEmailPlaceBack(email: string) {
+  const db = getDb();
+  await db
+    .delete(loginEmails)
     .where(
-      and(
-        eq(loginEmails.email, email),
-        gt(
-          loginEmails.sentAt,
-          sql`now() - ${sql.raw(`interval '${EMAIL_LIMIT_WINDOW_MINUTES} minutes'`)}`,
-        ),
+      eq(
+        loginEmails.id,
+        db
+          .select({ id: loginEmails.id })
+          .from(loginEmails)
+          .where(eq(loginEmails.email, email))
+          .orderBy(desc(loginEmails.sentAt))
+          .limit(1),
       ),
     );
-  return sent >= EMAIL_LIMIT;
 }
 
 // Runs for the form and for a direct request to /api/auth/sign-in/magic-link alike. It normalizes the
-// email, checks it with the same rule as the form, applies the limit and fixes where the link leads:
+// email, checks it with the same rule as the form, applies both limits and fixes where the link leads:
 // everything else the request carries (name, other redirects, metadata) is dropped
 const beforeSignInRequest = createAuthMiddleware(async (ctx) => {
   if (ctx.path !== "/sign-in/magic-link") return;
@@ -61,7 +110,7 @@ const beforeSignInRequest = createAuthMiddleware(async (ctx) => {
   }
   const { email } = parsed.data;
 
-  if (await tooManyEmails(email)) {
+  if (!(await takeEmailPlace(email, clientIp(ctx.headers)))) {
     throw new APIError("TOO_MANY_REQUESTS", {
       message: TOO_MANY_EMAILS_ERROR,
       code: LOGIN_ERROR.tooManyEmails,
@@ -78,7 +127,8 @@ const beforeSignInRequest = createAuthMiddleware(async (ctx) => {
 // Better Auth has created the link and calls this to deliver it. A new link kills the older ones of the
 // same address: they are the other `verifications` rows with the same value (the token is stored as is,
 // identifier = "magic-link:<token>", value = {"type":"magic-link","email":"<email>"}; design.md, decision 4).
-// Then the email goes out and counts toward the limit; rows older than a day are no longer needed
+// Then the email goes out: its place in the limit was taken before the link was made (beforeSignInRequest)
+// and is given back if the send fails. Rows older than a day are no longer needed
 async function sendSignInLink({
   email,
   url,
@@ -99,9 +149,13 @@ async function sendSignInLink({
       ),
     );
 
-  await sendLoginEmail(email, url);
+  try {
+    await sendLoginEmail(email, url);
+  } catch (error) {
+    await giveEmailPlaceBack(email);
+    throw error;
+  }
 
-  await db.insert(loginEmails).values({ email });
   await db.delete(loginEmails).where(lt(loginEmails.sentAt, sql`now() - interval '1 day'`));
 }
 

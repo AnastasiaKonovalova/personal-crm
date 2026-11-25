@@ -138,9 +138,25 @@ async function deleteEmailsTo(email: string) {
   });
 }
 
+// A fictional client IP from 198.51.100.0/24 (reserved for documentation) that no sign-in row uses yet. On the
+// server nginx sets X-Real-IP; a test sends it itself to act as one client (`fromIp`)
+export async function unusedTestIp() {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const ip = `198.51.100.${1 + Math.floor(Math.random() * 254)}`;
+    const { rows } = await withPool((pool) =>
+      pool.query("select 1 from login_emails where ip = $1 limit 1", [ip]),
+    );
+    if (rows.length === 0) return ip;
+  }
+  throw new Error("No unused test IP left in 198.51.100.0/24");
+}
+
+export const fromIp = (ip: string) => ({ "X-Real-IP": ip });
+
 // «Получить ссылку» on /login, sent the way a browser without JavaScript does it. The answer is the page with
-// the form state: «Ссылка для входа отправлена на …» or an error under the field
-export async function requestLoginLink(email: string) {
+// the form state: «Ссылка для входа отправлена на …» or an error under the field. `headers` go with the POST,
+// e.g. `fromIp(ip)`
+export async function requestLoginLink(email: string, headers: Record<string, string> = {}) {
   const page = await fetch(new URL("/login", baseUrl), { redirect: "manual" });
   const body = formBody(await page.text(), { email }, 'name="email"');
   if (!body) {
@@ -150,7 +166,7 @@ export async function requestLoginLink(email: string) {
     method: "POST",
     body,
     redirect: "manual",
-    headers: { Origin: new URL(baseUrl).origin },
+    headers: { ...headers, Origin: new URL(baseUrl).origin },
     // The first email of a run opens the SMTP connection, which can take seconds
     signal: AbortSignal.timeout(15_000),
   });

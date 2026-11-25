@@ -330,6 +330,7 @@ const CHECKED_MIGRATIONS = [
   "0002_gorgeous_magdalene",
   "0003_login",
   "0004_birthdays",
+  "0005_login_email_ip",
 ];
 
 describe("data checks per migration", () => {
@@ -581,6 +582,30 @@ describe("data checks per migration", () => {
       year1899: "23514",
       unknownChoice: "22P02", // invalid input value for enum
     });
+  });
+
+  it("0005 login email ip: old sign-in email rows keep their address and time and get no IP, contacts unchanged (email-ip-limit design.md, Migration Plan)", async () => {
+    const report = await checkMigration(
+      { tag: "0005_login_email_ip" },
+      {
+        fill: async (pool) => {
+          await fillContactsOfUser(pool);
+          await pool.query(`
+            insert into login_emails (email, sent_at) values
+              ('anna@example.com', now() - interval '5 minutes'),
+              ('anna@example.com', now() - interval '2 hours'),
+              ('boris@example.org', now() - interval '20 hours')
+          `);
+        },
+        inspect: (pool) =>
+          count(pool, "select count(*)::int as n from login_emails where ip is not null"),
+      },
+    );
+    expect(report.rowsBefore).toMatchObject({ contacts: 4, notes: 3, login_emails: 3 });
+    expect(report.problems).toEqual([]);
+    expect(report.newTables).toEqual([]);
+    expect(report.newColumns).toEqual({ login_emails: ["ip"] });
+    expect(report.inspected).toBe(0);
   });
 });
 
