@@ -53,7 +53,7 @@ export default async function ContactPage({
     <PageShell width="narrow" className="grid gap-heading">
       <BackLink href="/">Все контакты</BackLink>
 
-      <div className="flex flex-wrap items-end justify-between gap-grid">
+      <div className="flex flex-col items-start gap-grid">
         <h1 className="font-display text-page-title font-semibold">{contact.name}</h1>
         <div className="flex flex-wrap items-center gap-controls">
           <Button asChild variant="outline" size="sm">
