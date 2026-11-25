@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins/magic-link";
-import { and, count, eq, gt, like, lt, ne, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, like, lt, ne, sql } from "drizzle-orm";
 import { getDb } from "@/db";
 import { accounts, loginEmails, sessions, users, verifications } from "@/db/schema";
 import { EMAIL_ERROR, loginEmailSchema } from "@/lib/validation";
@@ -30,20 +30,46 @@ const EXPIRED_LINK_URL = "/login/expired";
 const SESSION_DAYS = 30;
 const DAY_SECONDS = 24 * 60 * 60;
 
-async function tooManyEmails(email: string) {
-  const [{ sent }] = await getDb()
-    .select({ sent: count() })
-    .from(loginEmails)
-    .where(
-      and(
-        eq(loginEmails.email, email),
-        gt(
-          loginEmails.sentAt,
-          sql`now() - ${sql.raw(`interval '${EMAIL_LIMIT_WINDOW_MINUTES} minutes'`)}`,
+// Takes a place in the limit for one email; false when the address has used them all. The count and the
+// new row are one transaction under a lock on the address: requests for it that come at once wait here
+// one by one, and each sees the places taken before it
+async function takeEmailPlace(email: string) {
+  return getDb().transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${email}))`);
+    const [{ sent }] = await tx
+      .select({ sent: count() })
+      .from(loginEmails)
+      .where(
+        and(
+          eq(loginEmails.email, email),
+          gt(
+            loginEmails.sentAt,
+            sql`now() - ${sql.raw(`interval '${EMAIL_LIMIT_WINDOW_MINUTES} minutes'`)}`,
+          ),
         ),
+      );
+    if (sent >= EMAIL_LIMIT) return false;
+    await tx.insert(loginEmails).values({ email });
+    return true;
+  });
+}
+
+// The email did not go out: the limit counts sent emails only, so one place of the address is given back
+async function giveEmailPlaceBack(email: string) {
+  const db = getDb();
+  await db
+    .delete(loginEmails)
+    .where(
+      eq(
+        loginEmails.id,
+        db
+          .select({ id: loginEmails.id })
+          .from(loginEmails)
+          .where(eq(loginEmails.email, email))
+          .orderBy(desc(loginEmails.sentAt))
+          .limit(1),
       ),
     );
-  return sent >= EMAIL_LIMIT;
 }
 
 // Runs for the form and for a direct request to /api/auth/sign-in/magic-link alike. It normalizes the
@@ -61,7 +87,7 @@ const beforeSignInRequest = createAuthMiddleware(async (ctx) => {
   }
   const { email } = parsed.data;
 
-  if (await tooManyEmails(email)) {
+  if (!(await takeEmailPlace(email))) {
     throw new APIError("TOO_MANY_REQUESTS", {
       message: TOO_MANY_EMAILS_ERROR,
       code: LOGIN_ERROR.tooManyEmails,
@@ -78,7 +104,8 @@ const beforeSignInRequest = createAuthMiddleware(async (ctx) => {
 // Better Auth has created the link and calls this to deliver it. A new link kills the older ones of the
 // same address: they are the other `verifications` rows with the same value (the token is stored as is,
 // identifier = "magic-link:<token>", value = {"type":"magic-link","email":"<email>"}; design.md, decision 4).
-// Then the email goes out and counts toward the limit; rows older than a day are no longer needed
+// Then the email goes out: its place in the limit was taken before the link was made (beforeSignInRequest)
+// and is given back if the send fails. Rows older than a day are no longer needed
 async function sendSignInLink({
   email,
   url,
@@ -99,9 +126,13 @@ async function sendSignInLink({
       ),
     );
 
-  await sendLoginEmail(email, url);
+  try {
+    await sendLoginEmail(email, url);
+  } catch (error) {
+    await giveEmailPlaceBack(email);
+    throw error;
+  }
 
-  await db.insert(loginEmails).values({ email });
   await db.delete(loginEmails).where(lt(loginEmails.sentAt, sql`now() - interval '1 day'`));
 }
 

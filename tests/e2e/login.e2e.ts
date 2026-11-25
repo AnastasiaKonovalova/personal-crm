@@ -328,6 +328,20 @@ describe("limit of emails", SLOW, () => {
     expect(await emailCount(email)).toBe(3);
   });
 
+  it("«Четвёртый запрос за 10 минут» with 12 requests at once: still 3 emails, the rest «Слишком часто»", async () => {
+    const email = newEmail("limit-race");
+
+    const answers = await Promise.all(
+      Array.from({ length: 12 }, async () => visibleText((await requestLoginLink(email)).html)),
+    );
+
+    expect(answers.filter((text) => text.includes(`${SENT} ${email}`))).toHaveLength(3);
+    expect(answers.filter((text) => text.includes(TOO_OFTEN))).toHaveLength(9);
+    // Every answer is in, so every email that was going to be sent has been sent
+    expect(await emailCount(email)).toBe(3);
+    expect(await loginEmailRows(email)).toBe(3);
+  });
+
   it("«Лимит после пробелов и регистра»: the limit counts the normalized address", async () => {
     const email = newEmail("limit-case");
     await requestThreeTimes(email);
