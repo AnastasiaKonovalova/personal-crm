@@ -94,16 +94,22 @@ export const verifications = pgTable(
   (table) => [index("verifications_identifier_idx").on(table.identifier)],
 );
 
-// One row per sign-in email sent: the limit of 3 emails in 10 minutes per address counts these (design.md, decision 3)
+// One row per sign-in email sent. Both limits count these: 3 emails in 10 minutes per address (login
+// design.md, decision 3) and 10 emails an hour per IP (email-ip-limit design.md, decision 3)
 export const loginEmails = pgTable(
   "login_emails",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     // Normalized like users.email
     email: text("email").notNull(),
+    // From X-Real-IP; NULL when the request had none (no nginx in front: locally, e2e) and for rows from before 0005
+    ip: text("ip"),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("login_emails_email_sent_at_idx").on(table.email, table.sentAt)],
+  (table) => [
+    index("login_emails_email_sent_at_idx").on(table.email, table.sentAt),
+    index("login_emails_ip_sent_at_idx").on(table.ip, table.sentAt),
+  ],
 );
 
 export const contacts = pgTable(

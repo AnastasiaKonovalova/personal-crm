@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     "playwright-report/**",
     "scripts/**",
     "tmp/**",
+    // Agent worktrees are other checkouts of the repo: they lint themselves, and their branches reach main through CI
+    ".claude/**",
   ]),
 ]);
 
