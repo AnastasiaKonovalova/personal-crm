@@ -6,4 +6,6 @@ source "$(dirname "$0")/stand.sh"
 
 use_stand "${1:-}"
 shift
+# docker compose checks the current folder: after `ssh` it is the login user's home, which crm-deploy cannot read
+cd "$stand_dir"
 compose "$@"
